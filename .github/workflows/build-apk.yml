@@ -6,6 +6,7 @@ permissions:
 on:
   push:
     branches: [main]
+    paths-ignore: ['dados-osm/**', 'tools/osm/**', '.github/workflows/osm.yml', 'README.md', 'mapas/**']
   workflow_dispatch:
 
 jobs:

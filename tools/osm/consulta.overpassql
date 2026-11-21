@@ -3,7 +3,7 @@
   way["highway"]["name"];
   nwr["amenity"~"^(hospital|clinic|doctors|pharmacy|police|fire_station|fuel|school|university|college|bank|townhall|bus_station|marketplace|post_office|place_of_worship|restaurant|fast_food)$"];
   nwr["shop"~"^(supermarket|convenience|mall|bakery|butcher|greengrocer|department_store|tyres|car_repair|motorcycle|motorcycle_repair)$"];
-  nwr["name"~"borracharia",i];
+  nwr["name"~"[Bb]orracharia"];
   nwr["healthcare"];
 );
 out geom;
