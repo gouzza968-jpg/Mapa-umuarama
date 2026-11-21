@@ -1,0 +1,36 @@
+name: Baixar dados do OpenStreetMap
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['tools/osm/consulta.overpassql']
+
+jobs:
+  osm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar Overpass
+        run: |
+          mkdir -p dados-osm
+          ok=0
+          for url in https://overpass-api.de/api/interpreter https://overpass.kumi.systems/api/interpreter https://maps.mail.ru/osm/tools/overpass/api/interpreter; do
+            for i in 1 2; do
+              if curl -fsS --max-time 240 --data-urlencode "data@tools/osm/consulta.overpassql" "$url" -o dados-osm/umuarama.json && python3 -c "import json;d=json.load(open('dados-osm/umuarama.json'));assert len(d['elements'])>100;print(len(d['elements']))"; then ok=1; break 2; fi
+              sleep 20
+            done
+          done
+          test $ok = 1
+          gzip -9 -k -f dados-osm/umuarama.json && rm dados-osm/umuarama.json
+          ls -la dados-osm
+      - name: Salvar no repositório
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add dados-osm
+          git commit -m "Dados do OpenStreetMap [skip ci]" || echo "sem mudanças"
+          git push
