@@ -1,6 +1,15 @@
 {
-  "latest": "2.8.0",
+  "latest": "2.9.0",
   "versions": [
+    {
+      "version": "2.9.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Nova guia Chat: converse com todos os motoboys do app",
+        "Envie fotos e a sua localização no chat",
+        "Toque numa localização recebida para ver no mapa"
+      ]
+    },
     {
       "version": "2.8.0",
       "date": "21/11/2026",
