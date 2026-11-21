@@ -41,6 +41,10 @@
   .chip{flex:none;display:flex;align-items:center;gap:7px;border-radius:999px;padding:8px 13px 8px 10px;font-size:13.5px;font-weight:600;border:1px solid var(--line);color:var(--ink)}
   .chip .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
   .chip small{color:var(--muted);font-weight:500}
+  .pchip{padding:7px 12px 7px 7px;gap:6px}
+  .pchip canvas{width:22px;height:22px;flex:none}
+  .pchip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+  .pchip:not(.on){color:var(--muted)}
   #results{margin-top:10px;border-radius:var(--r);overflow:auto;max-height:min(62vh,480px);display:none;padding:6px}
   #results.open{display:block;animation:fadeIn .16s ease-out}
   .rh{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;padding:10px 12px 6px;display:flex;justify-content:space-between}
@@ -78,7 +82,10 @@
   #card .h{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
   #card .s{color:var(--muted);font-size:13px;margin-top:4px;line-height:1.4}
   #card .x{margin:-4px -8px 0 auto}
-  .acts{display:flex;gap:8px;margin-top:14px}
+  .acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .acts .routes{display:flex;gap:8px;width:100%}
+  .acts .routes.hide{display:none}
+  .act.waze{background:#33ccff;border-color:transparent;color:#05222e}
   .act{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--raised);border-radius:13px;padding:11px 10px;font-size:14px;font-weight:600;text-decoration:none;color:var(--ink);white-space:nowrap}
   .act:active{transform:scale(.98)}
   .act.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
@@ -104,6 +111,12 @@
   .lopt .sw{width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center}
   .lopt .sw i{width:12px;height:3px;border-radius:2px;display:block}
   .lopt.on{border-color:var(--accent);background:var(--accent-soft)}
+  .sheet h4{margin:18px 4px 10px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+  .pgrid{display:flex;flex-wrap:wrap;gap:8px}
+  .popt{display:flex;align-items:center;gap:7px;padding:8px 12px 8px 8px;border-radius:999px;background:var(--raised);border:1.5px solid transparent;font-size:13.5px;font-weight:600}
+  .popt .e{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px}
+  .popt.on{border-color:var(--accent);background:var(--accent-soft)}
+  .popt:not(.on){opacity:.6}
 
   /* ---------- páginas (Mapas / Configurações) ---------- */
   .page{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom));background:var(--bg);z-index:8;overflow:auto;display:none;padding:calc(env(safe-area-inset-top) + 18px) 14px 30px}
@@ -206,7 +219,7 @@
 <div class="top" id="topbar">
   <div class="search glass">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="q" type="search" placeholder="Buscar rua e número, bairro…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+    <input id="q" type="search" placeholder="Rua e número, bairro, farmácia…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
     <button class="ib" id="clear" aria-label="Limpar" style="display:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
   <div class="chips" id="chips">
@@ -238,7 +251,10 @@
     <button class="btn primary" type="submit">Buscar</button>
   </form>
   <div class="acts">
-    <a class="act primary hide" id="route" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>Rota no Maps <small>BETA</small></a>
+    <div class="routes hide" id="routes">
+      <a class="act primary" id="route" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>Google Maps</a>
+      <a class="act waze" id="routeWaze" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15c-1-1-1.5-2.6-1.5-4.5C2.5 6 6.5 3 12 3s9.5 3 9.5 7.5c0 4-3 7-8 7.5h-4"/><circle cx="8" cy="19" r="2"/><circle cx="16" cy="19" r="2"/><path d="M9 9h.01M15 9h.01M9.5 12.5c1.5 1 3.5 1 5 0"/></svg>Waze</a>
+    </div>
     <button class="act" id="center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Centralizar</button>
     <button class="act" id="copy"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copiar</button>
   </div>
@@ -256,6 +272,8 @@
   <div class="handle"></div>
   <h3>Camadas do mapa</h3>
   <div class="lgrid" id="lgrid"></div>
+  <h4 id="poiTtl" style="display:none">Referências</h4>
+  <div class="pgrid" id="pgrid"></div>
 </div>
 
 <!-- Configurações -->
@@ -282,10 +300,10 @@
     <div class="ttl">Rotas</div>
     <div class="row">
       <div class="ri"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg></div>
-      <div class="grow"><div class="l">Abrir rota no Google Maps <span class="badge exp">Experimental</span></div><div class="d">Mostra o botão de rota no endereço encontrado.</div></div>
+      <div class="grow"><div class="l">Abrir rota no Google Maps e Waze <span class="badge exp">Experimental</span></div><div class="d">Mostra os botões de rota no endereço encontrado.</div></div>
       <label class="switch"><input type="checkbox" id="optRoute"><span></span></label>
     </div>
-    <div class="warnbox" id="routeWarn">⚠️ Nem todo endereço vai bater com o mapa oficial. O Google Maps localiza pelo nome da rua e número, e pode não conhecer ruas novas, ruas renomeadas por decreto ou loteamentos recentes. Confira sempre no mapa do app.</div>
+    <div class="warnbox" id="routeWarn">⚠️ Nem todo endereço vai bater com o mapa oficial. O Google Maps e o Waze localizam pelo nome da rua e número, e pode não conhecer ruas novas, ruas renomeadas por decreto ou loteamentos recentes. Confira sempre no mapa do app.</div>
   </div>
 
   <div class="sec">
@@ -407,6 +425,7 @@ const available = m => m.embutido || downloaded.has(m.id);
 
 // ---------- motor do mapa ----------
 let MAP = null; // dados do mapa atual
+let POIS = [], POICATS = [], GEO = null;
 let META, W, H, S, TC, TI, LC, all, pCat, pOff, pN, pBox, NP, GX, GY, gridP, gridT, stampP, texts, streets, sIdx, places, OV = null;
 let stamp = 0;
 const CELL = 2500;
@@ -458,6 +477,8 @@ async function buildMap(DATA){
     if (!seen.has(id)) { seen.set(id, {type:c, name:t[7], key:k, words:k.split(' '), ids:[i]}); places.push(seen.get(id)); }
     else seen.get(id).ids.push(i);
   });
+  POIS = DATA.pois || []; POICATS = DATA.poicats || []; GEO = DATA.geo || null;
+  for (const [i, pz] of POIS.entries()){ places.push({type:'poi', poi:i, name:pz[3], key:strip(pz[3] + ' ' + (POICATS[pz[2]]||['',''])[1]), words:strip(pz[3] + ' ' + (POICATS[pz[2]]||['',''])[1]).split(' '), ids:[]}); }
   buildOverview();
   snap = null; highlight = null; pin = null;
 }
@@ -492,6 +513,13 @@ const LAYERS = [
   ['rua','Nomes de ruas','#e2e8f0'], ['num','Numeração','#ff6b9a'], ['lote','Lotes','#5b6573'], ['quadra','Quadras','#94a3b8'],
   ['via','Rodovias','#f5a524'], ['rio','Rios e verde','#3b82f6'], ['bairro','Bairros','#a78bfa'], ['outro','Outros','#475569'],
 ];
+const POI_STY = {
+  saude:{e:'🏥', c:'#ef4444'}, farmacia:{e:'💊', c:'#10b981'}, mercado:{e:'🛒', c:'#3b82f6'}, posto:{e:'⛽', c:'#f59e0b'},
+  borracharia:{e:'tire', c:'#334155'}, oficina:{e:'🔧', c:'#64748b'}, seguranca:{e:'🚓', c:'#1d4ed8'}, escola:{e:'🏫', c:'#8b5cf6'},
+  servico:{e:'🏦', c:'#0ea5e9'}, comida:{e:'🍴', c:'#f97316'}, igreja:{e:'⛪', c:'#a855f7'},
+};
+const POI_SHORT = {saude:'Saúde', farmacia:'Farmácias', mercado:'Mercados', posto:'Postos', borracharia:'Borracharias', oficina:'Oficinas', seguranca:'Polícia', escola:'Escolas', servico:'Serviços', comida:'Comida', igreja:'Igrejas'};
+const poiVis = Object.assign({}, prefs.poiVis||{});   // começa tudo desligado: o usuário escolhe o que mostrar
 const vis = Object.assign({rua:true,num:true,lote:true,quadra:true,via:true,rio:true,bairro:true,outro:false}, prefs.vis||{});
 
 // ---------- canvas & vista ----------
@@ -508,6 +536,22 @@ function resize(){
 }
 const homeK = () => Math.min(VW/W, (VH-120)/H)*0.98;
 function fitAll(){ setView(W/2, H/2 + 30/homeK(), homeK()); }
+// área urbana (onde estão as quadras), para abrir o mapa preenchendo a tela
+let CORE = null;
+function computeCore(){
+  const ci = LC.indexOf('quadra'); const xs = [], ys = [];
+  for (let p=0;p<NP;p++){ if (pCat[p]!==ci) continue; xs.push((pBox[4*p]+pBox[4*p+2])/2); ys.push((pBox[4*p+1]+pBox[4*p+3])/2); }
+  if (xs.length < 20){ CORE = [0,0,W,H]; return; }
+  xs.sort((a,b)=>a-b); ys.sort((a,b)=>a-b);
+  const q = (a,f) => a[Math.floor((a.length-1)*f)];
+  CORE = [q(xs,.06), q(ys,.06), q(xs,.94), q(ys,.94)];
+}
+function fillTarget(){
+  const [x0,y0,x1,y1] = CORE, top = 120, bot = 20;
+  const k = Math.max(VW/(x1-x0), (VH-top-bot)/(y1-y0));
+  return [(x0+x1)/2, (y0+y1)/2 + (top-bot)/2/k, k];
+}
+function expandIn(){ const [x,y,k] = fillTarget(); animateTo(x, y, k, 1100); }
 function setView(x,y,k){ view.x=x; view.y=y; view.k=Math.max(kmin, Math.min(KMAX, k)); requestDraw(); }
 const toScreen = (x,y) => [ (x-view.x)*view.k + VW/2, VH/2 - (y-view.y)*view.k ];
 const toWorld = (sx,sy) => [ (sx-VW/2)/view.k + view.x, view.y - (sy-VH/2)/view.k ];
@@ -658,6 +702,43 @@ function drawTexts(){
   }
   ctx.restore();
 }
+let poiHits = [];
+function drawPoiIcon(g, st, r){
+  g.fillStyle = st.c; g.strokeStyle = '#fff'; g.lineWidth = 2;
+  g.beginPath(); g.arc(0,0,r,0,Math.PI*2); g.fill(); g.stroke();
+  if (st.e === 'tire'){ g.strokeStyle='#fff'; g.lineWidth = r*0.28; g.beginPath(); g.arc(0,0,r*0.5,0,Math.PI*2); g.stroke(); g.fillStyle='#fff'; g.beginPath(); g.arc(0,0,r*0.15,0,Math.PI*2); g.fill(); }
+  else { g.font = `${Math.round(r*1.1)}px system-ui, "Noto Color Emoji", sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(st.e, 0, r*0.08); g.textAlign='start'; g.textBaseline='alphabetic'; }
+}
+function drawPois(){
+  poiHits = [];
+  if (!POIS.length || view.k*10 < 0.08) return;
+  const k = view.k, r = k*10 > 1.5 ? 12 : k*10 > 0.45 ? 9 : 7, showName = k*10 > 2.2;
+  ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
+  for (let i=0;i<POIS.length;i++){
+    const pz = POIS[i], cat = (POICATS[pz[2]]||[])[0]; if (!poiVis[cat]) continue;
+    const [sx, sy] = toScreen(pz[0], pz[1]);
+    if (sx < -30 || sx > VW+30 || sy < -30 || sy > VH+30) continue;
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.translate(sx, sy);
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 4; drawPoiIcon(ctx, POI_STY[cat], r); ctx.shadowBlur = 0;
+    if (showName){
+      ctx.font = '600 11.5px system-ui,-apple-system,Roboto,sans-serif';
+      ctx.lineWidth = 3; ctx.strokeStyle = TH.halo; ctx.strokeText(pz[3], r+5, 4);
+      ctx.fillStyle = TH.text.rua; ctx.fillText(pz[3], r+5, 4);
+    }
+    poiHits.push([sx, sy, i]);
+  }
+  ctx.restore();
+}
+function hitPoi(x, y){ let best = null, bd = 26*26; for (const [sx, sy, i] of poiHits){ const d = (sx-x)**2 + (sy-y)**2; if (d < bd){ bd = d; best = i; } } return best; }
+const llOf = (x, y) => GEO ? [GEO.lat[0] + GEO.lat[1]*x + GEO.lat[2]*y, GEO.lon[0] + GEO.lon[1]*x + GEO.lon[2]*y] : null;
+function showPoi(i){
+  const pz = POIS[i], [cat, label] = POICATS[pz[2]];
+  highlight = null; pin = {x: pz[0], y: pz[1]};
+  const go = () => focusOn(pz[0], pz[1], Math.max(view.k, 1.2)); go();
+  const b = nearestBairro(pz[0], pz[1]);
+  showCard('poi:' + cat, esc(pz[3]), `${esc(label)}${pz[4] ? ' · ' + esc(pz[4]) : ''}${b ? ' · ' + esc(b) : ''}`, `${pz[5]},${pz[6]}`, `${pz[3]}${pz[4] ? ', ' + pz[4] : ''} - ${cityName()}`, go);
+  requestDraw(true);
+}
 function drawPin(){
   if (!pin) return;
   const [sx, sy] = toScreen(pin.x, pin.y);
@@ -681,7 +762,7 @@ function drawScale(){
 }
 function draw(){
   if (!VW || !MAP) return;
-  if (!vectorMode()){ drawOverview(); drawTexts(); snap=null; }
+  if (!vectorMode()){ drawOverview(); drawTexts(); drawPois(); snap=null; }
   else if (interacting && !needFull && snap){
     drawOverview();
     const r = view.k / snap.k; const [sx, sy] = toScreen(snap.x, snap.y);
@@ -690,7 +771,7 @@ function draw(){
     ctx.restore();
     scheduleFull();
   } else {
-    drawVectors(); drawTexts();
+    drawVectors(); drawTexts(); drawPois();
     if (!snap) snap = {c: document.createElement('canvas')};
     snap.c.width = cv.width; snap.c.height = cv.height;
     snap.c.getContext('2d').drawImage(cv,0,0);
@@ -730,7 +811,9 @@ function endPtr(e){
     interacting = false;
     if (!moved){
       const now = performance.now();
-      if (now - lastTap < 300 && lastTapPos && Math.hypot(e.clientX-lastTapPos.x, e.clientY-lastTapPos.y) < 30){ zoomAt(e.clientX, e.clientY, 2.2); lastTap = 0; }
+      const r = cv.getBoundingClientRect(), hp = hitPoi(e.clientX - r.left, e.clientY - r.top);
+      if (hp != null){ showPoi(hp); lastTap = 0; }
+      else if (now - lastTap < 300 && lastTapPos && Math.hypot(e.clientX-lastTapPos.x, e.clientY-lastTapPos.y) < 30){ zoomAt(e.clientX, e.clientY, 2.2); lastTap = 0; }
       else { lastTap = now; lastTapPos = {x:e.clientX, y:e.clientY}; }
     }
     gesture = null; requestDraw(true);
@@ -781,8 +864,12 @@ addEventListener('resize', resize);
 
 // ---------- camadas ----------
 function renderLayers(){
+  $('#poiTtl').style.display = POIS.length ? '' : 'none';
+  $('#pgrid').innerHTML = POIS.length ? POICATS.map(([c, n]) => `<button class="popt ${poiVis[c]?'on':''}" data-p="${c}"><canvas class="e" width="48" height="48" data-ic="${c}"></canvas>${esc(n)}</button>`).join('') : '';
+  document.querySelectorAll('#pgrid canvas[data-ic]').forEach(cn => { const g = cn.getContext('2d'); g.translate(24,24); drawPoiIcon(g, POI_STY[cn.dataset.ic], 20); });
   $('#lgrid').innerHTML = LAYERS.map(([k, n, c]) => `<button class="lopt ${vis[k]?'on':''}" data-l="${k}"><span class="sw" style="background:${c}22"><i style="background:${c}"></i></span>${n}</button>`).join('');
 }
+$('#pgrid').addEventListener('click', e => { const b = e.target.closest('.popt'); if (!b) return; togglePoi(b.dataset.p); renderLayers(); });
 $('#lgrid').addEventListener('click', e => { const b = e.target.closest('.lopt'); if (!b) return; const k = b.dataset.l; vis[k] = !vis[k]; prefs.vis = vis; savePrefs(); renderLayers(); requestDraw(true); });
 function openSheet(id){ $('#veil').classList.add('open'); $(id).classList.add('open'); }
 function closeSheets(){ $('#veil').classList.remove('open'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
@@ -816,16 +903,16 @@ function search(q){
   const P = parseQuery(q); const out = [];
   if (!P.qt.length) return {P, out};
   for (const st of sIdx){ const sc = matchScore(st.words, P.qt); if (sc>=0) out.push({kind:'rua', sc: sc + Math.min(st.nums.length,50)/100, st}); }
-  for (const pl of places){ const sc = matchScore(pl.words, P.qt); if (sc>=0) out.push({kind:pl.type, sc: sc-0.5, pl}); }
+  for (const pl of places){ const sc = matchScore(pl.words, P.qt); if (sc>=0) out.push({kind:pl.type, sc: sc-(pl.type==='poi'?0.3:0.5), pl}); }
   if (P.num){
     const qt2 = P.raw.split(' ').filter(w=>w && !STOP.has(w));
     for (const st of sIdx){ const sc = matchScore(st.words, qt2); if (sc>=0 && !out.find(o=>o.st===st)) out.push({kind:'rua', sc:sc+0.2, st, exactName:true}); }
   }
   out.sort((a,b)=>b.sc-a.sc);
   const res=[], seen=new Set();
-  for (const r of out){ const k = r.kind+'|'+(r.st? r.st.key : r.pl.key);
+  for (const r of out){ const k = r.kind+'|'+(r.st? r.st.key : r.pl.key)+(r.kind==='poi'? '|'+r.pl.poi : '');
     if (seen.has(k)) { if (r.st){ const prev=res.find(x=>x.st&&x.st.key===r.st.key); if (prev) prev.more=(prev.more||[]).concat([r.st]); } continue; }
-    seen.add(k); res.push(r); if (res.length>=40) break; }
+    seen.add(k); res.push(r); if (res.length>=60) break; }
   return {P, out: res};
 }
 function nearestBairro(x,y){
@@ -889,6 +976,8 @@ function renderResults(){
       const title = isAddr ? `${esc(r.st.name)}, <span style="color:var(--accent)">${esc(P.num)}</span>` : esc(r.st.name);
       return `<div class="res" data-i="${idx}"><div class="ri ${isAddr?'end':'rua'}">${isAddr?IC.end:IC.rua}</div><div><div class="t">${title}</div><div class="s">${b? esc(b)+' · ':''}${nn ? nn+' números' : 'sem numeração'}</div></div></div>`;
     }
+    if (r.kind === 'poi'){ const pz = POIS[r.pl.poi], [cat, lab] = POICATS[pz[2]], st = POI_STY[cat];
+      return `<div class="res" data-i="${idx}"><div class="ri" style="background:${st.c}22;font-size:18px">${st.e==='tire'?'🛞':st.e}</div><div><div class="t">${esc(pz[3])}</div><div class="s">${esc(lab)}${pz[4]? ' · '+esc(pz[4]):''}</div></div></div>`; }
     const label = {bairro:'Bairro', local:'Local', rio:'Rio / córrego'}[r.kind];
     return `<div class="res" data-i="${idx}"><div class="ri ${r.kind}">${IC[r.kind]}</div><div><div class="t">${esc(r.pl.name)}</div><div class="s">${label}</div></div></div>`;
   }).join('');
@@ -945,14 +1034,20 @@ $('#numrow').addEventListener('submit', e => {
 function showCard(kind, h, s, dest, copyText, focus, street){
   $('#numrow').classList.toggle('show', !!street);
   if (street) $('#numIn').value = street.num || '';
-  $('#cardic').innerHTML = IC[kind] || IC.end;
+  if (kind.startsWith('poi:')){ const st = POI_STY[kind.slice(4)]; $('#cardic').innerHTML = `<canvas width="88" height="88" style="width:30px;height:30px"></canvas>`; const g = $('#cardic canvas').getContext('2d'); g.scale(2,2); g.translate(22,22); drawPoiIcon(g, st, 19); }
+  else $('#cardic').innerHTML = IC[kind] || IC.end;
   $('#cardh').innerHTML = h; $('#cards').innerHTML = s||'';
   cardDest = dest || null; cardText = copyText || ''; cardFocus = focus || null;
   updateRouteBtn();
   $('#card').classList.add('open'); document.body.classList.add('hascard');
   requestAnimationFrame(() => document.body.style.setProperty('--cardh', ($('#card').offsetHeight + 4) + 'px'));
 }
-function updateRouteBtn(){ const b = $('#route'); if (prefs.route && cardDest){ b.href = mapsUrl(cardDest); b.classList.remove('hide'); } else b.classList.add('hide'); }
+const isLL = d => /^-?\d+\.\d+,-?\d+\.\d+$/.test(d);
+const wazeUrl = d => isLL(d) ? 'https://waze.com/ul?ll=' + encodeURIComponent(d) + '&navigate=yes' : 'https://waze.com/ul?q=' + encodeURIComponent(d) + '&navigate=yes';
+function updateRouteBtn(){
+  if (prefs.route && cardDest){ $('#route').href = mapsUrl(cardDest); $('#routeWaze').href = wazeUrl(cardDest); $('#routes').classList.remove('hide'); }
+  else $('#routes').classList.add('hide');
+}
 function hideCard(){ curStreet = null; $('#numIn').blur(); $('#card').classList.remove('open'); document.body.classList.remove('hascard'); cardDest = null; }
 $('#center').onclick = () => { if (cardFocus) cardFocus(); };
 $('#copy').onclick = async () => { try{ await navigator.clipboard.writeText(cardText); toast('Endereço copiado'); }catch(e){ toast('Não foi possível copiar'); } };
@@ -968,6 +1063,7 @@ function choose(idx){
     return;
   }
   const pl = r.pl;
+  if (r.kind === 'poi'){ showPoi(pl.poi); return; }
   highlight = {labels: new Set(pl.ids), nums: new Set()};
   let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
   for (const i of pl.ids){ const t=texts[i]; x0=Math.min(x0,t[0]); y0=Math.min(y0,t[1]); x1=Math.max(x1,t[0]); y1=Math.max(y1,t[1]); }
@@ -995,6 +1091,27 @@ function showTab(t){
 }
 $('#tabMap').onclick = () => showTab('map');
 $('#tabSet').onclick = () => showTab('set');
+function renderPoiChips(){
+  document.querySelectorAll('#chips .pchip').forEach(x => x.remove());
+  if (!POIS.length) return;
+  const counts = {}; for (const pz of POIS){ const c = (POICATS[pz[2]]||[])[0]; counts[c] = (counts[c]||0) + 1; }
+  for (const [c] of POICATS){
+    if (!counts[c]) continue;
+    const b = document.createElement('button');
+    b.className = 'chip glass pchip' + (poiVis[c] ? ' on' : ''); b.dataset.p = c;
+    b.innerHTML = `<canvas width="44" height="44"></canvas>${POI_SHORT[c] || c}`;
+    const g = b.querySelector('canvas').getContext('2d'); g.translate(22,22); drawPoiIcon(g, POI_STY[c], 18);
+    b.onclick = () => togglePoi(c);
+    $('#chips').appendChild(b);
+  }
+}
+function togglePoi(c){
+  poiVis[c] = !poiVis[c]; prefs.poiVis = poiVis; savePrefs();
+  document.querySelectorAll(`#chips .pchip[data-p="${c}"]`).forEach(x => x.classList.toggle('on', !!poiVis[c]));
+  if ($('#laySheet').classList.contains('open')) renderLayers();
+  if (poiVis[c] && view.k*10 < 0.08) toast('Aproxime o mapa para ver os ícones');
+  requestDraw(true);
+}
 function openMapSheet(){ closePanels(); renderMaps(); openSheet('#mapSheet'); }
 $('#mapChip').onclick = openMapSheet;
 
@@ -1048,7 +1165,8 @@ async function openMap(m){
     MAP = m; prefs.mapa = m.id; savePrefs();
     $('#mapChipName').textContent = m.nome; $('#mapChipCity').textContent = m.cidade ? '· ' + m.cidade.replace(/ - [A-Z]{2}$/,'') : '';
     hideCard(); qEl.value = ''; $('#clear').style.display='none';
-    resize(); fitAll();
+    computeCore(); renderPoiChips(); resize(); fitAll();
+    setTimeout(expandIn, 350);
   }catch(e){
     $('#lmsg').textContent = 'Erro: ' + e.message; await new Promise(r => setTimeout(r, 1800));
     if (!MAP) throw e;
@@ -1169,12 +1287,12 @@ $('#ubBtn').onclick = applyUpdate;
 function refreshSettings(){ paintUpdate(); paintRecent(); }
 
 // rota: no app abre direto o Google Maps
-$('#route').addEventListener('click', e => {
+['#route', '#routeWaze'].forEach(id => $(id).addEventListener('click', e => {
   if (!NATIVE) return;
   e.preventDefault();
-  const url = $('#route').href, L = plug('AppLauncher');
+  const url = $(id).href, L = plug('AppLauncher');
   if (L) L.openUrl({url}).catch(() => { location.href = url; }); else location.href = url;
-});
+}));
 function paintStatusBar(){
   const SB = NATIVE && plug('StatusBar'); if (!SB) return;
   const dark = prefs.theme !== 'light';
