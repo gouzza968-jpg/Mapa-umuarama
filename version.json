@@ -1,6 +1,18 @@
 {
-  "latest": "2.0.0",
+  "latest": "2.1.0",
   "versions": [
+    {
+      "version": "2.1.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Visual novo, mais moderno",
+        "Nova guia Mapas: escolha o mapa a ser mostrado (o atual é o Mapa 1)",
+        "Novos mapas podem ser baixados por dentro do app",
+        "Buscas recentes",
+        "Cartão do endereço com botões Centralizar e Copiar",
+        "Camadas do mapa em um painel novo, salvas no aparelho"
+      ]
+    },
     {
       "version": "2.0.0",
       "date": "21/11/2026",

@@ -3,193 +3,267 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0e1217">
+<meta name="theme-color" content="#0b0f14">
 <link rel="icon" href="data:,">
-<meta name="description" content="Mapa oficial de Umuarama com busca de ruas e numeração predial, para entregadores.">
 <title>Mapa Umuarama</title>
 <style>
   :root{
-    --bg:#0e1217; --card:#171c23; --card2:#1f262f; --ink:#e8ebef; --muted:#9aa4b2; --line:#2a323d;
-    --accent:#ff6a1f; --accent-soft:rgba(255,106,31,.14); --ok:#34d399; --warn:#fbbf24;
-    --shadow:0 8px 28px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.4);
-    --tabh:62px;
+    --bg:#0b0f14; --surface:rgba(20,26,34,.86); --solid:#141a22; --raised:#1b232d; --ink:#eef2f6; --muted:#8e9aab; --faint:#5b6778; --line:rgba(255,255,255,.07);
+    --accent:#ff6a1f; --accent2:#ff8a3d; --accent-soft:rgba(255,106,31,.14); --ok:#34d399; --warn:#fbbf24; --bad:#fb7185;
+    --shadow:0 12px 32px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.35);
+    --r:18px; --tabh:66px;
+    --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   body.light{
-    --bg:#f4f1ea; --card:#ffffff; --card2:#f3f4f6; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
-    --accent:#e2550f; --accent-soft:#fff1e8; --shadow:0 6px 24px rgba(17,24,39,.14), 0 1px 3px rgba(17,24,39,.10);
+    --bg:#eef1f4; --surface:rgba(255,255,255,.9); --solid:#ffffff; --raised:#f2f4f7; --ink:#111827; --muted:#667085; --faint:#98a2b3; --line:rgba(16,24,40,.08);
+    --accent:#e8590c; --accent2:#f76707; --accent-soft:rgba(232,89,12,.10);
+    --shadow:0 10px 28px rgba(16,24,40,.14), 0 2px 6px rgba(16,24,40,.08);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
-  button{font:inherit;color:inherit}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .glass{background:var(--surface);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--line);box-shadow:var(--shadow)}
   #map{position:fixed;left:0;top:0;width:100%;height:calc(100% - var(--tabh) - env(safe-area-inset-bottom));touch-action:none;display:block}
-  .top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 10px 0;z-index:5;pointer-events:none}
-  .search{pointer-events:auto;display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:4px 6px 4px 12px;max-width:560px;margin:0 auto}
+
+  /* ---------- topo ---------- */
+  .top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 12px) 12px 0;z-index:5;pointer-events:none}
+  .top > *{pointer-events:auto;max-width:560px;margin-left:auto;margin-right:auto}
+  .search{display:flex;align-items:center;gap:4px;border-radius:var(--r);padding:4px 6px 4px 14px;transition:box-shadow .2s}
+  .search:focus-within{box-shadow:0 0 0 2px var(--accent), var(--shadow)}
   .search svg{flex:none;color:var(--muted)}
-  .search input{flex:1;border:0;outline:0;font-size:17px;padding:11px 4px;background:transparent;color:var(--ink);min-width:0}
-  .search input::placeholder{color:var(--muted)}
+  .search input{flex:1;border:0;outline:0;font:500 16.5px var(--font);padding:12px 6px;background:transparent;color:var(--ink);min-width:0}
+  .search input::placeholder{color:var(--muted);font-weight:400}
   .search input::-webkit-search-cancel-button{display:none;-webkit-appearance:none}
-  .iconbtn{border:0;background:transparent;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--muted);cursor:pointer}
-  .iconbtn:active{background:var(--card2)}
-  #results{pointer-events:auto;max-width:560px;margin:8px auto 0;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:auto;max-height:min(60vh,460px);display:none}
-  #results.open{display:block}
-  .res{display:flex;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer}
-  .res:last-child{border-bottom:0}
-  .res:active{background:var(--card2)}
-  .tag{flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:3px 6px;background:var(--card2);color:var(--muted)}
-  .tag.rua{background:var(--accent-soft);color:var(--accent)}
-  .tag.end{background:rgba(248,113,113,.15);color:#f87171}
-  .res .t{font-size:15px;line-height:1.25}
+  .ib{border:0;background:transparent;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--muted)}
+  .ib:active{background:var(--raised)}
+  .chips{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;display:flex;align-items:center;gap:7px;border-radius:999px;padding:8px 13px 8px 10px;font-size:13.5px;font-weight:600;border:1px solid var(--line);color:var(--ink)}
+  .chip .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+  .chip small{color:var(--muted);font-weight:500}
+  #results{margin-top:10px;border-radius:var(--r);overflow:auto;max-height:min(62vh,480px);display:none;padding:6px}
+  #results.open{display:block;animation:fadeIn .16s ease-out}
+  .rh{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;padding:10px 12px 6px;display:flex;justify-content:space-between}
+  .rh button{border:0;background:none;color:var(--accent);font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;padding:0}
+  .res{display:flex;gap:12px;align-items:center;padding:10px 10px;border-radius:12px}
+  .res:active{background:var(--raised)}
+  .res .ri{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--raised);color:var(--muted)}
+  .res .ri.rua{background:var(--accent-soft);color:var(--accent)}
+  .res .ri.end{background:rgba(251,113,133,.14);color:var(--bad)}
+  .res .ri.bairro{background:rgba(167,139,250,.15);color:#a78bfa}
+  .res .ri.local{background:rgba(52,211,153,.13);color:var(--ok)}
+  .res .ri.rio{background:rgba(96,165,250,.14);color:#60a5fa}
+  .res .t{font-size:15px;font-weight:600;line-height:1.25}
   .res .s{font-size:12.5px;color:var(--muted);margin-top:2px}
-  .empty{padding:14px;color:var(--muted);font-size:14px}
-  .ctrls{position:fixed;right:10px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;gap:8px;z-index:4}
-  .fab{width:48px;height:48px;border-radius:14px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--ink);cursor:pointer;font-size:22px}
-  .fab:active{transform:scale(.96)}
-  #card{position:fixed;left:10px;right:70px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 14px);z-index:4;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;display:none;max-width:480px}
-  #card.open{display:block}
-  #card .h{font-weight:700;font-size:16px;line-height:1.25;padding-right:30px}
-  #card .s{color:var(--muted);font-size:13px;margin-top:3px}
-  #card .x{position:absolute;right:4px;top:4px}
-  #route{display:none;margin-top:10px;width:100%;border:0;border-radius:11px;padding:11px 12px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;cursor:pointer;align-items:center;justify-content:center;gap:8px;text-decoration:none}
-  #route.show{display:flex}
-  #route small{font-weight:600;opacity:.8;font-size:11px;background:rgba(0,0,0,.18);padding:2px 6px;border-radius:6px}
-  #layers{position:fixed;right:68px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 14px);z-index:6;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px 4px;display:none;min-width:210px}
-  #layers.open{display:block}
-  #layers label{display:flex;align-items:center;gap:10px;padding:9px 12px;font-size:15px;cursor:pointer}
-  #layers input{width:20px;height:20px;accent-color:var(--accent)}
-  #layers .sw{width:16px;height:4px;border-radius:2px;flex:none}
-  .ttl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:4px 12px 6px}
-  #scale{position:fixed;left:12px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 6px);font-size:11px;color:var(--muted);z-index:3;pointer-events:none}
-  #scale .bar{height:4px;border:1.5px solid var(--muted);border-top:0;margin-bottom:2px}
-  body.hascard #scale{display:none}
+  .empty{padding:16px 12px;color:var(--muted);font-size:14px;line-height:1.45}
 
-  /* tabs */
-  .tabs{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--card);border-top:1px solid var(--line);display:flex;z-index:10}
-  .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;position:relative}
-  .tab.on{color:var(--accent)}
-  .tab .dot{position:absolute;top:9px;left:calc(50% + 9px);width:9px;height:9px;border-radius:50%;background:#f43f5e;border:2px solid var(--card);display:none}
-  .tab .dot.show{display:block}
+  /* ---------- controles ---------- */
+  .ctrls{position:fixed;right:12px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 16px);display:flex;flex-direction:column;gap:10px;z-index:4;transition:transform .25s}
+  .group{display:flex;flex-direction:column;border-radius:16px;overflow:hidden}
+  .fab{width:50px;height:50px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink)}
+  .fab:active{background:var(--raised)}
+  .group .fab + .fab{border-top:1px solid var(--line)}
+  .single{border-radius:16px}
+  #scale{position:fixed;left:14px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 10px);font-size:11px;font-weight:600;color:var(--muted);z-index:3;pointer-events:none}
+  #scale .bar{height:5px;border:1.5px solid var(--muted);border-top:0;border-radius:0 0 2px 2px;margin-bottom:3px}
+  body.hascard #scale{opacity:0}
 
-  /* settings */
-  #settings{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom));background:var(--bg);z-index:8;overflow:auto;display:none;padding:calc(env(safe-area-inset-top) + 16px) 14px 30px}
-  #settings.open{display:block}
-  #settings h1{font-size:24px;margin:4px 4px 16px}
-  .sec{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:0 auto 14px;max-width:560px;overflow:hidden}
-  .sec .ttl{padding:14px 16px 4px}
+  /* ---------- cartão do resultado ---------- */
+  #card{position:fixed;left:12px;right:12px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 12px);z-index:6;border-radius:22px;padding:8px 16px 16px;max-width:560px;margin:0 auto;transform:translateY(130%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+  #card.open{transform:none}
+  body.hascard .ctrls{transform:translateY(calc(-1 * var(--cardh, 150px)))}
+  #card .handle{width:38px;height:4px;border-radius:4px;background:var(--faint);opacity:.5;margin:0 auto 10px}
+  #card .hd{display:flex;gap:12px;align-items:flex-start}
+  #card .badge-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;background:var(--accent-soft);color:var(--accent)}
+  #card .h{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
+  #card .s{color:var(--muted);font-size:13px;margin-top:4px;line-height:1.4}
+  #card .x{margin:-4px -8px 0 auto}
+  .acts{display:flex;gap:8px;margin-top:14px}
+  .act{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--raised);border-radius:13px;padding:11px 10px;font-size:14px;font-weight:600;text-decoration:none;color:var(--ink);white-space:nowrap}
+  .act:active{transform:scale(.98)}
+  .act.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+  .act small{font-size:10px;font-weight:700;background:rgba(0,0,0,.2);padding:2px 5px;border-radius:5px}
+  .act.hide{display:none}
+
+  /* ---------- folhas (camadas) ---------- */
+  #veil{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+  #veil.open{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;border-radius:24px 24px 0 0;padding:10px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-width:600px;margin:0 auto;background:var(--solid);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .sheet.open{transform:none}
+  .sheet .handle{width:38px;height:4px;border-radius:4px;background:var(--faint);opacity:.5;margin:0 auto 12px}
+  .sheet h3{margin:2px 4px 12px;font-size:18px}
+  .lgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .lopt{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:var(--raised);border:1.5px solid transparent;font-size:14px;font-weight:600;text-align:left}
+  .lopt .sw{width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center}
+  .lopt .sw i{width:12px;height:3px;border-radius:2px;display:block}
+  .lopt.on{border-color:var(--accent);background:var(--accent-soft)}
+
+  /* ---------- páginas (Mapas / Configurações) ---------- */
+  .page{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom));background:var(--bg);z-index:8;overflow:auto;display:none;padding:calc(env(safe-area-inset-top) + 18px) 14px 30px}
+  .page.open{display:block;animation:fadeIn .18s ease-out}
+  .page > *{max-width:560px;margin-left:auto;margin-right:auto}
+  .page h1{font-size:28px;letter-spacing:-.02em;margin:6px 4px 4px}
+  .page .sub{color:var(--muted);font-size:14px;margin:0 4px 18px}
+  .sec{background:var(--solid);border:1px solid var(--line);border-radius:20px;margin-bottom:14px;overflow:hidden}
+  .ttl{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:14px 16px 6px}
   .row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--line)}
-  .sec .ttl + .row{border-top:0}
-  .row .grow{flex:1;min-width:0}
-  .row .l{font-size:15px}
-  .row .d{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
-  .badge{font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px;background:var(--card2);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-  .badge.exp{background:rgba(251,191,36,.15);color:var(--warn)}
-  .badge.new{background:rgba(244,63,94,.15);color:#fb7185}
+  .ttl + .row{border-top:0}
+  .row .ri{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--raised);color:var(--muted)}
+  .grow{flex:1;min-width:0}
+  .row .l{font-size:15px;font-weight:600}
+  .row .d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .badge{display:inline-block;font-size:10.5px;font-weight:800;border-radius:6px;padding:3px 7px;background:var(--raised);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;vertical-align:middle}
+  .badge.exp{background:rgba(251,191,36,.14);color:var(--warn)}
+  .badge.new{background:rgba(251,113,133,.15);color:var(--bad)}
   .badge.ok{background:rgba(52,211,153,.14);color:var(--ok)}
+  .badge.acc{background:var(--accent-soft);color:var(--accent)}
   .switch{position:relative;width:50px;height:30px;flex:none}
   .switch input{opacity:0;width:0;height:0;position:absolute}
-  .switch span{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:30px;transition:.2s;cursor:pointer}
+  .switch span{position:absolute;inset:0;background:var(--raised);border:1px solid var(--line);border-radius:30px;transition:.2s}
   .switch span::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
   .switch input:checked + span{background:var(--accent);border-color:var(--accent)}
   .switch input:checked + span::after{transform:translateX(20px)}
-  .btn{border:1px solid var(--line);background:var(--card2);border-radius:11px;padding:10px 14px;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink);white-space:nowrap}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  .btn:disabled{opacity:.5}
-  .upd{padding:14px 16px;display:flex;gap:12px;align-items:center}
-  .upd .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--card2);flex:none;font-size:20px}
-  .upd.has .ic{background:rgba(244,63,94,.15)}
-  .warnbox{margin:0 16px 14px;padding:10px 12px;border-radius:10px;background:rgba(251,191,36,.10);color:var(--warn);font-size:12.5px;line-height:1.4;display:none}
+  .btn{border:1px solid var(--line);background:var(--raised);border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;color:var(--ink);white-space:nowrap}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+  .btn:disabled{opacity:.55}
+  .hero{display:flex;gap:14px;align-items:center;padding:16px}
+  .hero .appic{width:56px;height:56px;border-radius:17px;flex:none;background:#0e1217;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .upd{display:flex;gap:12px;align-items:center;padding:4px 16px 16px}
+  .upd .ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:rgba(52,211,153,.12);color:var(--ok);flex:none}
+  .upd.has .ic{background:rgba(251,113,133,.14);color:var(--bad)}
+  .prog{height:6px;border-radius:6px;background:var(--raised);margin:0 16px 14px;overflow:hidden;display:none}
+  .prog.show{display:block}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s}
+  .warnbox{margin:0 16px 14px;padding:11px 13px;border-radius:12px;background:rgba(251,191,36,.09);color:var(--warn);font-size:12.5px;line-height:1.45;display:none}
   .warnbox.show{display:block}
-  .log{padding:4px 16px 14px}
-  .log .v{display:flex;gap:8px;align-items:baseline;margin-top:12px}
+  .log{padding:0 16px 14px}
+  .log .v{display:flex;gap:8px;align-items:center;margin-top:12px}
   .log .v b{font-size:15px}
-  .log .v span{color:var(--muted);font-size:12.5px}
-  .log ul{margin:6px 0 0;padding-left:20px;color:var(--ink);font-size:14px;line-height:1.5}
+  .log .v span.dt{color:var(--muted);font-size:12.5px}
+  .log ul{margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.55}
   .log ul li::marker{color:var(--accent)}
-  .seg{display:flex;background:var(--card2);border-radius:10px;padding:3px;gap:3px}
-  .seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
-  .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.25)}
-  .foot{color:var(--muted);font-size:12px;text-align:center;margin-top:6px;line-height:1.5}
+  .seg{display:flex;background:var(--raised);border-radius:12px;padding:3px;gap:3px}
+  .seg button{border:0;background:transparent;padding:8px 13px;border-radius:9px;font-size:13px;font-weight:700;color:var(--muted)}
+  .seg button.on{background:var(--solid);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+  .foot{color:var(--faint);font-size:12px;text-align:center;margin-top:8px;line-height:1.5}
 
-  #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 74px);transform:translateX(-50%);background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:12px;padding:10px 14px;font-size:14px;z-index:30;display:none;max-width:calc(100% - 24px);align-items:center;gap:10px}
-  #toast.show{display:flex}
-  #loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:40;text-align:center;padding:20px}
-  #loading .b{font-weight:700;font-size:18px}
+  /* mapas */
+  .mcard{display:flex;gap:14px;align-items:center;padding:14px;border-radius:20px;background:var(--solid);border:1.5px solid var(--line);margin-bottom:12px;width:100%;text-align:left}
+  .mcard.on{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-soft),transparent 120%), var(--solid)}
+  .mcard .th{width:64px;height:64px;border-radius:16px;flex:none;background:#0e1217;overflow:hidden;display:grid;place-items:center;border:1px solid var(--line)}
+  .mcard .th canvas,.mcard .th img{width:100%;height:100%;display:block}
+  .mcard .n{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .mcard .dd{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .mcard .meta{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+  .radio{width:24px;height:24px;border-radius:50%;border:2px solid var(--faint);flex:none;display:grid;place-items:center}
+  .mcard.on .radio{border-color:var(--accent)}
+  .mcard.on .radio::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--accent)}
+  .note{display:flex;gap:10px;padding:14px;border-radius:16px;background:var(--raised);color:var(--muted);font-size:13px;line-height:1.45}
+
+  /* ---------- abas ---------- */
+  .tabs{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom));padding:6px 10px env(safe-area-inset-bottom);background:var(--solid);border-top:1px solid var(--line);display:flex;z-index:10;gap:6px}
+  .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:700;position:relative;border-radius:14px}
+  .tab .pill{width:56px;height:30px;border-radius:15px;display:grid;place-items:center;transition:background .2s}
+  .tab.on{color:var(--ink)}
+  .tab.on .pill{background:var(--accent-soft);color:var(--accent)}
+  .tab .dot{position:absolute;top:6px;left:calc(50% + 12px);width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid var(--solid);display:none}
+  .tab .dot.show{display:block}
+
+  #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 124px);transform:translate(-50%,-10px);border-radius:14px;padding:10px 10px 10px 14px;font-size:14px;font-weight:600;z-index:30;display:flex;max-width:calc(100% - 24px);align-items:center;gap:12px;opacity:0;pointer-events:none;transition:.2s}
+  #toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  #loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:40;text-align:center;padding:20px;transition:opacity .25s}
+  #loading.hide{opacity:0;pointer-events:none}
+  #loading .logo{width:76px;height:76px;margin:0 auto 18px;animation:bob 1.4s ease-in-out infinite}
+  #loading .b{font-weight:800;font-size:19px;letter-spacing:-.01em}
   #loading .m{color:var(--muted);font-size:14px;margin-top:6px}
-  .spin{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:sp 0.9s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
+  .lbar{width:160px;height:4px;border-radius:4px;background:var(--raised);margin:16px auto 0;overflow:hidden}
+  .lbar i{display:block;width:40%;height:100%;border-radius:4px;background:var(--accent);animation:slide 1.1s ease-in-out infinite}
+  @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+  @keyframes bob{50%{transform:translateY(-6px)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
 <canvas id="map"></canvas>
 
 <div class="top" id="topbar">
-  <div class="search">
+  <div class="search glass">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="q" type="search" placeholder="Rua e número, bairro ou local" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
-    <button class="iconbtn" id="clear" aria-label="Limpar" style="display:none">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-    </button>
+    <input id="q" type="search" placeholder="Buscar rua e número, bairro…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+    <button class="ib" id="clear" aria-label="Limpar" style="display:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
-  <div id="results"></div>
+  <div class="chips" id="chips">
+    <button class="chip glass" id="mapChip"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/></svg></span><span id="mapChipName">Mapa 1</span><small id="mapChipCity"></small><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <div id="results" class="glass"></div>
 </div>
 
 <div class="ctrls" id="ctrls">
-  <button class="fab" id="zin" aria-label="Aproximar">+</button>
-  <button class="fab" id="zout" aria-label="Afastar">−</button>
-  <button class="fab" id="home" aria-label="Cidade inteira">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
-  </button>
-  <button class="fab" id="lay" aria-label="Camadas">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>
-  </button>
+  <div class="group glass">
+    <button class="fab" id="zin" aria-label="Aproximar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="fab" id="zout" aria-label="Afastar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+  </div>
+  <div class="group glass">
+    <button class="fab" id="home" aria-label="Cidade inteira"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button class="fab" id="lay" aria-label="Camadas"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></button>
+  </div>
 </div>
 
-<div id="layers">
-  <div class="ttl">Mostrar no mapa</div>
-  <label><input type="checkbox" data-l="rua" checked><span class="sw" style="background:#e8ebef"></span>Nomes de ruas</label>
-  <label><input type="checkbox" data-l="num" checked><span class="sw" style="background:#ff6b9a"></span>Numeração predial</label>
-  <label><input type="checkbox" data-l="lote" checked><span class="sw" style="background:#5b6573"></span>Lotes</label>
-  <label><input type="checkbox" data-l="quadra" checked><span class="sw" style="background:#9aa4b2"></span>Quadras</label>
-  <label><input type="checkbox" data-l="via" checked><span class="sw" style="background:#f59e0b"></span>Rodovias e asfalto</label>
-  <label><input type="checkbox" data-l="rio" checked><span class="sw" style="background:#3b82f6"></span>Rios e áreas verdes</label>
-  <label><input type="checkbox" data-l="bairro" checked><span class="sw" style="background:#a78bfa"></span>Bairros</label>
-  <label><input type="checkbox" data-l="outro"><span class="sw" style="background:#4b5563"></span>Outros detalhes</label>
-</div>
-
-<div id="card">
-  <button class="iconbtn x" id="cardx" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-  <div class="h" id="cardh"></div><div class="s" id="cards"></div>
-  <a id="route" target="_blank" rel="noopener">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>
-    Abrir rota no Google Maps <small>Beta</small>
-  </a>
+<div id="card" class="glass">
+  <div class="handle"></div>
+  <div class="hd">
+    <div class="badge-ic" id="cardic"></div>
+    <div class="grow"><div class="h" id="cardh"></div><div class="s" id="cards"></div></div>
+    <button class="ib x" id="cardx" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="acts">
+    <a class="act primary hide" id="route" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>Rota no Maps <small>BETA</small></a>
+    <button class="act" id="center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Centralizar</button>
+    <button class="act" id="copy"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copiar</button>
+  </div>
 </div>
 <div id="scale"><div class="bar" id="scalebar"></div><span id="scalet"></span></div>
 
+<div id="veil"></div>
+<div class="sheet" id="laySheet">
+  <div class="handle"></div>
+  <h3>Camadas do mapa</h3>
+  <div class="lgrid" id="lgrid"></div>
+</div>
+
+<!-- Mapas -->
+<div class="page" id="pageMaps">
+  <h1>Mapas</h1>
+  <p class="sub">Escolha qual mapa mostrar.</p>
+  <div id="mapList"></div>
+  <div class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div id="mapsNote">Novos mapas aparecem aqui quando forem publicados. Depois de baixado, o mapa funciona sem internet.</div></div>
+</div>
+
 <!-- Configurações -->
-<div id="settings">
+<div class="page" id="pageSet">
   <h1>Configurações</h1>
+  <p class="sub">Atualizações, rotas e aparência.</p>
 
   <div class="sec">
-    <div class="ttl">Atualizações</div>
+    <div class="hero">
+      <div class="appic"><svg width="34" height="34" viewBox="0 0 24 24"><path fill="#ff6a1f" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.8" fill="#0e1217"/></svg></div>
+      <div class="grow"><div style="font-weight:800;font-size:17px">Mapa Umuarama</div><div style="color:var(--muted);font-size:13px;margin-top:2px">Versão <b id="vcur2"></b></div></div>
+    </div>
     <div class="upd" id="updbox">
-      <div class="ic" id="updic">✓</div>
-      <div class="grow">
-        <div class="l" id="updt">Verificando…</div>
-        <div class="d" id="updd">Versão instalada: <b id="vcur"></b></div>
-      </div>
+      <div class="ic" id="updic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>
+      <div class="grow"><div class="l" id="updt" style="font-weight:700">Verificando…</div><div class="d" id="updd" style="color:var(--muted);font-size:12.5px;margin-top:2px"></div></div>
       <button class="btn" id="updbtn">Verificar</button>
     </div>
-    <div class="ttl" style="padding-top:6px">Novidades</div>
+    <div class="prog" id="prog"><i id="progi"></i></div>
+    <div class="ttl" style="border-top:1px solid var(--line)">Novidades</div>
     <div class="log" id="changelog"></div>
   </div>
 
   <div class="sec">
     <div class="ttl">Rotas</div>
     <div class="row">
-      <div class="grow">
-        <div class="l">Abrir rota no Google Maps <span class="badge exp">Experimental</span></div>
-        <div class="d">Mostra um botão no endereço encontrado para abrir a rota no Google Maps.</div>
-      </div>
+      <div class="ri"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg></div>
+      <div class="grow"><div class="l">Abrir rota no Google Maps <span class="badge exp">Experimental</span></div><div class="d">Mostra o botão de rota no endereço encontrado.</div></div>
       <label class="switch"><input type="checkbox" id="optRoute"><span></span></label>
     </div>
     <div class="warnbox" id="routeWarn">⚠️ Nem todo endereço vai bater com o mapa oficial. O Google Maps localiza pelo nome da rua e número, e pode não conhecer ruas novas, ruas renomeadas por decreto ou loteamentos recentes. Confira sempre no mapa do app.</div>
@@ -198,169 +272,222 @@
   <div class="sec">
     <div class="ttl">Aparência</div>
     <div class="row">
+      <div class="ri"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10Z"/></svg></div>
       <div class="grow"><div class="l">Tema</div></div>
       <div class="seg" id="themeSeg"><button data-t="dark">Escuro</button><button data-t="light">Claro</button></div>
     </div>
   </div>
 
   <div class="sec">
-    <div class="ttl">Aplicativo</div>
+    <div class="ttl">Busca</div>
     <div class="row">
-      <div class="grow"><div class="l">Mapa salvo no aparelho</div><div class="d" id="offd">Funciona sem internet. Só a busca de atualizações e a rota precisam de conexão.</div></div>
-      <span class="badge ok" id="offb">Offline</span>
+      <div class="ri"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <div class="grow"><div class="l">Buscas recentes</div><div class="d" id="recd">Nenhuma</div></div>
+      <button class="btn" id="recClear">Limpar</button>
     </div>
   </div>
 
-  <div class="foot">Mapa Oficial de Numeração Predial de Umuarama-PR (outubro).<br>Os dados são da prefeitura e podem ter diferenças em relação ao local.</div>
+  <div class="foot">Mapas oficiais de numeração predial da prefeitura.<br>Podem existir diferenças em relação ao local.</div>
 </div>
 
 <nav class="tabs">
-  <button class="tab on" id="tabMap">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
-    Mapa
-  </button>
-  <button class="tab" id="tabSet">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-    Configurações
-    <span class="dot" id="setDot"></span>
-  </button>
+  <button class="tab on" id="tabMap"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>Explorar</button>
+  <button class="tab" id="tabMaps"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></span>Mapas</button>
+  <button class="tab" id="tabSet"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Configurações<span class="dot" id="setDot"></span></button>
 </nav>
 
-<div id="toast"><span id="toastt"></span><button class="btn primary" id="toastb" style="padding:7px 12px">Ver</button></div>
+<div id="toast" class="glass"><span id="toastt"></span><button class="btn primary" id="toastb" style="padding:7px 12px">Ver</button></div>
 
-<div id="loading"><div><div class="spin"></div><div class="b">Carregando mapa de Umuarama</div><div class="m" id="lmsg">Baixando dados do mapa…</div></div></div>
+<div id="loading"><div>
+  <svg class="logo" viewBox="0 0 24 24"><path fill="#ff6a1f" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.8" fill="var(--bg)"/></svg>
+  <div class="b" id="lttl">Mapa Umuarama</div><div class="m" id="lmsg">Carregando…</div><div class="lbar"><i></i></div>
+</div></div>
 
 <script>
 const APP_VERSION = "/*VERSION*/";
-const EMBED = /*EMBED*/null;          // dados embutidos (versão de arquivo único)
+const EMBED = /*EMBED*/null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = /*CHANGELOG*/null;
 (async function(){
 "use strict";
 const $ = s => document.querySelector(s);
-const lmsg = $('#lmsg');
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CAP = window.Capacitor, NATIVE = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
+const plug = n => CAP && CAP.Plugins && CAP.Plugins[n];
+const REPO_RAW = 'https://raw.githubusercontent.com/gouzza968-jpg/Mapa-umuarama/main/';
+const UPD_URL = 'https://github.com/gouzza968-jpg/Mapa-umuarama/releases/latest/download/update.json';
 
 // ---------- preferências ----------
 const PREF_KEY = 'mapaUmuarama.prefs';
-const prefs = Object.assign({theme:'dark', route:false}, (()=>{ try{ return JSON.parse(localStorage.getItem(PREF_KEY))||{}; }catch(e){ return {}; } })());
+const prefs = Object.assign({theme:'dark', route:false, mapa:'mapa1', recent:[]}, (()=>{ try{ return JSON.parse(localStorage.getItem(PREF_KEY))||{}; }catch(e){ return {}; } })());
 const savePrefs = () => { try{ localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); }catch(e){} };
 document.body.classList.toggle('light', prefs.theme==='light');
 
-// ---------- dados ----------
+// ---------- rede & armazenamento ----------
+async function httpGet(u, asJson=true){
+  const Hh = NATIVE && plug('CapacitorHttp');
+  const url = u + (u.includes('?') ? '&' : '?') + 't=' + Date.now();
+  if (Hh){
+    const r = await Hh.request({url, method:'GET', connectTimeout:15000, readTimeout:60000, responseType: asJson ? 'json' : 'text'});
+    if (r.status !== 200) throw new Error('http ' + r.status);
+    if (!asJson) return typeof r.data === 'string' ? r.data : JSON.stringify(r.data);
+    return typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+  }
+  const r = await fetch(url, {cache:'no-store'}); if (!r.ok) throw new Error('http ' + r.status);
+  return asJson ? r.json() : r.text();
+}
+const DB = {
+  db: null,
+  open(){ return this.db || (this.db = new Promise((res, rej) => { const q = indexedDB.open('mapaUmuarama', 1); q.onupgradeneeded = () => q.result.createObjectStore('mapas'); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); })); },
+  async get(k){ const d = await this.open(); return new Promise((res, rej) => { const q = d.transaction('mapas').objectStore('mapas').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
+  async put(k, v){ const d = await this.open(); return new Promise((res, rej) => { const t = d.transaction('mapas', 'readwrite'); t.objectStore('mapas').put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); }); },
+  async del(k){ const d = await this.open(); return new Promise((res) => { const t = d.transaction('mapas', 'readwrite'); t.objectStore('mapas').delete(k); t.oncomplete = () => res(); t.onerror = () => res(); }); },
+};
 async function gunzip(b64){
   const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  if (!('DecompressionStream' in window)) throw new Error('Navegador sem suporte. Atualize o Chrome ou o Safari.');
+  if (!('DecompressionStream' in window)) throw new Error('Navegador sem suporte. Atualize o Android System WebView.');
   const ds = new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'));
   return new Uint8Array(await new Response(ds).arrayBuffer());
 }
-let DATA, geoBuf, texts, streets;
-try{
-  if (EMBED) DATA = EMBED;
-  else {
-    const r = await fetch('data/mapa.json?v=' + APP_VERSION);
-    if (!r.ok) throw new Error('não foi possível baixar o mapa (' + r.status + ')');
-    DATA = await r.json();
-  }
-  lmsg.textContent = 'Descompactando…';
-  geoBuf = await gunzip(DATA.geo);
-  texts = JSON.parse(new TextDecoder().decode(await gunzip(DATA.txt)));
-  streets = JSON.parse(new TextDecoder().decode(await gunzip(DATA.streets)));
-}catch(e){ lmsg.textContent = 'Erro: ' + e.message + '. Verifique a internet e abra de novo.'; return; }
-lmsg.textContent = 'Montando o mapa…';
-await new Promise(r => setTimeout(r, 20));
 
-const META = DATA.meta, W = META.w, H = META.h, S = META.S;
-const TC = META.tcats; const TI = Object.fromEntries(TC.map((c,i)=>[c,i]));
-const LC = META.lines.map(l=>l[0]);
-
-// ---------- linhas ----------
-const all = new Int32Array(geoBuf.buffer, geoBuf.byteOffset, geoBuf.byteLength/4);
-const pCat=[], pOff=[], pN=[], pBox=[];
-META.lines.forEach(([c, off, len], ci) => {
-  let i = off/4; const end = i + len;
-  while (i < end){
-    const n = all[i]; const o = i+1;
-    let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
-    for (let k=0;k<n;k++){ const x=all[o+2*k], y=all[o+2*k+1]; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
-    pCat.push(ci); pOff.push(o); pN.push(n); pBox.push(x0,y0,x1,y1);
-    i = o + 2*n;
-  }
-});
-const NP = pCat.length;
-const CELL = 2500;
-const GX = Math.ceil(W/CELL)+1, GY = Math.ceil(H/CELL)+1;
-const gridP = Array.from({length:GX*GY}, ()=>[]);
-for (let p=0;p<NP;p++){
-  const cx0=Math.max(0,Math.floor(pBox[4*p]/CELL)), cy0=Math.max(0,Math.floor(pBox[4*p+1]/CELL));
-  const cx1=Math.min(GX-1,Math.floor(pBox[4*p+2]/CELL)), cy1=Math.min(GY-1,Math.floor(pBox[4*p+3]/CELL));
-  for (let cy=cy0;cy<=cy1;cy++) for (let cx=cx0;cx<=cx1;cx++) gridP[cy*GX+cx].push(p);
+// ---------- catálogo de mapas ----------
+let catalog = [];            // [{id,nome,descricao,cidade,arquivo|url,tamanho,embutido,versao}]
+let downloaded = new Set();  // ids salvos no aparelho
+async function loadCatalog(){
+  let local = [];
+  if (EMBED) local = [{id:'mapa1', nome:'Mapa 1', descricao:'Umuarama · Mapa oficial de numeração predial', cidade:'Umuarama - PR', embutido:true}];
+  else { try{ local = (await (await fetch('data/mapas.json')).json()).mapas; }catch(e){ local = [{id:'mapa1', nome:'Mapa 1', descricao:'Umuarama', cidade:'Umuarama - PR', arquivo:'data/mapa.json', embutido:true}]; } }
+  catalog = local.map(m => Object.assign({embutido:true}, m));
+  try{ const saved = JSON.parse(localStorage.getItem('mapaUmuarama.catalogo')||'[]'); merge(saved); }catch(e){}
+  try{ const k = await DB.open(); const keys = await new Promise(r => { const q = k.transaction('mapas').objectStore('mapas').getAllKeys(); q.onsuccess = () => r(q.result||[]); q.onerror = () => r([]); }); keys.forEach(x => downloaded.add(x)); }catch(e){}
 }
-const stampP = new Uint32Array(NP); let stamp = 0;
-const gridT = Array.from({length:GX*GY}, ()=>[]);
-texts.forEach((t,i) => {
-  const cx=Math.min(GX-1,Math.max(0,Math.floor(t[0]/CELL))), cy=Math.min(GY-1,Math.max(0,Math.floor(t[1]/CELL)));
-  gridT[cy*GX+cx].push(i);
-});
+function merge(list){
+  for (const m of list||[]){
+    if (!m || !m.id) continue;
+    const i = catalog.findIndex(c => c.id === m.id);
+    if (i >= 0){ if (!catalog[i].embutido) catalog[i] = Object.assign({}, catalog[i], m); }
+    else catalog.push(Object.assign({embutido:false}, m));
+  }
+}
+async function refreshRemoteCatalog(){
+  if (EMBED) return false;
+  try{
+    const r = await httpGet(REPO_RAW + 'mapas/catalogo.json');
+    const remote = (r.mapas||[]).filter(m => !m.embutido);
+    localStorage.setItem('mapaUmuarama.catalogo', JSON.stringify(remote));
+    const before = catalog.length; merge(remote);
+    return catalog.length > before;
+  }catch(e){ return false; }
+}
+const mapById = id => catalog.find(m => m.id === id);
+const available = m => m.embutido || downloaded.has(m.id);
+
+// ---------- motor do mapa ----------
+let MAP = null; // dados do mapa atual
+let META, W, H, S, TC, TI, LC, all, pCat, pOff, pN, pBox, NP, GX, GY, gridP, gridT, stampP, texts, streets, sIdx, places, OV = null;
+let stamp = 0;
+const CELL = 2500;
+
+async function readMapData(m){
+  if (EMBED) return EMBED;
+  if (m.embutido){ const r = await fetch(m.arquivo + '?v=' + APP_VERSION); if (!r.ok) throw new Error('não foi possível abrir o mapa'); return r.json(); }
+  const s = await DB.get(m.id); if (!s) throw new Error('mapa não baixado');
+  return typeof s === 'string' ? JSON.parse(s) : s;
+}
+async function buildMap(DATA){
+  const geoBuf = await gunzip(DATA.geo);
+  const tx = JSON.parse(new TextDecoder().decode(await gunzip(DATA.txt)));
+  const st = JSON.parse(new TextDecoder().decode(await gunzip(DATA.streets)));
+  META = DATA.meta; W = META.w; H = META.h; S = META.S;
+  TC = META.tcats; TI = Object.fromEntries(TC.map((c,i)=>[c,i])); LC = META.lines.map(l=>l[0]);
+  texts = tx; streets = st;
+  all = new Int32Array(geoBuf.buffer, geoBuf.byteOffset, geoBuf.byteLength/4);
+  pCat=[]; pOff=[]; pN=[]; pBox=[];
+  META.lines.forEach(([c, off, len], ci) => {
+    let i = off/4; const end = i + len;
+    while (i < end){
+      const n = all[i]; const o = i+1;
+      let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
+      for (let k=0;k<n;k++){ const x=all[o+2*k], y=all[o+2*k+1]; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+      pCat.push(ci); pOff.push(o); pN.push(n); pBox.push(x0,y0,x1,y1);
+      i = o + 2*n;
+    }
+  });
+  NP = pCat.length;
+  GX = Math.ceil(W/CELL)+1; GY = Math.ceil(H/CELL)+1;
+  gridP = Array.from({length:GX*GY}, ()=>[]);
+  for (let p=0;p<NP;p++){
+    const cx0=Math.max(0,Math.floor(pBox[4*p]/CELL)), cy0=Math.max(0,Math.floor(pBox[4*p+1]/CELL));
+    const cx1=Math.min(GX-1,Math.floor(pBox[4*p+2]/CELL)), cy1=Math.min(GY-1,Math.floor(pBox[4*p+3]/CELL));
+    for (let cy=cy0;cy<=cy1;cy++) for (let cx=cx0;cx<=cx1;cx++) gridP[cy*GX+cx].push(p);
+  }
+  stampP = new Uint32Array(NP); stamp = 0;
+  gridT = Array.from({length:GX*GY}, ()=>[]);
+  texts.forEach((t,i) => { const cx=Math.min(GX-1,Math.max(0,Math.floor(t[0]/CELL))), cy=Math.min(GY-1,Math.max(0,Math.floor(t[1]/CELL))); gridT[cy*GX+cx].push(i); });
+  // índice de busca
+  sIdx = streets.map(([name, labs, nums], si) => ({si, name, labs, nums, key: strip(name), words: strip(name).split(' ')}));
+  places = [];
+  const seen = new Map();
+  texts.forEach((t,i) => {
+    const c = TC[t[6]]; if (!['bairro','local','rio'].includes(c)) return;
+    const k = strip(t[7]); if (k.length < 3) return;
+    const id = c+'|'+k;
+    if (!seen.has(id)) { seen.set(id, {type:c, name:t[7], key:k, words:k.split(' '), ids:[i]}); places.push(seen.get(id)); }
+    else seen.get(id).ids.push(i);
+  });
+  buildOverview();
+  snap = null; highlight = null; pin = null;
+}
 
 // ---------- temas ----------
 const THEMES = {
   dark: {
-    bg:'#0e1217', halo:'rgba(14,18,23,.92)', hl:'rgba(255,196,0,.92)', soft:'rgba(255,196,0,.28)', hlInk:'#111', hlNum:'#7a0019',
-    line:{outro:'#2b333d', verde:'#1f6f43', rio:'#2f74d0', lote:'#323b46', circ:'#3a4451', num:'#6b2a44', quadra:'#7d8896', bairro:'#a78bfa', via:'#f59e0b'},
-    text:{lote:'#7c8794', quadra:'#60a5fa', num:'#ff6b9a', outro:'#6b7583', local:'#34d399', rio:'#60a5fa', rua:'#eef1f4', bairro:'#c4b5fd'},
+    bg:'#0b0f14', halo:'rgba(11,15,20,.92)', hl:'rgba(255,190,0,.95)', soft:'rgba(255,190,0,.26)', hlInk:'#111', hlNum:'#7a0019',
+    line:{outro:'#26303b', verde:'#1d6b44', rio:'#3478d6', lote:'#28313c', circ:'#323c48', num:'#5e2840', quadra:'#7b8796', bairro:'#a78bfa', via:'#f5a524'},
+    text:{lote:'#748091', quadra:'#60a5fa', num:'#ff6b9a', outro:'#677384', local:'#34d399', rio:'#60a5fa', rua:'#f1f5f9', bairro:'#c4b5fd'},
   },
   light: {
-    bg:'#f4f1ea', halo:'rgba(244,241,234,.92)', hl:'rgba(255,216,77,.95)', soft:'rgba(255,200,0,.30)', hlInk:'#111', hlNum:'#b00020',
-    line:{outro:'#d4d0c6', verde:'#7cc48a', rio:'#4f8fe8', lote:'#c9c3b7', circ:'#b8b2a6', num:'#e9a3bb', quadra:'#59606b', bairro:'#8b5cf6', via:'#f59e0b'},
-    text:{lote:'#8a8478', quadra:'#2563eb', num:'#d6336c', outro:'#9ca3af', local:'#047857', rio:'#1d4ed8', rua:'#111827', bairro:'#7c3aed'},
+    bg:'#eef1f4', halo:'rgba(238,241,244,.92)', hl:'rgba(255,212,59,.98)', soft:'rgba(255,200,0,.30)', hlInk:'#111', hlNum:'#b00020',
+    line:{outro:'#d0d5dc', verde:'#86c99a', rio:'#4f8fe8', lote:'#cfd4db', circ:'#bfc6cf', num:'#efb1c4', quadra:'#5d6878', bairro:'#8b5cf6', via:'#f59e0b'},
+    text:{lote:'#8a94a3', quadra:'#2563eb', num:'#d6336c', outro:'#98a2b3', local:'#047857', rio:'#1d4ed8', rua:'#111827', bairro:'#7c3aed'},
   }
 };
 let TH = THEMES[prefs.theme] || THEMES.dark;
 const STY = {
-  outro:{w:.7, minK:0.25, layer:'outro'},
-  verde:{w:.9, minK:0, layer:'rio'},
-  rio:{w:1.3, minK:0, layer:'rio'},
-  lote:{w:.7, minK:0.22, layer:'lote'},
-  circ:{w:.7, minK:0.6, layer:'quadra'},
-  num:{w:.7, minK:0.6, layer:'num'},
-  quadra:{w:1.1, minK:0, layer:'quadra'},
-  bairro:{w:1.6, minK:0, layer:'bairro', dash:[6,4]},
-  via:{w:2.2, minK:0, layer:'via'},
+  outro:{w:.7, minK:0.25, layer:'outro'}, verde:{w:.9, minK:0, layer:'rio'}, rio:{w:1.4, minK:0, layer:'rio'},
+  lote:{w:.7, minK:0.22, layer:'lote'}, circ:{w:.7, minK:0.6, layer:'quadra'}, num:{w:.7, minK:0.6, layer:'num'},
+  quadra:{w:1.15, minK:0, layer:'quadra'}, bairro:{w:1.6, minK:0, layer:'bairro', dash:[6,4]}, via:{w:2.4, minK:0, layer:'via'},
 };
 const DRAW_ORDER = ['outro','verde','rio','lote','circ','num','quadra','via','bairro'];
 const TSTY = {
-  lote:{min:7, layer:'lote'},
-  quadra:{min:7, layer:'quadra', bold:true},
-  num:{min:6.5, layer:'num', bold:true},
-  outro:{min:8, layer:'outro'},
-  local:{min:6, layer:'outro', bold:true, minPx:10},
-  rio:{min:5, layer:'rio', italic:true, minPx:10},
-  rua:{min:0, layer:'rua', bold:true},
-  bairro:{min:0, layer:'bairro', bold:true},
+  lote:{min:7, layer:'lote'}, quadra:{min:7, layer:'quadra', bold:true}, num:{min:6.5, layer:'num', bold:true},
+  outro:{min:8, layer:'outro'}, local:{min:6, layer:'outro', bold:true, minPx:10}, rio:{min:5, layer:'rio', italic:true, minPx:10},
+  rua:{min:0, layer:'rua', bold:true}, bairro:{min:0, layer:'bairro', bold:true},
 };
 const T_ORDER = ['lote','outro','quadra','num','local','rio','rua','bairro'];
-const vis = {rua:true,num:true,lote:true,quadra:true,via:true,rio:true,bairro:true,outro:false};
+const LAYERS = [
+  ['rua','Nomes de ruas','#e2e8f0'], ['num','Numeração','#ff6b9a'], ['lote','Lotes','#5b6573'], ['quadra','Quadras','#94a3b8'],
+  ['via','Rodovias','#f5a524'], ['rio','Rios e verde','#3b82f6'], ['bairro','Bairros','#a78bfa'], ['outro','Outros','#475569'],
+];
+const vis = Object.assign({rua:true,num:true,lote:true,quadra:true,via:true,rio:true,bairro:true,outro:false}, prefs.vis||{});
 
 // ---------- canvas & vista ----------
 const cv = $('#map'), ctx = cv.getContext('2d');
 let dpr = Math.min(window.devicePixelRatio||1, 3), VW=0, VH=0;
-const view = {x:W/2, y:H/2, k:1};
-const KMIN_F = 0.6, KMAX = 12;
-let kmin = 0.01;
+const view = {x:0, y:0, k:1};
+const KMAX = 12; let kmin = 0.01;
 function resize(){
   const r = cv.getBoundingClientRect();
   VW = r.width; VH = r.height; dpr = Math.min(window.devicePixelRatio||1, 3);
   cv.width = Math.round(VW*dpr); cv.height = Math.round(VH*dpr);
-  kmin = Math.min(VW/W, VH/H) * KMIN_F;
+  if (W) kmin = Math.min(VW/W, VH/H) * 0.6;
   requestDraw(true);
 }
-function homeK(){ return Math.min(VW/W, (VH-80)/H)*0.98; }
-function fitAll(){ setView(W/2, H/2, homeK()); }
+const homeK = () => Math.min(VW/W, (VH-120)/H)*0.98;
+function fitAll(){ setView(W/2, H/2 + 30/homeK(), homeK()); }
 function setView(x,y,k){ view.x=x; view.y=y; view.k=Math.max(kmin, Math.min(KMAX, k)); requestDraw(); }
 const toScreen = (x,y) => [ (x-view.x)*view.k + VW/2, VH/2 - (y-view.y)*view.k ];
 const toWorld = (sx,sy) => [ (sx-VW/2)/view.k + view.x, view.y - (sy-VH/2)/view.k ];
 
-// ---------- imagem de visão geral ----------
-let OV = null;
 function buildOverview(){
   const max = (Math.min(screen.width, screen.height) * (window.devicePixelRatio||1) > 1200) ? 3072 : 2304;
   const s = max / Math.max(W,H);
@@ -382,29 +509,25 @@ function buildOverview(){
   }
   OV = {c, s};
 }
-buildOverview();
 
 // ---------- desenho ----------
 let pending = false, interacting = false, fullTimer = null, needFull = true, snap = null;
+let highlight = null, pin = null;
 function requestDraw(forceFull){
   if (forceFull) { clearTimeout(fullTimer); fullTimer = null; needFull = true; }
   if (pending) return; pending = true;
   requestAnimationFrame(() => { pending = false; draw(); });
 }
 function scheduleFull(){ clearTimeout(fullTimer); fullTimer = setTimeout(()=>{ needFull = true; requestDraw(); }, 140); }
-let highlight = null, pin = null;
-
 function drawOverview(){
   const s = OV.s, k = view.k;
   const sx0 = (view.x - VW/2/k)*s, sy0 = (H - (view.y + VH/2/k))*s;
   ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.imageSmoothingEnabled = true;
   ctx.fillStyle = TH.bg; ctx.fillRect(0,0,VW,VH);
   ctx.drawImage(OV.c, -sx0 * (k/s), -sy0 * (k/s), OV.c.width*(k/s), OV.c.height*(k/s));
   ctx.restore();
 }
-function vectorMode(){ return view.k * dpr > OV.s * 1.6; }
-
+const vectorMode = () => view.k * dpr > OV.s * 1.6;
 function drawVectors(){
   const k = view.k;
   const [wx0, wy1] = toWorld(0,0), [wx1, wy0] = toWorld(VW,VH);
@@ -439,7 +562,6 @@ function drawVectors(){
   ctx.setLineDash([]);
   ctx.restore();
 }
-
 function textCandidates(){
   const [wx0, wy1] = toWorld(-200,-200), [wx1, wy0] = toWorld(VW+200,VH+200);
   const cx0=Math.max(0,Math.floor(wx0/CELL)), cx1=Math.min(GX-1,Math.floor(wx1/CELL));
@@ -452,7 +574,6 @@ function textCandidates(){
 }
 const occupied = [];
 function collides(b){ for (const o of occupied) if (b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]) return true; return false; }
-
 function drawTexts(){
   const k = view.k;
   ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -477,7 +598,7 @@ function drawTexts(){
       else { if (px < st.min && !hl) continue; if (st.minPx) px = Math.max(px, st.minPx); px = Math.min(px, 60); }
       const [sx, sy] = toScreen(t[0], t[1]);
       let rot = -t[3];
-      ctx.font = `${st.italic?'italic ':''}${st.bold?'600 ':''}${px.toFixed(1)}px system-ui,-apple-system,Roboto,sans-serif`;
+      ctx.font = `${st.italic?'italic ':''}${st.bold?'650 ':''}${px.toFixed(1)}px system-ui,-apple-system,Roboto,sans-serif`;
       const s = t[7]; const w = ctx.measureText(s).width;
       let ax = t[4]===1 ? -w/2 : t[4]===2 ? -w : 0;
       let ay = t[5]===2 ? px*0.35 : t[5]===3 ? px*0.8 : 0;
@@ -500,9 +621,9 @@ function drawTexts(){
       if (flipped){ ax = -ax - w; ay = (t[5]===0||t[5]===1) ? px*0.8 : (t[5]===3? 0 : ay); }
       if (name==='bairro'){ ax=-w/2; ay=px*0.35; }
       if (hl || soft){
-        ctx.fillStyle = hl ? TH.hl : TH.soft; const pad = px*0.25;
+        ctx.fillStyle = hl ? TH.hl : TH.soft; const pad = px*0.28;
         const bx=ax-pad, by=ay-px*0.85-pad*0.4, bw2=w+2*pad, bh2=px*1.15+pad*0.8;
-        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx,by,bw2,bh2,px*0.3); else ctx.rect(bx,by,bw2,bh2); ctx.fill();
+        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx,by,bw2,bh2,px*0.35); else ctx.rect(bx,by,bw2,bh2); ctx.fill();
       } else if (name!=='lote' && name!=='outro'){
         ctx.lineWidth = Math.max(2.5, px*0.22); ctx.strokeStyle = TH.halo; ctx.lineJoin='round';
         ctx.strokeText(s, ax, ay);
@@ -513,17 +634,18 @@ function drawTexts(){
   }
   ctx.restore();
 }
-
 function drawPin(){
   if (!pin) return;
   const [sx, sy] = toScreen(pin.x, pin.y);
   ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.translate(sx, sy);
-  ctx.fillStyle='rgba(255,106,31,.22)'; ctx.beginPath(); ctx.arc(0,0,26,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#ff6a1f'; ctx.strokeStyle='#fff'; ctx.lineWidth=3;
-  ctx.beginPath(); ctx.moveTo(0,0); ctx.bezierCurveTo(-4,-10,-13,-16,-13,-26); ctx.arc(0,-26,13,Math.PI,0); ctx.bezierCurveTo(13,-16,4,-10,0,0); ctx.closePath();
+  ctx.fillStyle='rgba(255,106,31,.20)'; ctx.beginPath(); ctx.arc(0,0,24,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0,1,7,3,0,0,Math.PI*2); ctx.fill();
+  const g = ctx.createLinearGradient(0,-40,0,0); g.addColorStop(0,'#ff8a3d'); g.addColorStop(1,'#ff5a0a');
+  ctx.fillStyle=g; ctx.strokeStyle='#fff'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.bezierCurveTo(-4,-10,-14,-17,-14,-28); ctx.arc(0,-28,14,Math.PI,0); ctx.bezierCurveTo(14,-17,4,-10,0,0); ctx.closePath();
   ctx.fill(); ctx.stroke();
-  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,-26,5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,-28,5.5,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 function drawScale(){
@@ -534,9 +656,8 @@ function drawScale(){
   $('#scalet').textContent = nice>=1000 ? (nice/1000)+' km' : nice+' m';
 }
 function draw(){
-  if (!VW) return;
-  const vm = vectorMode();
-  if (!vm){ drawOverview(); drawTexts(); snap=null; }
+  if (!VW || !MAP) return;
+  if (!vectorMode()){ drawOverview(); drawTexts(); snap=null; }
   else if (interacting && !needFull && snap){
     drawOverview();
     const r = view.k / snap.k; const [sx, sy] = toScreen(snap.x, snap.y);
@@ -573,9 +694,7 @@ cv.addEventListener('pointermove', e => {
   } else if (pts.length >= 2 && gesture.n >= 2){
     const c = mid(pts[0],pts[1]), d = dist(pts[0],pts[1]);
     const k = Math.max(kmin, Math.min(KMAX, gesture.k * d / gesture.d));
-    view.k = k;
-    view.x = gesture.wc[0] - (c.x - VW/2)/k;
-    view.y = gesture.wc[1] + (c.y - VH/2)/k;
+    view.k = k; view.x = gesture.wc[0] - (c.x - VW/2)/k; view.y = gesture.wc[1] + (c.y - VH/2)/k;
     moved = true;
   }
   requestDraw();
@@ -587,9 +706,8 @@ function endPtr(e){
     interacting = false;
     if (!moved){
       const now = performance.now();
-      if (now - lastTap < 300 && lastTapPos && Math.hypot(e.clientX-lastTapPos.x, e.clientY-lastTapPos.y) < 30){
-        const r = cv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, 2.2); lastTap = 0;
-      } else { lastTap = now; lastTapPos = {x:e.clientX, y:e.clientY}; }
+      if (now - lastTap < 300 && lastTapPos && Math.hypot(e.clientX-lastTapPos.x, e.clientY-lastTapPos.y) < 30){ zoomAt(e.clientX, e.clientY, 2.2); lastTap = 0; }
+      else { lastTap = now; lastTapPos = {x:e.clientX, y:e.clientY}; }
     }
     gesture = null; requestDraw(true);
   } else startGesture();
@@ -614,44 +732,43 @@ cv.addEventListener('wheel', e => {
   clearTimeout(wheelT); wheelT = setTimeout(()=>{ interacting=false; requestDraw(true); }, 160);
 }, {passive:false});
 let anim = null;
-function animateTo(x, y, k, ms=450){
+function animateTo(x, y, k, ms=480){
   cancelAnimationFrame(anim);
   const a = {x:view.x, y:view.y, k:view.k}; const t0 = performance.now();
   k = Math.max(kmin, Math.min(KMAX, k));
   interacting = true;
   const step = now => {
-    const t = Math.min(1, (now - t0)/ms), e = t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+    const t = Math.min(1, (now - t0)/ms), e = 1 - Math.pow(1 - t, 3);
     view.k = Math.exp(Math.log(a.k) + (Math.log(k)-Math.log(a.k))*e); view.x = a.x + (x-a.x)*e; view.y = a.y + (y-a.y)*e;
     requestDraw();
     if (t < 1) anim = requestAnimationFrame(step); else { interacting = false; requestDraw(true); }
   };
   anim = requestAnimationFrame(step);
 }
-function fitBox(x0,y0,x1,y1, padPx=70, maxK=4){
-  const k = Math.min((VW-2*padPx)/Math.max(1,x1-x0), (VH-2*padPx-140)/Math.max(1,y1-y0), maxK);
-  animateTo((x0+x1)/2, (y0+y1)/2 - 40/k, k);
+function focusOn(x, y, k){ const off = 150/2; animateTo(x, y - off/k, k); }
+function fitBox(x0,y0,x1,y1, padPx=60, maxK=4){
+  const k = Math.min((VW-2*padPx)/Math.max(1,x1-x0), (VH-2*padPx-260)/Math.max(1,y1-y0), maxK);
+  animateTo((x0+x1)/2, (y0+y1)/2 - 70/k, k);
 }
 $('#zin').onclick = () => zoomAt(VW/2, VH/2, 2);
 $('#zout').onclick = () => zoomAt(VW/2, VH/2, 0.5);
-$('#home').onclick = () => animateTo(W/2, H/2, homeK());
-$('#lay').onclick = e => { e.stopPropagation(); $('#layers').classList.toggle('open'); };
-document.querySelectorAll('#layers input').forEach(inp => inp.onchange = () => { vis[inp.dataset.l] = inp.checked; requestDraw(true); });
-function closePanels(){ $('#layers').classList.remove('open'); $('#results').classList.remove('open'); $('#q').blur(); }
+$('#home').onclick = () => animateTo(W/2, H/2 + 30/homeK(), homeK());
 addEventListener('resize', resize);
 
+// ---------- camadas ----------
+function renderLayers(){
+  $('#lgrid').innerHTML = LAYERS.map(([k, n, c]) => `<button class="lopt ${vis[k]?'on':''}" data-l="${k}"><span class="sw" style="background:${c}22"><i style="background:${c}"></i></span>${n}</button>`).join('');
+}
+$('#lgrid').addEventListener('click', e => { const b = e.target.closest('.lopt'); if (!b) return; const k = b.dataset.l; vis[k] = !vis[k]; prefs.vis = vis; savePrefs(); renderLayers(); requestDraw(true); });
+function openSheet(id){ $('#veil').classList.add('open'); $(id).classList.add('open'); }
+function closeSheets(){ $('#veil').classList.remove('open'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
+$('#veil').onclick = closeSheets;
+$('#lay').onclick = () => { closePanels(); renderLayers(); openSheet('#laySheet'); };
+function closePanels(){ closeSheets(); $('#results').classList.remove('open'); $('#q').blur(); if (!$('#q').value.trim()) $('#chips').style.display = ''; }
+
 // ---------- busca ----------
-const strip = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function strip(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
 const STOP = new Set(['RUA','R','AV','AVENIDA','DE','DA','DO','DOS','DAS','E','TRAV','TRAVESSA','AL','ALAMEDA','PROJ','PROJETADA','N','NO','NUMERO']);
-const sIdx = streets.map(([name, labs, nums], si) => ({si, name, labs, nums, key: strip(name), words: strip(name).split(' ')}));
-const places = [];
-{ const seen = new Map();
-  texts.forEach((t,i) => {
-    const c = TC[t[6]]; if (!['bairro','local','rio'].includes(c)) return;
-    const k = strip(t[7]); if (k.length < 3) return;
-    const id = c+'|'+k;
-    if (!seen.has(id)) { seen.set(id, {type:c, name:t[7], key:k, words:k.split(' '), ids:[i]}); places.push(seen.get(id)); }
-    else seen.get(id).ids.push(i);
-  }); }
 function matchScore(words, qt){
   if (!qt.length) return -1;
   let score = 0;
@@ -695,7 +812,7 @@ function nearestBairro(x,y){
 function streetCenter(st){ const ls = st.labs.map(i=>texts[i]); return {cx: ls.reduce((a,t)=>a+t[0],0)/ls.length, cy: ls.reduce((a,t)=>a+t[1],0)/ls.length}; }
 const numVal = s => { const m = s.match(/^(\d+)/); return m ? +m[1] : NaN; };
 function resolveAddress(stList, num){
-  const N = numVal(num); let best = null;
+  let best = null;
   for (const st of stList) for (const i of st.nums){ const s = texts[i][7]; if (s === num || s.replace(/^0+/,'') === num.replace(/^0+/,'')) return {i, exact:true, st}; }
   for (const st of stList){
     const ls = st.labs.map(i=>texts[i]);
@@ -704,63 +821,87 @@ function resolveAddress(stList, num){
       if (d < 3000 && (!best || d < best.d)) best = {i, d, exact:true, st};
     }
   }
-  if (best) return best;
-  for (const st of stList) for (const i of st.nums){ const v = numVal(texts[i][7]); if (isNaN(v)) continue; const d = Math.abs(v-N); if (!best || d < best.d) best = {i, d, exact:false, st}; }
   return best;
 }
-// nome limpo para o Google Maps
 function cleanStreetName(n){
   return n.replace(/\(.*?\)/g,'').replace(/\bDecreto.*$/i,'').replace(/\s+/g,' ').trim()
     .toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(De|Da|Do|Dos|Das|E)\b/g, w=>w.toLowerCase());
 }
-function mapsUrl(dest){ return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(dest); }
+const cityName = () => (MAP && MAP.cidade) || 'Umuarama - PR';
+const mapsUrl = dest => 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(dest);
+
+const IC = {
+  rua:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3 5 21M16 3l3 18M12 4v3M12 11v3M12 18v2"/></svg>',
+  end:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+  bairro:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 21V10l5-4 5 4v11M13 21V8l4-3 4 3v13M3 21h18"/></svg>',
+  local:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16M9 21v-5h6v5M8 9h2M14 9h2M8 13h2M14 13h2"/></svg>',
+  rio:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 8c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 14c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 20c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"/></svg>',
+  clock:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+};
 
 const qEl = $('#q'), resEl = $('#results');
-const esc = s => s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let lastResults = [];
+function renderRecent(){
+  $('#chips').style.display = 'none';
+  const rec = prefs.recent || [];
+  if (!rec.length){ resEl.innerHTML = '<div class="empty">Digite o nome da rua e o número.<br>Ex.: <b>ney braga 1520</b> · <b>sakai 4580</b> · <b>jardim social</b></div>'; resEl.classList.add('open'); return; }
+  resEl.innerHTML = `<div class="rh">Recentes <button id="rclr">Limpar</button></div>` + rec.map((r,i) => `<div class="res" data-r="${i}"><div class="ri">${IC.clock}</div><div><div class="t">${esc(r)}</div></div></div>`).join('');
+  resEl.classList.add('open');
+  $('#rclr').onclick = e => { e.stopPropagation(); prefs.recent = []; savePrefs(); renderRecent(); paintRecent(); };
+}
 function renderResults(){
   const q = qEl.value.trim();
   $('#clear').style.display = q ? '' : 'none';
-  if (q.length < 2){ resEl.classList.remove('open'); return; }
+  $('#chips').style.display = q || document.activeElement === qEl ? 'none' : '';
+  if (q.length < 2){ if (document.activeElement === qEl) renderRecent(); else resEl.classList.remove('open'); return; }
   const {P, out} = search(q);
   lastResults = out;
-  if (!out.length){ resEl.innerHTML = '<div class="empty">Nada encontrado. Tente só uma parte do nome (ex.: “ney braga 1520”).</div>'; resEl.classList.add('open'); return; }
+  if (!out.length){ resEl.innerHTML = '<div class="empty">Nada encontrado. Tente só uma parte do nome, ex.: <b>ney braga 1520</b>.</div>'; resEl.classList.add('open'); return; }
   resEl.innerHTML = out.map((r, idx) => {
     if (r.st){
       const list = [r.st].concat(r.more||[]); const nn = list.reduce((a,s)=>a+s.nums.length,0);
       const {cx, cy} = streetCenter(r.st); const b = nearestBairro(cx, cy);
       const isAddr = P.num && !r.exactName;
-      const tag = isAddr ? '<span class="tag end">Endereço</span>' : '<span class="tag rua">Rua</span>';
-      const title = isAddr ? `${esc(r.st.name)}, <b>${esc(P.num)}</b>` : esc(r.st.name);
-      return `<div class="res" data-i="${idx}">${tag}<div><div class="t">${title}</div><div class="s">${b? 'perto de '+esc(b)+' · ':''}${nn} números no mapa</div></div></div>`;
+      const title = isAddr ? `${esc(r.st.name)}, <span style="color:var(--accent)">${esc(P.num)}</span>` : esc(r.st.name);
+      return `<div class="res" data-i="${idx}"><div class="ri ${isAddr?'end':'rua'}">${isAddr?IC.end:IC.rua}</div><div><div class="t">${title}</div><div class="s">${b? esc(b)+' · ':''}${nn ? nn+' números' : 'sem numeração'}</div></div></div>`;
     }
-    const label = {bairro:'Bairro', local:'Local', rio:'Rio'}[r.kind];
-    return `<div class="res" data-i="${idx}"><span class="tag">${label}</span><div><div class="t">${esc(r.pl.name)}</div></div></div>`;
+    const label = {bairro:'Bairro', local:'Local', rio:'Rio / córrego'}[r.kind];
+    return `<div class="res" data-i="${idx}"><div class="ri ${r.kind}">${IC[r.kind]}</div><div><div class="t">${esc(r.pl.name)}</div><div class="s">${label}</div></div></div>`;
   }).join('');
   resEl.classList.add('open');
 }
 qEl.addEventListener('input', renderResults);
-qEl.addEventListener('focus', () => { $('#layers').classList.remove('open'); if (qEl.value.trim().length>=2) renderResults(); });
+qEl.addEventListener('focus', () => { closeSheets(); $('#toast').classList.remove('show'); renderResults(); });
+qEl.addEventListener('blur', () => setTimeout(() => { if (!qEl.value.trim()) $('#chips').style.display = ''; }, 150));
 qEl.addEventListener('keydown', e => { if (e.key==='Enter' && lastResults.length) choose(0); });
-resEl.addEventListener('click', e => { const el = e.target.closest('.res'); if (el) choose(+el.dataset.i); });
-$('#clear').onclick = () => { qEl.value=''; renderResults(); highlight=null; pin=null; hideCard(); requestDraw(true); qEl.focus(); };
+resEl.addEventListener('pointerdown', e => e.preventDefault());
+resEl.addEventListener('click', e => {
+  const el = e.target.closest('.res'); if (!el) return;
+  if (el.dataset.r != null){ qEl.value = prefs.recent[+el.dataset.r]; renderResults(); if (lastResults.length) choose(0); return; }
+  choose(+el.dataset.i);
+});
+$('#clear').onclick = () => { qEl.value=''; highlight=null; pin=null; hideCard(); requestDraw(true); qEl.focus(); renderResults(); };
 $('#cardx').onclick = () => { hideCard(); pin=null; highlight=null; requestDraw(true); };
+function addRecent(q){ q = q.trim(); if (!q) return; prefs.recent = [q].concat((prefs.recent||[]).filter(x => x.toLowerCase() !== q.toLowerCase())).slice(0, 8); savePrefs(); paintRecent(); }
 
-let cardDest = null;
-function showCard(h, s, dest){
+let cardDest = null, cardText = '', cardFocus = null;
+function showCard(kind, h, s, dest, copyText, focus){
+  $('#cardic').innerHTML = IC[kind] || IC.end;
   $('#cardh').innerHTML = h; $('#cards').innerHTML = s||'';
-  cardDest = dest || null; updateRouteBtn();
+  cardDest = dest || null; cardText = copyText || ''; cardFocus = focus || null;
+  updateRouteBtn();
   $('#card').classList.add('open'); document.body.classList.add('hascard');
+  requestAnimationFrame(() => document.body.style.setProperty('--cardh', ($('#card').offsetHeight + 4) + 'px'));
 }
-function updateRouteBtn(){
-  const b = $('#route');
-  if (prefs.route && cardDest){ b.href = mapsUrl(cardDest); b.classList.add('show'); } else b.classList.remove('show');
-}
+function updateRouteBtn(){ const b = $('#route'); if (prefs.route && cardDest){ b.href = mapsUrl(cardDest); b.classList.remove('hide'); } else b.classList.add('hide'); }
 function hideCard(){ $('#card').classList.remove('open'); document.body.classList.remove('hascard'); cardDest = null; }
+$('#center').onclick = () => { if (cardFocus) cardFocus(); };
+$('#copy').onclick = async () => { try{ await navigator.clipboard.writeText(cardText); toast('Endereço copiado'); }catch(e){ toast('Não foi possível copiar'); } };
 
 function choose(idx){
   const r = lastResults[idx]; if (!r) return;
   const {P} = search(qEl.value);
+  addRecent(qEl.value);
   resEl.classList.remove('open'); qEl.blur();
   if (r.st){
     const list = [r.st].concat(r.more||[]);
@@ -775,22 +916,21 @@ function choose(idx){
         const t = texts[a.i];
         highlight = {labels: labs, nums: new Set([a.i]), soft: nums};
         pin = {x: t[0], y: t[1]};
-        animateTo(t[0], t[1] - 30/0.8, 0.8);
+        const go = () => focusOn(t[0], t[1], 0.8); go();
         const b = nearestBairro(t[0], t[1]);
-        showCard(`${esc(r.st.name)}, ${esc(t[7])}`, `${b? 'Região: '+esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - Umuarama - PR`);
+        showCard('end', `${esc(r.st.name)}, ${esc(t[7])}`, `${b? esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - ${cityName()}`, `${gname}, ${t[7]} - ${cityName()}`, go);
         return;
       }
     }
-    // rua inteira (sem número, ou número não encontrado)
     highlight = {labels: labs, nums: new Set(), soft: nums}; pin = null;
     let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
     for (const i of [...labs, ...nums]){ const t=texts[i]; x0=Math.min(x0,t[0]); y0=Math.min(y0,t[1]); x1=Math.max(x1,t[0]); y1=Math.max(y1,t[1]); }
-    fitBox(x0-300, y0-300, x1+300, y1+300, 60, 2.5);
+    const go = () => fitBox(x0-300, y0-300, x1+300, y1+300, 50, 2.5); go();
     const b = nearestBairro(x0/2+x1/2, y0/2+y1/2);
     if (P.num && !r.exactName){
-      showCard(`${esc(r.st.name)}, ${esc(P.num)}`, `O número <b>${esc(P.num)}</b> não está no mapa. Rua inteira destacada.<br>${faixa}${b? ' · perto de '+esc(b):''}`, `${gname}, ${P.num} - Umuarama - PR`);
+      showCard('rua', `${esc(r.st.name)}, ${esc(P.num)}`, `O número <b>${esc(P.num)}</b> não está no mapa — rua inteira destacada.<br>${faixa}${b? ' · '+esc(b):''}`, `${gname}, ${P.num} - ${cityName()}`, `${gname}, ${P.num} - ${cityName()}`, go);
     } else {
-      showCard(esc(r.st.name), `${faixa}${b? ' · perto de '+esc(b):''}<br>Dica: digite o número junto, ex.: “${esc(r.st.name.split(' (')[0])} ${vals.length? vals[Math.floor(vals.length/2)] : '100'}”`, `${gname} - Umuarama - PR`);
+      showCard('rua', esc(r.st.name), `${faixa}${b? ' · '+esc(b):''}`, `${gname} - ${cityName()}`, `${gname} - ${cityName()}`, go);
     }
     return;
   }
@@ -798,23 +938,91 @@ function choose(idx){
   highlight = {labels: new Set(pl.ids), nums: new Set()};
   let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
   for (const i of pl.ids){ const t=texts[i]; x0=Math.min(x0,t[0]); y0=Math.min(y0,t[1]); x1=Math.max(x1,t[0]); y1=Math.max(y1,t[1]); }
-  if (pl.ids.length===1){ pin = {x:x0, y:y0}; animateTo(x0, y0, r.kind==='bairro'? 0.35 : 2); }
-  else { pin=null; fitBox(x0-400,y0-400,x1+400,y1+400, 60, 1.5); }
-  showCard(esc(pl.name), {bairro:'Bairro', local:'Local / empresa', rio:'Rio / córrego'}[r.kind] + (pl.ids.length>1? ` · aparece ${pl.ids.length}× no mapa`:''),
-    r.kind==='rio' ? null : `${cleanStreetName(pl.name)} - Umuarama - PR`);
+  let go;
+  if (pl.ids.length===1){ pin = {x:x0, y:y0}; go = () => focusOn(x0, y0, r.kind==='bairro'? 0.35 : 2); }
+  else { pin=null; go = () => fitBox(x0-400,y0-400,x1+400,y1+400, 50, 1.5); }
+  go();
+  showCard(r.kind, esc(pl.name), {bairro:'Bairro', local:'Local / empresa', rio:'Rio / córrego'}[r.kind] + (pl.ids.length>1? ` · aparece ${pl.ids.length}× no mapa`:''),
+    r.kind==='rio' ? null : `${cleanStreetName(pl.name)} - ${cityName()}`, `${pl.name} - ${cityName()}`, go);
 }
 
 // ---------- guias ----------
+let curTab = 'map';
 function showTab(t){
-  const set = t==='set';
-  $('#settings').classList.toggle('open', set);
-  $('#tabSet').classList.toggle('on', set); $('#tabMap').classList.toggle('on', !set);
-  ['#topbar','#ctrls'].forEach(s => $(s).style.display = set ? 'none' : '');
-  if (set){ closePanels(); $('#toast').classList.remove('show'); $('#card').style.visibility='hidden'; refreshSettings(); }
-  else { $('#card').style.visibility=''; }
+  curTab = t;
+  $('#pageMaps').classList.toggle('open', t==='maps');
+  $('#pageSet').classList.toggle('open', t==='set');
+  $('#tabMap').classList.toggle('on', t==='map'); $('#tabMaps').classList.toggle('on', t==='maps'); $('#tabSet').classList.toggle('on', t==='set');
+  const onMap = t==='map';
+  ['#topbar','#ctrls','#scale'].forEach(s => $(s).style.visibility = onMap ? '' : 'hidden');
+  $('#card').style.visibility = onMap ? '' : 'hidden';
+  $('#toast').classList.remove('show');
+  if (!onMap) closePanels();
+  if (t==='set') refreshSettings();
+  if (t==='maps') renderMaps();
 }
 $('#tabMap').onclick = () => showTab('map');
+$('#tabMaps').onclick = () => showTab('maps');
 $('#tabSet').onclick = () => showTab('set');
+$('#mapChip').onclick = () => showTab('maps');
+
+// ---------- página Mapas ----------
+function fmtSize(b){ return b ? (b/1048576).toFixed(1).replace('.',',') + ' MB' : ''; }
+let dlBusy = null;
+function renderMaps(){
+  $('#mapList').innerHTML = catalog.map(m => {
+    const on = MAP && MAP.id === m.id, has = available(m);
+    const meta = [];
+    if (on) meta.push('<span class="badge acc">Em uso</span>');
+    if (m.embutido) meta.push('<span class="badge ok">No app</span>');
+    else if (downloaded.has(m.id)) meta.push('<span class="badge ok">No aparelho</span>');
+    else meta.push(`<span class="badge">${dlBusy===m.id ? 'Baixando…' : 'Baixar' + (m.tamanho? ' · '+fmtSize(m.tamanho):'')}</span>`);
+    if (m.atualizado) meta.push(`<span class="badge">${esc(m.atualizado)}</span>`);
+    return `<button class="mcard ${on?'on':''}" data-m="${esc(m.id)}">
+      <div class="th">${on && OV ? '<canvas data-thumb></canvas>' : `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${has?'#ff6a1f':'#5b6778'}" stroke-width="1.8" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>`}</div>
+      <div class="grow"><div class="n">${esc(m.nome)}</div><div class="dd">${esc(m.descricao||'')}${m.cidade? ' · '+esc(m.cidade):''}</div><div class="meta">${meta.join('')}</div></div>
+      <div class="radio"></div></button>`;
+  }).join('');
+  const th = $('#mapList canvas[data-thumb]');
+  if (th && OV){ th.width = 128; th.height = 128; const g = th.getContext('2d'); g.fillStyle = TH.bg; g.fillRect(0,0,128,128);
+    const sc = Math.max(128/OV.c.width, 128/OV.c.height) * 1.25; g.drawImage(OV.c, (128-OV.c.width*sc)/2, (128-OV.c.height*sc)/2, OV.c.width*sc, OV.c.height*sc); }
+}
+$('#mapList').addEventListener('click', async e => {
+  const b = e.target.closest('.mcard'); if (!b) return;
+  const m = mapById(b.dataset.m); if (!m) return;
+  if (MAP && MAP.id === m.id){ showTab('map'); return; }
+  if (!available(m)){
+    if (dlBusy) return;
+    dlBusy = m.id; renderMaps();
+    try{
+      const txt = await httpGet(m.url.startsWith('http') ? m.url : REPO_RAW + m.url, false);
+      JSON.parse(txt); // valida
+      await DB.put(m.id, txt); downloaded.add(m.id);
+      toast(`${m.nome} baixado`);
+    }catch(err){ dlBusy = null; renderMaps(); toast('Não foi possível baixar. Confira a internet.'); return; }
+    dlBusy = null;
+  }
+  await openMap(m); showTab('map');
+});
+
+async function openMap(m){
+  const L = $('#loading'); L.classList.remove('hide'); L.style.display = '';
+  $('#lttl').textContent = m.nome; $('#lmsg').textContent = 'Abrindo o mapa…';
+  await new Promise(r => setTimeout(r, 30));
+  try{
+    const D = await readMapData(m);
+    $('#lmsg').textContent = 'Montando o mapa…'; await new Promise(r => setTimeout(r, 20));
+    await buildMap(D);
+    MAP = m; prefs.mapa = m.id; savePrefs();
+    $('#mapChipName').textContent = m.nome; $('#mapChipCity').textContent = m.cidade ? '· ' + m.cidade.replace(/ - [A-Z]{2}$/,'') : '';
+    hideCard(); qEl.value = ''; $('#clear').style.display='none';
+    resize(); fitAll();
+  }catch(e){
+    $('#lmsg').textContent = 'Erro: ' + e.message; await new Promise(r => setTimeout(r, 1800));
+    if (!MAP) throw e;
+  }
+  L.classList.add('hide'); setTimeout(() => { L.style.display = 'none'; }, 260);
+}
 
 // ---------- configurações ----------
 const optRoute = $('#optRoute');
@@ -825,62 +1033,58 @@ paintThemeSeg();
 document.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => {
   prefs.theme = b.dataset.t; savePrefs(); paintThemeSeg();
   document.body.classList.toggle('light', prefs.theme==='light');
-  document.querySelector('meta[name=theme-color]').content = prefs.theme==='light' ? '#f4f1ea' : '#0e1217';
-  TH = THEMES[prefs.theme]; buildOverview(); snap = null; requestDraw(true);
+  document.querySelector('meta[name=theme-color]').content = prefs.theme==='light' ? '#eef1f4' : '#0b0f14';
+  TH = THEMES[prefs.theme]; if (MAP){ buildOverview(); snap = null; requestDraw(true); }
+  paintStatusBar();
 });
+function paintRecent(){ const n = (prefs.recent||[]).length; $('#recd').textContent = n ? `${n} salva${n>1?'s':''} neste aparelho` : 'Nenhuma'; $('#recClear').disabled = !n; }
+$('#recClear').onclick = () => { prefs.recent = []; savePrefs(); paintRecent(); toast('Buscas recentes apagadas'); };
 
+function cmpVer(a,b){ const pa=String(a).split('.').map(Number), pb=String(b).split('.').map(Number); for(let i=0;i<3;i++){ if((pa[i]||0)!==(pb[i]||0)) return (pa[i]||0)-(pb[i]||0); } return 0; }
+let cur = {versionName: APP_VERSION, versionCode: 0}, remote = null, local = CHANGELOG_EMBED, updBusy = false, updPct = 0;
 function renderChangelog(log){
-  if (!log || !log.versions) { $('#changelog').innerHTML = '<div class="d" style="color:var(--muted);font-size:13px;padding-top:8px">Sem informações de versão.</div>'; return; }
-  $('#changelog').innerHTML = log.versions.map(v => `
-    <div class="v"><b>v${esc(v.version)}</b><span>${esc(v.date||'')}</span>${v.version===cur.versionName?'<span class="badge ok">instalada</span>':''}${cmpVer(v.version, cur.versionName)>0?'<span class="badge new">nova</span>':''}</div>
+  if (!log || !log.versions) { $('#changelog').innerHTML = '<div style="color:var(--muted);font-size:13px;padding-top:8px">Sem informações de versão.</div>'; return; }
+  $('#changelog').innerHTML = log.versions.slice(0, 6).map(v => `
+    <div class="v"><b>v${esc(v.version)}</b><span class="dt">${esc(v.date||'')}</span>${v.version===cur.versionName?'<span class="badge ok">instalada</span>':''}${cmpVer(v.version, cur.versionName)>0?'<span class="badge new">nova</span>':''}</div>
     <ul>${(v.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`).join('');
 }
-function cmpVer(a,b){ const pa=a.split('.').map(Number), pb=b.split('.').map(Number); for(let i=0;i<3;i++){ if((pa[i]||0)!==(pb[i]||0)) return (pa[i]||0)-(pb[i]||0); } return 0; }
-
-// ---------- app Android (Capacitor) ----------
-const CAP = window.Capacitor, NATIVE = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
-const plug = n => CAP && CAP.Plugins && CAP.Plugins[n];
-const UPD_URL = 'https://github.com/gouzza968-jpg/Mapa-umuarama/releases/latest/download/update.json';
-let cur = {versionName: APP_VERSION, versionCode: 0}, remote = null, local = CHANGELOG_EMBED, updBusy = false, updPct = 0;
-async function httpJson(u){
-  const Hh = NATIVE && plug('CapacitorHttp');
-  if (Hh){ const r = await Hh.request({url: u + '?t=' + Date.now(), method:'GET', connectTimeout:10000, readTimeout:10000});
-    if (r.status !== 200) throw new Error('http ' + r.status); return typeof r.data === 'string' ? JSON.parse(r.data) : r.data; }
-  const r = await fetch(u + '?t=' + Date.now(), {cache:'no-store'}); if (!r.ok) throw new Error('http'); return r.json();
-}
 const hasUpdate = () => !!(remote && Number(remote.versionCode) > Number(cur.versionCode));
+const CHECK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+const DOWN = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg>';
 function paintUpdate(){
   renderChangelog(remote && remote.changelog ? {versions: remote.changelog} : local);
   const btn = $('#updbtn'), has = NATIVE && hasUpdate();
+  $('#vcur2').textContent = cur.versionName;
   $('#updbox').classList.toggle('has', has);
   $('#setDot').classList.toggle('show', has);
+  $('#prog').classList.toggle('show', updBusy);
+  $('#progi').style.width = updPct + '%';
   if (!NATIVE){
-    $('#updic').textContent = 'ℹ️'; $('#updt').textContent = 'Versão de demonstração';
-    $('#updd').innerHTML = `Versão: <b>${esc(cur.versionName)}</b> · as atualizações funcionam no app Android.`;
-    btn.style.display = 'none'; return;
+    $('#updic').innerHTML = CHECK; $('#updt').textContent = 'Versão de demonstração';
+    $('#updd').textContent = 'As atualizações funcionam no app Android.'; btn.style.display = 'none'; return;
   }
   btn.style.display = '';
-  if (updBusy){ btn.disabled = true; btn.textContent = updPct >= 100 ? 'Instalando…' : `Baixando ${updPct}%`; return; }
+  if (updBusy){ btn.disabled = true; btn.textContent = updPct >= 100 ? 'Instalando…' : `${updPct}%`; $('#updt').textContent = 'Baixando atualização…'; return; }
   btn.disabled = false;
   if (has){
-    $('#updic').textContent = '⬇️'; $('#updt').textContent = `Nova versão ${remote.versionName} disponível`;
-    $('#updd').innerHTML = `Versão instalada: <b>${esc(cur.versionName)}</b>`;
-    btn.textContent = 'Atualizar agora'; btn.classList.add('primary'); btn.onclick = applyUpdate;
+    $('#updic').innerHTML = DOWN; $('#updt').textContent = `Nova versão ${remote.versionName}`;
+    $('#updd').textContent = 'Toque para baixar e instalar';
+    btn.textContent = 'Atualizar'; btn.classList.add('primary'); btn.onclick = applyUpdate;
   } else {
-    $('#updic').textContent = '✓'; $('#updt').textContent = 'Você está na versão mais recente';
-    $('#updd').innerHTML = `Versão instalada: <b>${esc(cur.versionName)}</b>`;
+    $('#updic').innerHTML = CHECK; $('#updt').textContent = 'App atualizado';
+    $('#updd').textContent = 'Você está na versão mais recente';
     btn.textContent = 'Verificar'; btn.classList.remove('primary'); btn.onclick = () => checkUpdates(true);
   }
 }
 async function checkUpdates(manual){
-  if (!NATIVE){ paintUpdate(); return; }
+  if (!NATIVE){ paintUpdate(); return false; }
   const btn = $('#updbtn');
   if (manual && !updBusy){ btn.disabled = true; btn.textContent = 'Verificando…'; }
   try{
     const P = plug('AppUpdate'); if (P) cur = await P.info();
-    remote = await httpJson(UPD_URL);
+    remote = await httpGet(UPD_URL);
     if (manual && !hasUpdate()) toast('Seu app já está atualizado');
-  }catch(e){ if (manual) toast('Sem conexão para verificar. Confira a internet.'); }
+  }catch(e){ if (manual) toast('Sem conexão para verificar'); }
   paintUpdate();
   return hasUpdate();
 }
@@ -895,13 +1099,14 @@ async function applyUpdate(){
       const st = await P.status(); updPct = st.pct || 0; paintUpdate();
       if (st.error){ updBusy = false; paintUpdate(); toast('Falha no download. Tente de novo.'); return; }
       if (st.done){ updBusy = false; paintUpdate(); try{ await P.install(); }catch(e){ toast('Não foi possível abrir o instalador'); }
-        const btn = $('#updbtn'); btn.textContent = 'Instalar'; btn.onclick = () => P.install().catch(()=>toast('Não foi possível abrir o instalador')); return; }
+        const btn = $('#updbtn'); btn.textContent = 'Instalar'; btn.classList.add('primary'); btn.onclick = () => P.install().catch(()=>toast('Não foi possível abrir o instalador')); return; }
       setTimeout(poll, 400);
     };
     poll();
   }catch(e){ updBusy = false; paintUpdate(); toast('Não foi possível atualizar agora.'); }
 }
-function refreshSettings(){ paintUpdate(); }
+function refreshSettings(){ paintUpdate(); paintRecent(); }
+
 // rota: no app abre direto o Google Maps
 $('#route').addEventListener('click', e => {
   if (!NATIVE) return;
@@ -909,19 +1114,17 @@ $('#route').addEventListener('click', e => {
   const url = $('#route').href, L = plug('AppLauncher');
   if (L) L.openUrl({url}).catch(() => { location.href = url; }); else location.href = url;
 });
-// barra de status e botão voltar
 function paintStatusBar(){
   const SB = NATIVE && plug('StatusBar'); if (!SB) return;
   const dark = prefs.theme !== 'light';
-  SB.setBackgroundColor({color: dark ? '#0e1217' : '#f4f1ea'}).catch(()=>{});
+  SB.setBackgroundColor({color: dark ? '#0b0f14' : '#eef1f4'}).catch(()=>{});
   SB.setStyle({style: dark ? 'DARK' : 'LIGHT'}).catch(()=>{});
 }
 paintStatusBar();
-document.querySelectorAll('#themeSeg button').forEach(b => b.addEventListener('click', paintStatusBar));
 if (NATIVE && plug('App')){
   plug('App').addListener('backButton', () => {
-    if ($('#settings').classList.contains('open')) return showTab('map');
-    if ($('#results').classList.contains('open') || $('#layers').classList.contains('open')) return closePanels();
+    if (curTab !== 'map') return showTab('map');
+    if ($('#veil').classList.contains('open') || $('#results').classList.contains('open')) return closePanels();
     if ($('#card').classList.contains('open')){ hideCard(); pin=null; highlight=null; requestDraw(true); return; }
     plug('App').exitApp();
   });
@@ -932,15 +1135,19 @@ let toastAction = null;
 function toast(msg, action, label='Ver'){
   $('#toastt').textContent = msg; toastAction = action || null;
   $('#toastb').style.display = action ? '' : 'none'; $('#toastb').textContent = label;
-  $('#toast').classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(()=>$('#toast').classList.remove('show'), action? 8000 : 3000);
+  $('#toast').classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(()=>$('#toast').classList.remove('show'), action? 8000 : 2600);
 }
 $('#toastb').onclick = () => { $('#toast').classList.remove('show'); if (toastAction) toastAction(); };
 
 // ---------- início ----------
-resize(); fitAll();
-$('#loading').remove();
+try{
+  await loadCatalog();
+  let m = mapById(prefs.mapa); if (!m || !available(m)) m = catalog.find(available) || catalog[0];
+  await openMap(m);
+}catch(e){ $('#lmsg').textContent = 'Erro: ' + e.message; return; }
 if (!local && !EMBED){ try{ local = await (await fetch('version.json')).json(); }catch(e){} }
-paintUpdate();
+paintUpdate(); paintRecent();
+refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => showTab('maps'), 'Ver'); } if (curTab==='maps') renderMaps(); });
 if (NATIVE){
   if (await checkUpdates(false)) toast(`Nova versão ${remote.versionName} disponível`, () => showTab('set'), 'Ver');
   setInterval(() => { if (document.visibilityState === 'visible' && !updBusy) checkUpdates(false); }, 30*60*1000);
