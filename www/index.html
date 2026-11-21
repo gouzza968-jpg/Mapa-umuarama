@@ -105,6 +105,19 @@
   #routeBar .rb-ic{width:38px;height:38px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
   #routeBar .t{font-weight:800;font-size:15px}
   #routeBar .s{font-size:12.5px;color:var(--muted);margin-top:1px}
+  #navBar{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 12px);z-index:7;max-width:560px;margin:0 auto;border-radius:20px;padding:14px;display:none;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;box-shadow:var(--shadow)}
+  #navBar.show{display:block;animation:fadeIn .2s ease-out}
+  #navBar.arrived{background:linear-gradient(135deg,#059669,#10b981)}
+  #navBar .k{font-size:12px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:.06em}
+  #navBar .lbl{font-size:18px;font-weight:800;line-height:1.25;margin-top:3px}
+  #navBar .met{display:flex;gap:14px;margin-top:6px;font-weight:800;font-size:15px}
+  #navBar .row2{display:flex;gap:8px;margin-top:12px}
+  #navBar .row2 button{flex:1;border:0;border-radius:12px;padding:11px;font-weight:800;font-size:14.5px}
+  #navBar .bOk{background:#fff;color:#065f46}
+  #navBar .bEnd{background:rgba(255,255,255,.18);color:#fff}
+  body.nav #topbar{visibility:hidden}
+  body.nav #routeBar{display:none!important}
+  body.nav .ctrls{transform:none!important}
   .stops{list-style:none;margin:0;padding:0}
   .stop{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
   .stop .n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:13px;display:grid;place-items:center;flex:none}
@@ -305,10 +318,17 @@
   </div>
 </div>
 <div id="scale"><div class="bar" id="scalebar"></div><span id="scalet"></span></div>
+<div id="navBar">
+  <div class="k" id="navK">Próxima parada</div>
+  <div class="lbl" id="navL"></div>
+  <div class="met" id="navM"></div>
+  <div class="row2"><button class="bOk" id="navOk">✓ Entregue</button><button class="bEnd" id="navEnd">Encerrar</button></div>
+</div>
 <div id="routeBar" class="glass">
   <div class="rb-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h7"/></svg></div>
   <div class="grow"><div class="t" id="rbT"></div><div class="s" id="rbS"></div></div>
-  <button class="btn primary" id="rbOpen">Paradas</button>
+  <button class="btn primary" id="rbGo">Iniciar</button>
+  <button class="btn" id="rbOpen">Paradas</button>
   <button class="ib" id="rbX" aria-label="Encerrar rota"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
 </div>
 
@@ -321,7 +341,7 @@
 </div>
 <div class="sheet" id="routeSheet">
   <div class="handle"></div>
-  <div class="rhead"><h3>Rota</h3><button class="btn" id="rOpt">Melhor ordem</button><button class="btn" id="rClear">Limpar</button></div>
+  <div class="rhead"><h3>Rota</h3><button class="btn primary" id="rGo">Iniciar</button><button class="btn" id="rOpt">Melhor ordem</button><button class="btn" id="rClear">Limpar</button></div>
   <div class="rsum" id="rSum"></div>
   <ul class="stops" id="stopList"></ul>
   <div class="rfoot" id="rFoot"></div>
@@ -418,7 +438,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.7.0";
+const APP_VERSION = "2.8.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -821,35 +841,46 @@ function mapOfLL(lat, lon){
   const dl = lat - a0, dn = lon - b0;
   return [(dl*b2 - a2*dn)/det, (a1*dn - b1*dl)/det];
 }
+function drawMoto(sx, sy, label, mine, head){
+  ctx.setTransform(dpr,0,0,dpr,sx*dpr,sy*dpr);
+  if (head != null && !isNaN(head)){
+    ctx.save(); ctx.rotate(head * Math.PI/180);
+    ctx.fillStyle = mine ? 'rgba(255,106,31,.9)' : 'rgba(124,58,237,.9)';
+    ctx.beginPath(); ctx.moveTo(0,-27); ctx.lineTo(7,-17); ctx.lineTo(-7,-17); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 6;
+  ctx.fillStyle = mine ? '#ff6a1f' : '#7c3aed'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.font = '17px system-ui,"Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🏍️', 0, 1);
+  if (label){ ctx.font = '800 12px system-ui,Roboto,sans-serif'; ctx.lineWidth = 3.5; ctx.strokeStyle = TH.halo; ctx.strokeText(label, 0, 29); ctx.fillStyle = mine ? '#ffb08a' : '#c4b5fd'; ctx.fillText(label, 0, 29); }
+  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+}
 function drawMe(){
   if (!me) return;
   const p = mapOfLL(me.lat, me.lon); if (!p) return;
   const [sx, sy] = toScreen(p[0], p[1]);
   ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.translate(sx, sy);
   const acc = Math.min(200, Math.max(8, (me.acc||20) * S * view.k));
-  ctx.fillStyle = 'rgba(59,130,246,.16)'; ctx.strokeStyle = 'rgba(59,130,246,.45)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(0,0,acc,0,Math.PI*2); ctx.fill(); ctx.stroke();
-  if (me.head != null && !isNaN(me.head)){
-    ctx.save(); ctx.rotate(me.head * Math.PI/180);
-    const g = ctx.createLinearGradient(0,-34,0,0); g.addColorStop(0,'rgba(59,130,246,0)'); g.addColorStop(1,'rgba(59,130,246,.55)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,34,-Math.PI/2-0.5,-Math.PI/2+0.5); ctx.closePath(); ctx.fill(); ctx.restore();
-  }
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,106,31,.13)'; ctx.strokeStyle = 'rgba(255,106,31,.4)'; ctx.lineWidth = 1;
+  if (acc > 18){ ctx.beginPath(); ctx.arc(0,0,acc,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+  drawMoto(sx, sy, prefs.share && prefs.nick ? prefs.nick : 'Você', true, me.head);
   ctx.restore();
 }
 function onPos(pos){
   const c = pos.coords || pos;
-  me = {lat: c.latitude, lon: c.longitude, acc: c.accuracy, head: (c.speed && c.speed > 1) ? c.heading : null};
+  const prevMe = me; me = {lat: c.latitude, lon: c.longitude, acc: c.accuracy, head: (c.speed && c.speed > 0.8 && c.heading != null) ? c.heading : (prevMe ? prevMe.head : null)};
   const p = mapOfLL(me.lat, me.lon);
   if (p && (p[0] < -20000 || p[0] > W + 20000 || p[1] < -20000 || p[1] > H + 20000)){ if (!onPos.warned){ toast('Você está fora da área deste mapa'); onPos.warned = true; } }
-  else if (p && follow) animateTo(p[0], p[1] - 60/Math.max(view.k, 0.25), Math.max(view.k, 0.25), 400);
+  else if (p && follow){ const k = nav ? Math.max(view.k, 0.3) : Math.max(view.k, 0.25); animateTo(p[0], p[1] + (nav ? 80 : -60)/k, k, 400); }
   $('#loc').classList.add('on');
   if (prefs.share) liveSend(false);
+  if (nav) navTick();
   if (routeNeedsOrigin && stops.some(s => !s.done)){ routeNeedsOrigin = false; computeRoute(false); }
   requestDraw(true);
 }
 function onPosErr(e){
+  const denied = e && (e.code === 1 || /denied|permission/i.test(e.message||''));
+  if (!denied && locWatch) return;   // sem posição nova por um tempo (parado/sem sinal): continua esperando
   stopLoc();
   toast(e && (e.code === 1 || /denied|permission/i.test(e.message||'')) ? 'Permita o acesso à localização para usar este botão' : 'Não foi possível obter sua localização');
 }
@@ -859,9 +890,9 @@ async function startLoc(){
     if (G){
       const perm = await G.requestPermissions().catch(() => null);
       if (perm && perm.location === 'denied'){ onPosErr({code:1}); return; }
-      locWatch = {native: await G.watchPosition({enableHighAccuracy:true, timeout:20000, maximumAge:3000}, (pos, err) => { if (err) onPosErr(err); else if (pos) onPos(pos); })};
+      locWatch = {native: await G.watchPosition({enableHighAccuracy:true, maximumAge:3000}, (pos, err) => { if (err) onPosErr(err); else if (pos) onPos(pos); })};
     } else if (navigator.geolocation){
-      locWatch = {web: navigator.geolocation.watchPosition(onPos, onPosErr, {enableHighAccuracy:true, timeout:20000, maximumAge:3000})};
+      locWatch = {web: navigator.geolocation.watchPosition(onPos, onPosErr, {enableHighAccuracy:true, maximumAge:3000})};
     } else { toast('Localização não disponível neste aparelho'); return; }
     toast('Buscando sua localização…');
   }catch(e){ onPosErr(e); }
@@ -1262,12 +1293,7 @@ function drawLive(){
     if (Date.now() - (o.t||0) > 180000) continue;
     const m = mapOfLL(o.lat, o.lon); if (!m) continue;
     const [sx, sy] = toScreen(m[0], m[1]); if (sx < -40 || sx > VW+40 || sy < -40 || sy > VH+40) continue;
-    ctx.setTransform(dpr,0,0,dpr,sx*dpr,sy*dpr);
-    ctx.fillStyle = '#7c3aed'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.font = '14px system-ui,"Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🏍️', 0, 1);
-    ctx.font = '700 12px system-ui,Roboto,sans-serif'; ctx.lineWidth = 3.5; ctx.strokeStyle = TH.halo; ctx.strokeText(o.apelido||'', 0, 26); ctx.fillStyle = '#c4b5fd'; ctx.fillText(o.apelido||'', 0, 26);
-    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    drawMoto(sx, sy, o.apelido || '', false, o.head);
   }
   ctx.restore();
 }
@@ -1418,6 +1444,7 @@ function drawRoute(){
 function paintRoute(){
   const pend = stops.filter(s => !s.done), has = stops.length > 0;
   $('#routeBar').classList.toggle('show', has && curTab === 'map');
+  $('#rbGo').style.display = stops.some(s => !s.done) ? '' : 'none';
   document.body.classList.toggle('hasroute', has && curTab === 'map');
   if (has){
     $('#rbT').textContent = route && route.legs.length ? `${fmtMin(route.t)} · ${fmtKm(route.d)}` : (pend.length ? `${pend.length} parada${pend.length>1?'s':''}` : 'Rota concluída');
@@ -1472,10 +1499,59 @@ $('#rOpt').onclick = async () => {
   saveStops(); $('#rOpt').disabled = false; $('#rOpt').textContent = 'Melhor ordem';
   await computeRoute(false); renderStops(); toast('Paradas reorganizadas na melhor ordem');
 };
-function clearRoute(){ stops.length = 0; saveStops(); route = null; paintRoute(); closeSheets(); requestDraw(true); }
+// ---------- navegação (Iniciar rota) ----------
+let nav = false, navLast = {t: 0, lat: 0, lon: 0};
+const distM = (a, b, c, d) => Math.hypot((a - c) * 110540, (b - d) * 111320 * Math.cos(a * Math.PI / 180));
+async function startNav(){
+  const pend = stops.filter(s => !s.done);
+  if (!pend.length){ toast('Adicione uma parada primeiro'); return; }
+  nav = true; document.body.classList.add('nav'); closePanels(); hideCard();
+  follow = true; $('#loc').classList.add('follow');
+  if (!locWatch){ routeNeedsOrigin = true; await startLoc(); }
+  $('#navBar').classList.add('show'); paintNav();
+  if (me){ const p = mapOfLL(me.lat, me.lon); if (p) animateTo(p[0], p[1], 0.35, 600); await computeRoute(false); paintNav(); }
+  try{ const KA = plug('KeepAwake'); if (KA) KA.keepAwake(); }catch(e){}
+}
+function stopNav(){
+  nav = false; document.body.classList.remove('nav'); $('#navBar').classList.remove('show', 'arrived');
+  follow = false; $('#loc').classList.remove('follow'); paintRoute(); requestDraw(true);
+}
+function paintNav(){
+  if (!nav) return;
+  const pend = stops.filter(s => !s.done), nx = pend[0];
+  if (!nx){ $('#navBar').classList.add('arrived'); $('#navK').textContent = 'Rota concluída'; $('#navL').textContent = 'Todas as paradas foram entregues 🎉'; $('#navM').innerHTML = ''; $('#navOk').style.display = 'none'; return; }
+  $('#navOk').style.display = '';
+  const total = stops.length, idx = stops.indexOf(nx) + 1;
+  const near = me && distM(me.lat, me.lon, nx.lat, nx.lon) < 40;
+  $('#navBar').classList.toggle('arrived', !!near);
+  $('#navK').textContent = near ? `Você chegou · parada ${idx} de ${total}` : `Próxima parada · ${idx} de ${total}`;
+  $('#navL').textContent = nx.label;
+  const L = route && route.legs.find(l => l.to === nx);
+  const leg = L && !L.fail ? `<span>⏱ ${fmtMin(L.t)}</span><span>📍 ${fmtKm(L.d)}</span>` : (me ? `<span>📍 ${fmtKm(distM(me.lat, me.lon, nx.lat, nx.lon))} em linha reta</span>` : '<span>Aguardando o GPS…</span>');
+  $('#navM').innerHTML = leg + (pend.length > 1 && route ? `<span style="opacity:.8">total ${fmtMin(route.t)}</span>` : '');
+}
+function navTick(){
+  if (!nav || !me) return;
+  const now = Date.now();
+  if (now - navLast.t > 12000 || distM(me.lat, me.lon, navLast.lat, navLast.lon) > 60){
+    navLast = {t: now, lat: me.lat, lon: me.lon};
+    computeRoute(false).then(paintNav);
+  } else paintNav();
+}
+$('#navOk').onclick = async () => {
+  const nx = stops.find(s => !s.done); if (!nx) return;
+  nx.done = true; saveStops(); toast('Entrega concluída');
+  await computeRoute(false); paintNav(); paintRoute();
+};
+$('#navEnd').onclick = stopNav;
+$('#rbGo').onclick = startNav;
+$('#rGo').onclick = () => { closeSheets(); startNav(); };
+
+function clearRoute(){ if (nav) stopNav(); stops.length = 0; saveStops(); route = null; paintRoute(); closeSheets(); requestDraw(true); }
 $('#rClear').onclick = clearRoute;
 $('#rbX').onclick = () => { const bak = stops.slice(); clearRoute(); toast('Rota encerrada', async () => { stops.push(...bak); saveStops(); await computeRoute(false); }, 'Desfazer'); };
 $('#rbOpen').onclick = () => { closePanels(); renderStops(); openSheet('#routeSheet'); };
+$('#rbT').parentElement.onclick = () => $('#rbOpen').click();
 $('#goRoute').onclick = () => addStop(cardTarget, true);
 $('#addStop').onclick = () => addStop(cardTarget, false);
 
@@ -1710,6 +1786,7 @@ paintStatusBar();
 if (NATIVE && plug('App')){
   plug('App').addListener('backButton', () => {
     if (curTab !== 'map') return showTab('map');
+    if (nav) return stopNav();
     if ($('#veil').classList.contains('open') || $('#results').classList.contains('open')) return closePanels();
     if ($('#card').classList.contains('open')){ hideCard(); pin=null; highlight=null; requestDraw(true); return; }
     plug('App').exitApp();

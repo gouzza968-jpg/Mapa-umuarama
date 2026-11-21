@@ -1,6 +1,16 @@
 {
-  "latest": "2.7.0",
+  "latest": "2.8.0",
   "versions": [
+    {
+      "version": "2.8.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Iniciar rota: o mapa acompanha você até cada parada, com distância e tempo",
+        "A rota se recalcula sozinha se você sair do caminho",
+        "Ao chegar, toque em “Entregue” e siga para a próxima",
+        "Ícone de motoboy no lugar da bolinha de localização, igual ao que os outros veem"
+      ]
+    },
     {
       "version": "2.7.0",
       "date": "21/11/2026",
