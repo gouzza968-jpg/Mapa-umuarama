@@ -172,6 +172,16 @@
   .page .sub{color:var(--muted);font-size:14px;margin:0 4px 18px}
   .sec{background:var(--solid);border:1px solid var(--line);border-radius:20px;margin-bottom:14px;overflow:hidden}
   .ttl{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:14px 16px 6px}
+  /* configurações recolhidas: toca no título para abrir, uma de cada vez */
+  .sec .sech{cursor:pointer;position:relative;user-select:none}
+  .sec > .sech.ttl{font-size:15.5px;font-weight:750;color:var(--ink);text-transform:none;letter-spacing:0;padding:17px 48px 17px 16px}
+  .sec .sech::after{content:'';position:absolute;right:20px;top:24px;width:9px;height:9px;border-right:2.4px solid var(--muted);border-bottom:2.4px solid var(--muted);transform:rotate(45deg);transition:transform .2s}
+  .sec .sech.hero2::after{top:30px}
+  .sec.open .sech::after{transform:rotate(-135deg);top:28px}
+  .sec.open .sech.hero2::after{top:34px}
+  .sec .secb{display:none}
+  .sec.open .secb{display:block;animation:secIn .18s ease-out}
+  @keyframes secIn{from{opacity:0;transform:translateY(-4px)}}
   .row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--line)}
   .ttl + .row{border-top:0}
   .row .ri{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--raised);color:var(--muted)}
@@ -489,7 +499,7 @@
       <label class="switch"><input type="checkbox" id="pTelVis"><span></span></label>
     </div>
     <div class="field"><button class="btn primary" id="nickSave" style="width:100%">Salvar perfil</button></div>
-    <div class="warnbox show" style="color:var(--muted);background:var(--raised)">🔒 Só aparece quem ligar esta opção. Sua posição não fica gravada: ela some do mapa quando você desliga, fecha o app ou fica sem sinal.</div>
+    <div class="warnbox show" style="color:var(--muted);background:var(--raised)">🔒 Só aparece quem ligar esta opção. Fica guardada só a sua última posição, e ela é apagada quando você desliga. Depois de 3 minutos sem sinal, você some do mapa.</div>
   </div>
 
   <div class="sec" id="secRotas">
@@ -547,7 +557,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.17.0";
+const APP_VERSION = "2.17.1";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -2282,6 +2292,27 @@ $('#rbOpen').onclick = () => { closePanels(); renderStops(); openSheet('#routeSh
 $('#rbT').parentElement.onclick = () => $('#rbOpen').click();
 $('#goRoute').onclick = () => addStop(cardTarget, true);
 $('#addStop').onclick = () => addStop(cardTarget, false);
+
+// ---------- configurações em sanfona ----------
+(function(){
+  document.querySelectorAll('#pageSet .sec').forEach(sec => {
+    const kids = [...sec.children]; if (!kids.length) return;
+    let i = kids[0].classList.contains('ttl') ? 1 : kids.findIndex(k => k.classList.contains('ttl'));
+    if (i <= 0) i = 1;
+    let head;
+    if (kids[0].classList.contains('ttl')){ head = kids[0]; head.classList.add('sech'); head.removeAttribute('style'); }
+    else { head = document.createElement('div'); head.className = 'sech hero2'; kids.slice(0, i).forEach(k => head.appendChild(k)); }
+    const body = document.createElement('div'); body.className = 'secb';
+    kids.slice(i).forEach(k => body.appendChild(k));
+    sec.append(head, body);
+    head.addEventListener('click', e => {
+      if (e.target.closest('button, input, label, a, select')) return;   // botões no título continuam funcionando
+      const abrir = !sec.classList.contains('open');
+      document.querySelectorAll('#pageSet .sec.open').forEach(x => x.classList.remove('open'));
+      if (abrir){ sec.classList.add('open'); setTimeout(() => sec.scrollIntoView({behavior: 'smooth', block: 'nearest'}), 60); }
+    });
+  });
+})();
 
 // ---------- guias ----------
 let curTab = 'map';
