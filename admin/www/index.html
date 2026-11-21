@@ -141,7 +141,16 @@ try{ const P = plug('App'); if (P && P.getInfo){ const i = await P.getInfo(); $(
 
 if (!window.supabase){ $('#lmsg').textContent = 'Biblioteca do servidor não carregou.'; return; }
 const sb = window.supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true}});
-let me = null, msgs = [], bans = new Map(), online = [];
+let me = null, msgs = [], bans = new Map(), online = [], perfis = new Map();
+function abrir(url){ const L = plug('AppLauncher'); if (L) L.openUrl({url}).catch(() => { location.href = url; }); else location.href = url; }
+window.addEventListener('message', e => { if (e.data && typeof e.data.abrir === 'string' && /^(tel:|https:\/\/wa\.me\/|https:\/\/www\.google\.com\/maps)/.test(e.data.abrir)) abrir(e.data.abrir); });
+const telD = t => (t||'').replace(/\D/g, '');
+function fmtTel(t){ const d = telD(t).replace(/^55(?=\d{10,11}$)/, ''); return d.length === 11 ? `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}` : d.length === 10 ? `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}` : (t||''); }
+async function loadPerfis(ids){
+  ids = ids.filter(id => /^[0-9a-f-]{36}$/.test(id)); if (!ids.length) return;
+  const {data} = await sb.from('perfis').select('*').in('uid', ids);
+  (data||[]).forEach(p => perfis.set(p.uid, p)); renderOnline();
+}
 
 async function checkAdmin(){
   const {data: u} = await sb.auth.getUser(); me = u && u.user;
@@ -185,7 +194,10 @@ function renderBans(){
 function renderOnline(){
   const vivos = online.filter(o => Date.now() - (o.t||0) < 180000);
   $('#sOn').textContent = vivos.length;
-  $('#onList').innerHTML = vivos.length ? vivos.map(o => `<div class="row"><div class="av">🏍️</div><div class="grow"><b>${esc(o.apelido)}</b>${bans.has(o.id)?' <span class="tag ban">Bloqueado</span>':''}<div class="d">atualizado ${Math.max(0, Math.round((Date.now()-o.t)/1000))} s atrás</div></div><button class="btn sm" data-map>Ver no mapa</button></div>`).join('') : '<div class="empty">Nenhum motoboy compartilhando agora.</div>';
+  $('#onList').innerHTML = vivos.length ? vivos.map(o => { const p = perfis.get(o.id) || {};
+    return `<div class="row"><div class="av">🏍️</div><div class="grow"><b>${esc(o.apelido)}</b>${bans.has(o.id)?' <span class="tag ban">Bloqueado</span>':''}
+      <div class="d">${p.nome ? esc(p.nome) + ' · ' : ''}${p.telefone ? '📞 ' + esc(fmtTel(p.telefone)) + (p.telefone_visivel ? '' : ' (oculto para os outros)') + ' · ' : ''}atualizado ${Math.max(0, Math.round((Date.now()-o.t)/1000))} s atrás</div>
+      <div class="acts" style="display:flex;gap:6px;margin-top:6px">${p.telefone ? `<button class="btn sm" data-tel="${esc(telD(p.telefone))}">Ligar</button><button class="btn sm" data-wa="${esc(telD(p.telefone))}">WhatsApp</button>` : ''}<button class="btn sm" data-map>Ver no mapa</button></div></div></div>`; }).join('') : '<div class="empty">Nenhum motoboy compartilhando agora.</div>';
 }
 async function delMsg(id){
   const m = msgs.find(x => x.id === id); if (!m) return;
@@ -220,7 +232,11 @@ $('#msgList').addEventListener('click', e => {
   const id = +b.closest('.msg').dataset.id, m = msgs.find(x => x.id === id); if (!m) return;
   if (b.dataset.a === 'del') delMsg(id); else if (b.dataset.a === 'ban') ban(m.autor, m.apelido); else unban(m.autor);
 });
-$('#onList').addEventListener('click', e => { if (e.target.closest('[data-map]')) document.querySelector('.tab[data-p="pMap"]').click(); });
+$('#onList').addEventListener('click', e => {
+  if (e.target.closest('[data-map]')) return document.querySelector('.tab[data-p="pMap"]').click();
+  const t = e.target.closest('[data-tel]'); if (t) return abrir('tel:' + t.dataset.tel);
+  const w = e.target.closest('[data-wa]'); if (w){ const d = w.dataset.wa; return abrir('https://wa.me/' + (d.startsWith('55') ? d : '55' + d)); }
+});
 $('#banList').addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (b) unban(b.closest('.row').dataset.u); });
 $('#admSend').onclick = async () => {
   const t = $('#admIn').value.trim(); if (!t) return;
@@ -249,9 +265,9 @@ async function start(){
   live.on('presence', {event: 'sync'}, () => {
     const st = live.presenceState(), out = [];
     for (const [k, arr] of Object.entries(st)){ const p = arr[arr.length - 1]; if (p && p.lat) out.push(Object.assign({id: k}, p)); }
-    online = out; renderOnline();
+    online = out; renderOnline(); loadPerfis(out.map(o => o.id).filter(id => !perfis.has(id)));
   }).subscribe();
-  setInterval(renderOnline, 15000);
+  setInterval(() => { renderOnline(); loadPerfis(online.map(o => o.id)); }, 30000);
 }
 
 if (await checkAdmin()) start(); else { try{ await sb.auth.signOut(); }catch(e){} }

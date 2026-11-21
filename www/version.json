@@ -1,6 +1,15 @@
 {
-  "latest": "2.9.2",
+  "latest": "2.10.0",
   "versions": [
+    {
+      "version": "2.10.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Perfil com nome e telefone (opcionais) em Configurações",
+        "Escolha se o seu telefone fica visível para os outros motoboys",
+        "Toque num motoboy no mapa para ver o contato e ligar ou chamar no WhatsApp"
+      ]
+    },
     {
       "version": "2.9.2",
       "date": "21/11/2026",
