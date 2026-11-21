@@ -1,6 +1,15 @@
 {
-  "latest": "2.17.1",
+  "latest": "2.18.0",
   "versions": [
+    {
+      "version": "2.18.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Chat com visual novo: balões agrupados, cores por motoboy e quantos estão online",
+        "Localização no chat aparece como cartão, com botão Ver",
+        "Botão para descer até as mensagens novas"
+      ]
+    },
     {
       "version": "2.17.1",
       "date": "21/11/2026",

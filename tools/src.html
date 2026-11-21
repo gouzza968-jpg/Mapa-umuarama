@@ -294,9 +294,59 @@
   body.hascard .chatfab{transform:translateY(calc(-1 * var(--cardh, 150px)))}
   body.hasroute .chatfab{transform:translateY(-74px)}
   body.hascard.hasroute .chatfab{transform:translateY(calc(-1 * var(--cardh, 150px)))}
-  .chathead{display:flex;align-items:center;gap:10px}
-  .chathead .voltar{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;flex:none}
-  .chathead .ttl{min-width:0}
+  /* ---- chat (visual novo) ---- */
+  .page.chat{padding-top:0!important;background:radial-gradient(1200px 500px at 50% -10%, rgba(255,106,31,.10), transparent 60%), var(--bg)}
+  .page.chat > *{max-width:640px}
+  .chathead{display:flex;align-items:center;gap:11px;margin:0 auto!important;padding:calc(env(safe-area-inset-top) + 10px) 6px 10px;border-bottom:1px solid var(--line);position:relative;z-index:2}
+  .chathead .voltar{width:40px;height:40px;border-radius:50%;border:0;background:var(--raised);color:var(--ink);display:grid;place-items:center;flex:none}
+  .chav{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,var(--accent),#ffb15c);box-shadow:0 4px 14px rgba(255,106,31,.35)}
+  .chtt{min-width:0;flex:1} .cht{font-weight:800;font-size:16.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chs{font-size:12.5px;color:var(--muted);margin-top:1px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
+  .chs .on{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18);flex:none}
+  .msgwrap{flex:1;position:relative;min-height:0;display:flex}
+  .msgwrap #msgs{flex:1;padding:12px 8px 14px;gap:2px}
+  .msg{max-width:78%;padding:8px 12px 6px;border-radius:18px;font-size:15.2px;line-height:1.38;box-shadow:0 1px 1px rgba(0,0,0,.18)}
+  .msg:not(.me){background:var(--solid);border:1px solid var(--line);border-bottom-left-radius:18px}
+  .msg.me{border-bottom-right-radius:18px;box-shadow:0 3px 10px rgba(255,106,31,.25)}
+  .mrow{display:flex;align-items:flex-end;gap:7px;max-width:100%}
+  .msg.adm:not(.me){background:linear-gradient(180deg,rgba(255,106,31,.16),rgba(255,106,31,.04)),var(--solid);border-color:rgba(255,106,31,.45)}
+  .mrow.me{justify-content:flex-end}
+  .mrow.first{margin-top:10px}
+  .mrow.last:not(.me) .msg{border-bottom-left-radius:6px}
+  .mrow.last.me .msg{border-bottom-right-radius:6px}
+  .mrow:not(.first):not(.me) .msg{border-top-left-radius:8px}
+  .mrow.me:not(.first) .msg{border-top-right-radius:8px}
+  .mav{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;visibility:hidden}
+  .mrow.last .mav{visibility:visible}
+  .msg .who{font-size:12.5px;font-weight:800;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+  .msg .badge{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:var(--accent);color:#fff;border-radius:6px;padding:2px 5px}
+  .msg .tm{display:block;font-size:10.5px;opacity:.6;text-align:right;margin:2px -2px -2px 10px;float:right;position:relative;top:5px}
+  .msg .tx{white-space:pre-wrap}
+  .msg::after{content:'';display:block;clear:both}
+  .msg img{border-radius:14px;margin:2px -6px 4px;max-width:calc(100% + 12px);width:240px;object-fit:cover;max-height:300px}
+  .msg.foto{padding:5px 5px 6px}
+  .msg.foto .who, .msg.foto .tx{padding:0 7px}
+  .msg.foto img{margin:0 0 4px;width:100%;max-width:240px}
+  .msg.foto .tm{margin-right:6px}
+  .lcard{display:flex;align-items:center;gap:10px;margin:2px 0 4px;padding:10px;border-radius:14px;background:rgba(0,0,0,.18);min-width:210px}
+  .msg:not(.me) .lcard{background:var(--raised)}
+  .lcard .li{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;background:rgba(255,255,255,.14);flex:none}
+  .msg:not(.me) .lcard .li{background:rgba(220,38,38,.15)}
+  .lcard .lt{flex:1;min-width:0;font-size:13.5px;font-weight:700} .lcard .lt span{display:block;font-weight:500;font-size:12px;opacity:.75}
+  .msg .locb{margin:0;padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.95);color:#c2410c;font-weight:800;font-size:12.5px}
+  .msg:not(.me) .locb{background:var(--accent);color:#fff}
+  .day{background:transparent;padding:0;margin:14px 0 4px;display:flex;align-items:center;gap:10px;align-self:stretch;font-size:11.5px}
+  .day::before,.day::after{content:'';flex:1;height:1px;background:var(--line)}
+  .day span{background:var(--raised);border-radius:999px;padding:4px 11px}
+  .chatnote .big{font-size:46px;display:block;margin-bottom:6px}
+  .tobottom{position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--raised);color:var(--ink);display:none;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  .tobottom.show{display:grid}
+  .tobottom .n{position:absolute;top:-6px;right:-4px;background:var(--accent);color:#fff;border-radius:9px;font-size:10.5px;font-weight:800;padding:1px 5px}
+  .chatbar{margin:0 auto!important;padding:8px 8px calc(env(safe-area-inset-bottom) + 10px)!important;border-top:0!important;background:transparent!important;gap:8px!important}
+  .chatbar .ib{width:42px;height:42px;border-radius:50%;background:var(--solid);border:1px solid var(--line);color:var(--ink);flex:none}
+  .chatbar input[type=text]{border-radius:24px!important;padding:12px 16px!important;background:var(--solid)!important}
+  .sendbtn{width:46px!important;height:46px!important;box-shadow:0 4px 14px rgba(255,106,31,.4)}
+  .nickbox{margin:0 auto!important;padding:10px 8px calc(env(safe-area-inset-bottom) + 10px)!important}
 
   body.adminview{--tabh:0px}
   body.adminview .tabs, body.adminview #chips, body.adminview #locGroup, body.adminview #routeBar, body.adminview #updBanner, body.adminview .acts .go, body.adminview .acts .routes{display:none!important}
@@ -447,13 +497,16 @@
 
 <!-- Chat -->
 <div class="page chat" id="pageChat">
-  <div class="chathead"><button class="voltar" id="chatBack" aria-label="Voltar ao mapa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><h1>Chat</h1><div class="sub" id="chatSub">Motoboys de Umuarama</div></div></div>
-  <div id="msgs"><div class="chatnote">Carregando mensagens…</div></div>
+  <div class="chathead"><button class="voltar" id="chatBack" aria-label="Voltar ao mapa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="chav">🏍️</div>
+    <div class="chtt"><div class="cht">Motoboys de Umuarama</div><div class="chs" id="chatSub">Chat aberto a todos</div></div></div>
+  <div class="msgwrap"><div id="msgs"><div class="chatnote">Carregando mensagens…</div></div>
+    <button class="tobottom" id="toBottom" aria-label="Ir para as últimas mensagens"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
   <div class="nickbox" id="chatNick" style="display:none"><input id="chatNickIn" maxlength="20" placeholder="Escolha um apelido para conversar"><button class="btn primary" id="chatNickOk">Entrar</button></div>
   <form class="chatbar" id="chatBar" autocomplete="off">
     <button type="button" class="ib" id="chatPhoto" aria-label="Enviar foto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button type="button" class="ib" id="chatLoc" aria-label="Enviar localização"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></button>
-    <input type="text" id="chatIn" maxlength="500" placeholder="Mensagem" enterkeyhint="send">
+    <input type="text" id="chatIn" maxlength="500" placeholder="Escreva uma mensagem…" enterkeyhint="send">
     <button type="submit" class="sendbtn" id="chatSend" aria-label="Enviar"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5 3 10l12 2-12 2z"/></svg></button>
     <input type="file" id="chatFile" accept="image/*" hidden>
   </form>
@@ -1676,6 +1729,7 @@ async function liveSend(force){
   try{ await liveCh.track({apelido: prefs.nick.trim().slice(0, 20), lat: +me.lat.toFixed(6), lon: +me.lon.toFixed(6), head: me.head, t: now}); }catch(e){}
 }
 function paintLive(){
+  try{ paintChatSub(); }catch(e){}
   const n = liveOthers.filter(o => Date.now() - (o.t||0) < 180000).length;
   $('#liveOptT').textContent = `Motoboys${liveSubscribed ? ` (${n} online)` : ''}`;
   $('#liveOpt').classList.toggle('on', !!prefs.showLive);
@@ -1981,22 +2035,49 @@ function paintChatOff(){
 }
 function paintBanned(){ if (!chatBanned) return; $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none'; if (!$('#banNote')) $('#pageChat').insertAdjacentHTML('beforeend', '<div class="chatnote" id="banNote" style="margin:0;padding:12px">🚫 Você foi bloqueado no chat pelo administrador. Ainda pode ler as mensagens.</div>'); }
 function paintUnread(){ const c = $('#chatCnt'); c.textContent = chatUnread > 99 ? '99+' : chatUnread; c.classList.toggle('show', chatUnread > 0); }
+const CORES = ['#7c3aed','#2563eb','#0891b2','#059669','#ca8a04','#db2777','#dc2626','#4f46e5','#0d9488','#9333ea'];
+const corDe = s => { let h = 0; for (const c of String(s || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return CORES[h % CORES.length]; };
+const inicial = s => (String(s || '?').trim()[0] || '?').toUpperCase();
+let novasAbaixo = 0;
 function renderChat(scroll){
   const box = $('#msgs');
-  if (!chatMsgs.length){ chatNote('Nenhuma mensagem ainda.<br>Diga oi para os outros motoboys! 👋'); return; }
+  if (!chatMsgs.length){ box.innerHTML = '<div class="chatnote"><span class="big">👋</span><b>Nenhuma mensagem ainda</b><br>Diga oi para os outros motoboys!</div>'; return; }
   let lastDay = '';
-  box.innerHTML = chatMsgs.map(m => {
+  box.innerHTML = chatMsgs.map((m, i) => {
     const d = new Date(m.criado_em), day = fmtDia(d), mine = sbUid && m.autor === sbUid;
-    const sep = day !== lastDay ? `<div class="day">${day}</div>` : ''; lastDay = day;
-    return sep + `<div class="msg ${mine ? 'me' : ''} ${m.admin && !mine ? 'adm' : ''}" data-id="${m.id}">${mine ? '' : `<div class="who">${m.admin ? '🛡️ ' : ''}${esc(m.apelido)}${m.admin ? ' · Administrador' : ''}</div>`}${m.foto ? `<img src="${esc(m.foto)}" loading="lazy" data-foto alt="foto">` : ''}${m.texto ? esc(m.texto) : ''}${m.lat != null ? `<br><button class="locb" data-lat="${m.lat}" data-lon="${m.lon}" data-who="${esc(m.apelido)}">📍 Ver no mapa</button>` : ''}<div class="tm">${fmtHora(d)}</div></div>`;
+    const sep = day !== lastDay ? `<div class="day"><span>${day}</span></div>` : ''; const novoDia = day !== lastDay; lastDay = day;
+    const ant = chatMsgs[i - 1], prox = chatMsgs[i + 1];
+    const mesmo = (a, b) => a && b && a.autor === b.autor && Math.abs(new Date(a.criado_em) - new Date(b.criado_em)) < 5 * 60000 && fmtDia(new Date(a.criado_em)) === fmtDia(new Date(b.criado_em));
+    const first = novoDia || !mesmo(ant, m), last = !mesmo(m, prox);
+    const cor = m.admin ? 'var(--accent)' : corDe(m.autor || m.apelido);
+    const quem = !mine && first ? `<div class="who" style="color:${m.admin ? 'var(--accent)' : cor}">${m.admin ? '🛡️ ' : ''}${esc(m.apelido)}${m.admin ? '<span class="badge">Admin</span>' : ''}</div>` : '';
+    const loc = m.lat != null ? `<div class="lcard"><div class="li">📍</div><div class="lt">Localização<span>${mine ? 'Você enviou' : 'Enviada por ' + esc(m.apelido)}</span></div><button class="locb" data-lat="${m.lat}" data-lon="${m.lon}" data-who="${esc(m.apelido)}">Ver</button></div>` : '';
+    const txt = m.texto && !(m.lat != null && /^📍 Minha localização$/.test(m.texto)) ? `<span class="tx">${esc(m.texto)}</span>` : '';
+    const av = mine ? '' : `<div class="mav" style="background:${cor}">${m.admin ? '🛡️' : esc(inicial(m.apelido))}</div>`;
+    return sep + `<div class="mrow ${mine ? 'me' : ''} ${first ? 'first' : ''} ${last ? 'last' : ''}">${av}<div class="msg ${mine ? 'me' : ''} ${m.admin && !mine ? 'adm' : ''} ${m.foto ? 'foto' : ''}" data-id="${m.id}">${quem}${m.foto ? `<img src="${esc(m.foto)}" loading="lazy" data-foto alt="foto">` : ''}${loc}${txt}<span class="tm">${fmtHora(d)}</span></div></div>`;
   }).join('');
-  if (scroll) box.scrollTop = box.scrollHeight;
+  if (scroll){ box.scrollTop = box.scrollHeight; novasAbaixo = 0; }
+  else if (box.scrollHeight - box.scrollTop - box.clientHeight > 160) novasAbaixo++;
+  paintToBottom();
+}
+function paintToBottom(){
+  const box = $('#msgs'), longe = box.scrollHeight - box.scrollTop - box.clientHeight > 160;
+  if (!longe) novasAbaixo = 0;
+  const b = $('#toBottom'); b.classList.toggle('show', longe);
+  let n = b.querySelector('.n'); if (novasAbaixo){ if (!n){ n = document.createElement('span'); n.className = 'n'; b.appendChild(n); } n.textContent = novasAbaixo; } else if (n) n.remove();
+}
+$('#msgs').addEventListener('scroll', () => paintToBottom(), {passive: true});
+$('#toBottom').onclick = () => { const box = $('#msgs'); box.scrollTo({top: box.scrollHeight, behavior: 'smooth'}); novasAbaixo = 0; };
+function paintChatSub(){
+  const n = liveOthers.filter(o => Date.now() - (o.t||0) < 180000).length;
+  const nick = (prefs.nick || '').trim();
+  $('#chatSub').innerHTML = (n ? `<span class="on"></span>${n} online agora` : 'Chat aberto a todos') + (nick.length >= 2 ? ` · você é <b>${esc(nick)}</b>` : '');
 }
 function openChat(){
   chatUnread = 0; paintUnread();
   const hasNick = (prefs.nick || '').trim().length >= 2;
   $('#chatNick').style.display = hasNick ? 'none' : ''; $('#chatBar').style.display = hasNick ? '' : 'none';
-  $('#chatSub').textContent = hasNick ? `Você: ${prefs.nick}` : 'Motoboys de Umuarama';
+  paintChatSub();
   if (!chatReady) chatInit(); else { chatSync(); setTimeout(() => { $('#msgs').scrollTop = $('#msgs').scrollHeight; }, 30); }
   paintBanned(); if (chatOff){ $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none'; $('#msgs').style.display = 'none'; }
 }
