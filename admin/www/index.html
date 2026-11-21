@@ -117,6 +117,8 @@
 <div class="page" id="pOn">
   <h1>Online</h1><p class="sub">Motoboys compartilhando a localização agora</p>
   <div class="card" id="onList"><div class="empty">Conectando…</div></div>
+  <h1 style="margin-top:22px">🚨 Blitz</h1><p class="sub">Alertas ativos reportados pelos motoboys</p>
+  <div class="card" id="blitzList"><div class="empty">Carregando…</div></div>
 </div>
 
 <div class="page" id="pAcc">
@@ -401,6 +403,27 @@ async function syncMsgs(){
 $('#maisMsgs').onclick = maisAntigas;
 $('#msgBusca').oninput = () => renderMsgs();
 document.addEventListener('visibilitychange', () => { if (!document.hidden && me) syncMsgs(); });
+// ---------- alertas de blitz ----------
+let blitz = [];
+const haMin = d => { const m = Math.max(0, Math.round((Date.now() - new Date(d)) / 60000)); return m < 60 ? `há ${m} min` : `há ${Math.floor(m/60)} h ${m%60} min`; };
+async function loadBlitz(){
+  const r = await sb.from('alertas').select('*').gt('expira_em', new Date().toISOString()).order('criado_em', {ascending: false}).limit(200);
+  if (r.error){ $('#blitzList').innerHTML = `<div class="empty">${/does not exist|schema cache|42P01/i.test(r.error.message + r.error.code) ? 'Rode o ativar-alertas-blitz.sql para usar os alertas.' : 'Não foi possível carregar.'}</div>`; return; }
+  blitz = r.data; renderBlitz();
+}
+function renderBlitz(){
+  const vivos = blitz.filter(a => new Date(a.expira_em) > Date.now());
+  $('#blitzList').innerHTML = vivos.length ? vivos.map(a => `<div class="row" data-b="${a.id}"><div class="av" style="background:#dc2626;color:#fff">🚨</div><div class="grow"><b>Blitz ${haMin(a.criado_em)}</b><div class="d">${a.apelido ? 'por ' + esc(a.apelido) + ' · ' : ''}👍 ${a.sim} · 👋 ${a.nao} · <a style="color:var(--accent)" data-ver="${a.lat},${a.lon}" href="#">ver no mapa</a></div></div><button class="btn sm danger" data-a="rmb">Remover</button></div>`).join('') : '<div class="empty">Nenhuma blitz ativa.</div>';
+}
+$('#blitzList').addEventListener('click', async e => {
+  const v = e.target.closest('[data-ver]'); if (v){ e.preventDefault(); return abrir('https://www.google.com/maps?q=' + v.dataset.ver); }
+  const b = e.target.closest('button[data-a="rmb"]'); if (!b) return;
+  const id = +b.closest('.row').dataset.b;
+  if (!(await ask('Remover este alerta de blitz?', 'Ele some do mapa de todos os motoboys.'))) return;
+  const {error} = await sb.from('alertas').delete().eq('id', id);
+  if (error) return toast('Não foi possível remover');
+  blitz = blitz.filter(x => x.id !== id); renderBlitz(); toast('Alerta removido');
+});
 async function start(){
   $('#login').style.display = 'none'; $('#accEm').textContent = me.email || '';
   const [m, b] = await Promise.all([
@@ -417,6 +440,8 @@ async function start(){
     .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { msgs = msgs.filter(x => x.id !== (p.old && p.old.id)); renderMsgs(); })
     .on('postgres_changes', {event: '*', schema: 'public', table: 'banidos'}, async () => { const r = await sb.from('banidos').select('*'); bans = new Map((r.data||[]).map(x => [x.autor, x])); renderAll(); })
     .subscribe();
+  loadBlitz(); setInterval(() => { if (!document.hidden) loadBlitz(); else renderBlitz(); }, 30000);
+  sb.channel('admin-blitz').on('postgres_changes', {event: '*', schema: 'public', table: 'alertas'}, () => loadBlitz()).subscribe();
   const live = sb.channel('motoboys-umuarama', {config: {presence: {key: 'admin-' + me.id}}});
   live.on('presence', {event: 'sync'}, () => {
     const st = live.presenceState(), out = [];

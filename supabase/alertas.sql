@@ -44,7 +44,7 @@ grant select on public.alertas_votos to authenticated;
 drop policy if exists "ver votos" on public.alertas_votos;
 create policy "ver votos" on public.alertas_votos for select to authenticated using (autor = auth.uid());
 
--- "ainda está lá" estende +1 h; "não está mais" de 2 motoboys (ou do autor) encerra o alerta
+-- "ainda está lá" estende +1 h; "não está mais" de 2 motoboys (ou do autor) remove o alerta
 create or replace function public.votar_alerta(p_id bigint, p_ainda boolean) returns void
 language plpgsql security definer set search_path = public
 as $$
@@ -60,8 +60,9 @@ begin
     nao = (select count(*) from public.alertas_votos v where v.alerta = p_id and not v.ainda),
     expira_em = case when p_ainda then greatest(expira_em, least(now() + interval '1 hour', criado_em + interval '6 hours')) else expira_em end
   where id = p_id;
+  -- 2 motoboys dizendo "não está mais" (ou o próprio autor): o alerta é removido
   if not p_ainda and (a.autor = auth.uid() or (select count(*) from public.alertas_votos v where v.alerta = p_id and not v.ainda) >= 2) then
-    update public.alertas set expira_em = now() where id = p_id;
+    delete from public.alertas where id = p_id;
   end if;
 end $$;
 grant execute on function public.votar_alerta(bigint, boolean) to authenticated;

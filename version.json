@@ -1,6 +1,13 @@
 {
-  "latest": "2.16.0",
+  "latest": "2.16.1",
   "versions": [
+    {
+      "version": "2.16.1",
+      "date": "21/11/2026",
+      "notes": [
+        "Blitz: quando 2 motoboys avisam “Não está mais”, o alerta sai do mapa"
+      ]
+    },
     {
       "version": "2.16.0",
       "date": "21/11/2026",

@@ -1735,7 +1735,7 @@ async function votarBlitz(ainda){
   if (error){ toast('Não foi possível enviar'); return; }
   meusVotos[id] = ainda;
   if (mine && !ainda){ alertas = alertas.filter(x => x.id !== id); hideCard(); toast('Alerta removido'); }
-  else { toast(ainda ? 'Obrigado! Alerta confirmado' : 'Obrigado! Avisamos os outros'); hideCard(); alertasLoad(); }
+  else { toast(ainda ? 'Obrigado! Alerta confirmado' : 'Obrigado! Com 2 avisos o alerta sai do mapa'); hideCard(); alertasLoad(); }
   paintBlitzOpt(); requestDraw(true);
 }
 $('#bSim').onclick = () => votarBlitz(true);
