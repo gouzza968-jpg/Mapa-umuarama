@@ -102,7 +102,9 @@
   <div class="stats"><div class="stat"><b id="sMsg">–</b><span>mensagens</span></div><div class="stat"><b id="sOn">–</b><span>online agora</span></div><div class="stat"><b id="sBan">–</b><span>bloqueados</span></div></div>
   <div class="card" style="display:flex;align-items:center;gap:12px"><div class="grow"><b>Chat dos motoboys</b><div class="d" id="chatStD">Carregando…</div></div><label class="sw"><input type="checkbox" id="chatOn"><span></span></label></div>
   <div class="card"><div class="sendbar"><input id="admIn" maxlength="500" placeholder="Mensagem como Administrador"><button class="btn primary" id="admSend">Enviar</button></div></div>
+  <div class="card"><input id="msgBusca" placeholder="Buscar nas mensagens (texto ou apelido)" style="width:100%;box-sizing:border-box"></div>
   <div class="card" id="msgList"><div class="empty">Carregando…</div></div>
+  <div style="text-align:center;margin:6px 0 18px"><button class="btn" id="maisMsgs" style="display:none">Carregar mensagens mais antigas</button></div>
 </div>
 
 <div class="page" id="pBan">
@@ -110,7 +112,7 @@
   <div class="card" id="banList"><div class="empty">Carregando…</div></div>
 </div>
 
-<div class="page mapa" id="pMap"><iframe id="mapFrame" title="Mapa 1 com motoboys online"></iframe></div>
+<div class="page mapa" id="pMap"><iframe id="mapFrame" title="Mapa Principal com motoboys online"></iframe></div>
 
 <div class="page" id="pOn">
   <h1>Online</h1><p class="sub">Motoboys compartilhando a localização agora</p>
@@ -280,16 +282,20 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
 const back = plug('App'); if (back) back.addListener('backButton', () => { if ($('#dlg').classList.contains('show')) return $('#dNo').click(); const f = document.querySelector('.tab'); if (!f.classList.contains('on')) f.click(); else back.exitApp(); });
 
 const hora = d => new Date(d).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'});
+let totalMsgs = null, temMais = false;
 function renderMsgs(){
-  $('#sMsg').textContent = msgs.length >= 300 ? '300+' : msgs.length;
-  $('#msgList').innerHTML = msgs.length ? msgs.slice().reverse().map(m => {
+  $('#sMsg').textContent = totalMsgs != null ? Math.max(totalMsgs, msgs.length) : msgs.length;
+  $('#maisMsgs').style.display = temMais ? '' : 'none';
+  const q = ($('#msgBusca').value || '').trim().toLowerCase();
+  const lista = q ? msgs.filter(m => ((m.texto||'') + ' ' + (m.apelido||'')).toLowerCase().includes(q)) : msgs;
+  $('#msgList').innerHTML = lista.length ? lista.slice().reverse().map(m => {
     const banned = bans.has(m.autor);
     return `<div class="msg" data-id="${m.id}"><div class="av ${m.admin?'adm':''}">${esc((m.apelido||'?')[0].toUpperCase())}</div><div class="grow">
       <div class="top"><span class="nm">${esc(m.apelido)}</span>${m.admin?'<span class="tag adm">Admin</span>':''}${banned?'<span class="tag ban">Bloqueado</span>':''}<span class="tm">${hora(m.criado_em)}</span></div>
       ${m.texto?`<div class="tx">${esc(m.texto)}</div>`:''}${m.foto?`<img src="${esc(m.foto)}" loading="lazy" alt="foto">`:''}
       ${m.lat!=null?`<div class="d">📍 <a style="color:var(--accent)" href="https://www.google.com/maps?q=${m.lat},${m.lon}" target="_blank">ver localização</a></div>`:''}
       <div class="acts"><button class="btn sm danger" data-a="del">Apagar</button>${m.admin?'':(banned?`<button class="btn sm" data-a="unban">Desbloquear</button>`:`<button class="btn sm" data-a="ban">Bloquear ${esc(m.apelido)}</button>`)}</div>
-    </div></div>`; }).join('') : '<div class="empty">Nenhuma mensagem.</div>';
+    </div></div>`; }).join('') : `<div class="empty">${q ? 'Nada encontrado.' : 'Nenhuma mensagem.'}</div>`;
 }
 function renderBans(){
   $('#sBan').textContent = bans.size;
@@ -345,9 +351,10 @@ $('#banList').addEventListener('click', e => { const b = e.target.closest('butto
 $('#admSend').onclick = async () => {
   const t = $('#admIn').value.trim(); if (!t) return;
   $('#admSend').disabled = true;
-  const {error} = await sb.from('mensagens').insert({apelido: 'Administrador', texto: t.slice(0, 500), sala: 'geral', admin: true});
+  const {data, error} = await sb.from('mensagens').insert({apelido: 'Administrador', texto: t.slice(0, 500), sala: 'geral', admin: true}).select().single();
   $('#admSend').disabled = false;
   if (error) return toast('Não foi possível enviar'); $('#admIn').value = ''; toast('Enviada');
+  if (data && !msgs.some(x => x.id === data.id)){ msgs.push(data); ordena(); renderMsgs(); }
 };
 
 async function loadChatCfg(){
@@ -366,19 +373,47 @@ $('#chatOn').onchange = async () => {
   else toast(on ? 'Chat ativado' : 'Chat desativado');
   loadChatCfg();
 };
+// chat completo: carrega tudo em blocos de 1000 (mais antigas sob demanda) e confere o servidor a cada 10 s
+const ordena = () => msgs.sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em) || a.id - b.id);
+async function contarMsgs(){ const r = await sb.from('mensagens').select('id', {count: 'exact', head: true}); if (!r.error) totalMsgs = r.count; }
+async function maisAntigas(){
+  const ant = msgs.length ? msgs[0].criado_em : new Date(Date.now() + 864e5).toISOString();
+  $('#maisMsgs').disabled = true;
+  const r = await sb.from('mensagens').select('*').lt('criado_em', ant).order('criado_em', {ascending: false}).limit(1000);
+  $('#maisMsgs').disabled = false;
+  if (r.error) return toast('Não foi possível carregar');
+  const ids = new Set(msgs.map(x => x.id)); for (const m of r.data) if (!ids.has(m.id)) msgs.push(m);
+  temMais = r.data.length === 1000; ordena(); renderMsgs();
+}
+async function syncMsgs(){
+  if (document.hidden) return;
+  const ult = msgs.length ? msgs[msgs.length - 1].criado_em : new Date(0).toISOString();
+  const r = await sb.from('mensagens').select('*').gte('criado_em', ult).order('criado_em', {ascending: true}).limit(500);
+  let mudou = false;
+  if (!r.error){ const ids = new Set(msgs.map(x => x.id)); for (const m of r.data) if (!ids.has(m.id)){ msgs.push(m); mudou = true; } }
+  if (msgs.length){
+    const v = await sb.from('mensagens').select('id').gte('criado_em', msgs[0].criado_em).limit(10000);
+    if (!v.error){ const vivos = new Set(v.data.map(x => x.id)); const n = msgs.length; msgs = msgs.filter(m => vivos.has(m.id)); if (msgs.length !== n) mudou = true; }
+  }
+  await contarMsgs();
+  if (mudou) ordena(); renderMsgs();
+}
+$('#maisMsgs').onclick = maisAntigas;
+$('#msgBusca').oninput = () => renderMsgs();
+document.addEventListener('visibilitychange', () => { if (!document.hidden && me) syncMsgs(); });
 async function start(){
   $('#login').style.display = 'none'; $('#accEm').textContent = me.email || '';
   const [m, b] = await Promise.all([
-    sb.from('mensagens').select('*').order('criado_em', {ascending: false}).limit(300),
+    sb.from('mensagens').select('*').order('criado_em', {ascending: false}).limit(1000),
     sb.from('banidos').select('*'),
   ]);
   if (m.error){ $('#msgList').innerHTML = '<div class="empty">O chat ainda não foi ativado no servidor (rode o chat.sql e o admin.sql).</div>'; }
-  else msgs = (m.data || []).reverse();
+  else { msgs = (m.data || []).reverse(); temMais = (m.data || []).length === 1000; contarMsgs().then(renderMsgs); setInterval(syncMsgs, 10000); }
   (b.data || []).forEach(x => bans.set(x.autor, x));
   renderAll();
   loadChatCfg();
   sb.channel('admin-chat')
-    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens'}, p => { if (!msgs.some(x => x.id === p.new.id)){ msgs.push(p.new); renderMsgs(); } })
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens'}, p => { if (!msgs.some(x => x.id === p.new.id)){ msgs.push(p.new); if (totalMsgs != null) totalMsgs++; ordena(); renderMsgs(); } })
     .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { msgs = msgs.filter(x => x.id !== (p.old && p.old.id)); renderMsgs(); })
     .on('postgres_changes', {event: '*', schema: 'public', table: 'banidos'}, async () => { const r = await sb.from('banidos').select('*'); bans = new Map((r.data||[]).map(x => [x.autor, x])); renderAll(); })
     .subscribe();

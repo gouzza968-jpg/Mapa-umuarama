@@ -1,6 +1,15 @@
 {
-  "latest": "2.14.0",
+  "latest": "2.15.0",
   "versions": [
+    {
+      "version": "2.15.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Chat agora num botão flutuante no mapa (a guia Chat saiu da barra)",
+        "Mensagens do chat chegam com mais garantia: o app confere o servidor e busca o que faltou",
+        "A mensagem enviada aparece na hora"
+      ]
+    },
     {
       "version": "2.14.0",
       "date": "21/11/2026",

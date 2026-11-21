@@ -33,7 +33,7 @@ jobs:
           mkdir -p www/mapa/data www/mapa/vendor
           python3 ../tools/build.py
           cp ../www/index.html www/mapa/index.html
-          cp ../www/data/mapa.json ../www/data/mapas.json ../www/data/mapa2.json www/mapa/data/
+          cp ../www/data/mapa.json ../www/data/mapas.json ../www/data/mapa2.json ../www/data/principal.json www/mapa/data/
           cp www/vendor/supabase.js www/mapa/vendor/supabase.js
           ls -la www/mapa www/mapa/data
       - name: Criar projeto Android

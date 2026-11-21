@@ -267,6 +267,16 @@
   #viewer img{max-width:100%;max-height:100%}
   .tab .cnt{position:absolute;top:4px;left:calc(50% + 10px);min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:800;display:none;place-items:center;padding:0 5px;border:2px solid var(--solid)}
   .tab .cnt.show{display:grid}
+  .chatfab{position:fixed;left:14px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 42px);width:56px;height:56px;border-radius:50%;border:0;background:var(--accent,#ff6a1f);color:#fff;display:grid;place-items:center;z-index:4;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .25s}
+  .chatfab:active{transform:scale(.94)}
+  .chatfab .cnt{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:10px;background:var(--bad);color:#fff;font-size:11px;font-weight:800;display:none;place-items:center;padding:0 5px;border:2px solid var(--solid)}
+  .chatfab .cnt.show{display:grid}
+  body.hascard .chatfab{transform:translateY(calc(-1 * var(--cardh, 150px)))}
+  body.hasroute .chatfab{transform:translateY(-74px)}
+  body.hascard.hasroute .chatfab{transform:translateY(calc(-1 * var(--cardh, 150px)))}
+  .chathead{display:flex;align-items:center;gap:10px}
+  .chathead .voltar{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;flex:none}
+  .chathead .ttl{min-width:0}
 
   body.adminview{--tabh:0px}
   body.adminview .tabs, body.adminview #chips, body.adminview #locGroup, body.adminview #routeBar, body.adminview #updBanner, body.adminview .acts .go, body.adminview .acts .routes{display:none!important}
@@ -408,7 +418,7 @@
 
 <!-- Chat -->
 <div class="page chat" id="pageChat">
-  <div class="chathead"><h1>Chat</h1><div class="sub" id="chatSub">Motoboys de Umuarama</div></div>
+  <div class="chathead"><button class="voltar" id="chatBack" aria-label="Voltar ao mapa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><h1>Chat</h1><div class="sub" id="chatSub">Motoboys de Umuarama</div></div></div>
   <div id="msgs"><div class="chatnote">Carregando mensagens…</div></div>
   <div class="nickbox" id="chatNick" style="display:none"><input id="chatNickIn" maxlength="20" placeholder="Escolha um apelido para conversar"><button class="btn primary" id="chatNickOk">Entrar</button></div>
   <form class="chatbar" id="chatBar" autocomplete="off">
@@ -492,9 +502,10 @@
 
 <nav class="tabs">
   <button class="tab on" id="tabMap"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>Explorar</button>
-  <button class="tab" id="tabChat"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>Chat<span class="cnt" id="chatCnt"></span></button>
   <button class="tab" id="tabSet"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Configurações<span class="dot" id="setDot"></span></button>
 </nav>
+
+<button id="tabChat" class="chatfab" aria-label="Chat dos motoboys"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5" stroke-linecap="round"/></svg><span class="cnt" id="chatCnt"></span></button>
 
 <div id="toast" class="glass"><span id="toastt"></span><button class="btn primary" id="toastb" style="padding:7px 12px">Ver</button></div>
 
@@ -529,7 +540,7 @@ const savePrefs = () => { try{ localStorage.setItem(PREF_KEY, JSON.stringify(pre
 document.body.classList.toggle('light', prefs.theme==='light');
 const ADMIN_VIEW = /admin/.test(location.hash);   // mapa dentro do app de administração
 if (!prefs.principalV1){ prefs.principalV1 = 1; if (!ADMIN_VIEW && (!prefs.mapa || prefs.mapa === 'mapa1')) prefs.mapa = 'principal'; }   // o Mapa Principal passa a ser o padrão
-if (ADMIN_VIEW){ prefs.mapa = 'mapa1'; prefs.showLive = true; document.body.classList.add('adminview'); }
+if (ADMIN_VIEW){ prefs.mapa = 'principal'; prefs.showLive = true; document.body.classList.add('adminview'); }
 
 // ---------- rede & armazenamento ----------
 async function httpGet(u, asJson=true){
@@ -1651,20 +1662,58 @@ async function chatInit(){
     if (sbUid){ try{ const bn = await sb.from('banidos').select('autor').eq('autor', sbUid).maybeSingle(); if (bn.data){ chatBanned = true; paintBanned(); } }catch(e){} }
     chatCh = sb.channel('chat-geral')
       .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens', filter: 'sala=eq.geral'}, p => {
-        const m = p.new; if (chatMsgs.some(x => x.id === m.id)) return;
-        chatMsgs.push(m); if (chatMsgs.length > 300) chatMsgs.shift(); renderChat(true);
-        if (curTab !== 'chat' && m.autor !== sbUid && !chatOff){ chatUnread++; paintUnread(); }
+        addMsgs([p.new], true);
       })
       .on('postgres_changes', {event: '*', schema: 'public', table: 'config'}, p => {
         const r = p.new && p.new.chave === 'chat' ? p.new : null; if (!r) return;
         chatOff = !!(r.valor && r.valor.ativo === false); paintChatOff();
       })
       .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { chatMsgs = chatMsgs.filter(x => x.id !== (p.old && p.old.id)); renderChat(false); })
-      .subscribe(st => { chatSubStatus = st; });
+      .subscribe(st => {
+        chatSubStatus = st;
+        if (st === 'SUBSCRIBED') chatSync();                       // reconectou: busca o que chegou enquanto estava fora
+        if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') reabrirCanal();
+      });
     chatReady = true;
   }catch(e){ chatNote('Não foi possível carregar o chat.'); }
   finally{ chatLoading = false; }
 }
+// garante que nenhuma mensagem se perca: além do tempo real, confere no servidor de tempos em tempos
+let chatSyncing = false, reabrindo = null;
+function addMsgs(lista, contar){
+  let novas = 0;
+  for (const m of lista){ if (chatMsgs.some(x => x.id === m.id)) continue; chatMsgs.push(m); novas++;
+    if (contar && curTab !== 'chat' && m.autor !== sbUid && !chatOff){ chatUnread++; } }
+  if (!novas) return 0;
+  chatMsgs.sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em) || a.id - b.id);
+  while (chatMsgs.length > 300) chatMsgs.shift();
+  const box = $('#msgs'), noFim = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
+  renderChat(noFim || curTab !== 'chat'); paintUnread();
+  return novas;
+}
+async function chatSync(){
+  if (!sb || !chatReady || chatSyncing) return; chatSyncing = true;
+  try{
+    const ult = chatMsgs.length ? chatMsgs[chatMsgs.length - 1].criado_em : new Date(Date.now() - 864e5).toISOString();
+    const {data, error} = await sb.from('mensagens').select('*').eq('sala', 'geral').gte('criado_em', ult).order('criado_em', {ascending: true}).limit(200);
+    if (!error && data) addMsgs(data, true);
+    // apagadas pelo administrador
+    if (!error && chatMsgs.length){
+      const desde = chatMsgs[0].criado_em;
+      const r = await sb.from('mensagens').select('id').eq('sala', 'geral').gte('criado_em', desde).limit(1000);
+      if (!r.error && r.data){ const vivos = new Set(r.data.map(x => x.id)); const antes = chatMsgs.length; chatMsgs = chatMsgs.filter(m => vivos.has(m.id) || m._local); if (chatMsgs.length !== antes) renderChat(false); }
+    }
+  }catch(e){}
+  finally{ chatSyncing = false; }
+}
+function reabrirCanal(){
+  if (reabrindo) return;
+  reabrindo = setTimeout(() => { reabrindo = null; if (!sb) return; try{ if (chatCh) sb.removeChannel(chatCh); }catch(e){} chatCh = null; chatReady = false; chatInit(); }, 4000);
+}
+setInterval(() => { if (!document.hidden && !chatOff) chatSync(); }, 15000);
+setInterval(() => { if (!document.hidden && !chatOff && curTab === 'chat') chatSync(); }, 6000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ chatSync(); } });
+addEventListener('online', () => { chatSync(); });
 let cfgCh = null;
 async function chatCfgInit(){
   if (!sb || cfgCh) return;
@@ -1706,7 +1755,7 @@ function openChat(){
   const hasNick = (prefs.nick || '').trim().length >= 2;
   $('#chatNick').style.display = hasNick ? 'none' : ''; $('#chatBar').style.display = hasNick ? '' : 'none';
   $('#chatSub').textContent = hasNick ? `Você: ${prefs.nick}` : 'Motoboys de Umuarama';
-  if (!chatReady) chatInit(); else setTimeout(() => { $('#msgs').scrollTop = $('#msgs').scrollHeight; }, 30);
+  if (!chatReady) chatInit(); else { chatSync(); setTimeout(() => { $('#msgs').scrollTop = $('#msgs').scrollHeight; }, 30); }
   paintBanned(); if (chatOff){ $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none'; $('#msgs').style.display = 'none'; }
 }
 $('#chatNickOk').onclick = () => { const v = $('#chatNickIn').value.trim().slice(0, 20); if (v.length < 2){ toast('Apelido com pelo menos 2 letras'); return; } prefs.nick = v; savePrefs(); $('#nick').value = v; openChat(); };
@@ -1715,7 +1764,11 @@ async function sendMsg(fields){
   if (!(await ensureAuth())){ toast(/disabled|anonymous/i.test(sbAuthErr) ? 'Login anônimo desligado no servidor' : 'Sem login no servidor: ' + sbAuthErr); return false; }
   if (Date.now() - chatLastSend < 1200){ toast('Espere um pouquinho'); return false; }
   chatLastSend = Date.now();
-  const {error} = await sb.from('mensagens').insert(Object.assign({apelido: prefs.nick.trim().slice(0, 20), sala: 'geral', texto: ''}, fields));
+  const linha = Object.assign({apelido: prefs.nick.trim().slice(0, 20), sala: 'geral', texto: ''}, fields);
+  let r = await sb.from('mensagens').insert(linha).select().single();
+  if (r.error && /fetch|network|timeout|Failed/i.test(r.error.message || '')){ await new Promise(z => setTimeout(z, 1500)); r = await sb.from('mensagens').insert(linha).select().single(); }
+  const error = r.error;
+  if (!error && r.data){ addMsgs([r.data], false); const b = $('#msgs'); b.scrollTop = b.scrollHeight; }
   if (error){ if (/row-level|permission/i.test(error.message)){ const bn = await sb.from('banidos').select('autor').eq('autor', sbUid).maybeSingle(); if (bn.data){ chatBanned = true; paintBanned(); toast('Você foi bloqueado no chat'); return false; } } toast(/row-level|permission|JWT|auth/i.test(error.message) ? 'Não autorizado. Peça para ativar o login anônimo no servidor.' : 'Não foi possível enviar'); return false; }
   return true;
 }
@@ -2007,7 +2060,8 @@ function showTab(t){
   $('#tabChat').classList.toggle('on', t==='chat');
   $('#tabMap').classList.toggle('on', t==='map'); $('#tabSet').classList.toggle('on', t==='set');
   const onMap = t==='map';
-  ['#topbar','#ctrls','#scale'].forEach(s => $(s).style.visibility = onMap ? '' : 'hidden');
+  ['#topbar','#ctrls','#scale','#tabChat'].forEach(s => $(s).style.visibility = onMap ? '' : 'hidden');
+  $('#tabMap').classList.toggle('on', t==='map' || t==='chat');
   $('#card').style.visibility = onMap ? '' : 'hidden';
   $('#toast').classList.remove('show');
   if (onMap) showBanner(); else hideBanner();
@@ -2019,6 +2073,7 @@ function showTab(t){
 $('#tabMap').onclick = () => showTab('map');
 $('#tabSet').onclick = () => showTab('set');
 $('#tabChat').onclick = () => showTab('chat');
+$('#chatBack').onclick = () => showTab('map');
 function renderPoiChips(){
   document.querySelectorAll('#chips .pchip').forEach(x => x.remove());
   if (!POIS.length) return;
