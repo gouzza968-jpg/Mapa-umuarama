@@ -49,10 +49,14 @@ jobs:
       - name: Permissões
         run: |
           M=android/app/src/main/AndroidManifest.xml
-          for P in REQUEST_INSTALL_PACKAGES ACCESS_COARSE_LOCATION ACCESS_FINE_LOCATION CAMERA; do
+          for P in REQUEST_INSTALL_PACKAGES ACCESS_COARSE_LOCATION ACCESS_FINE_LOCATION CAMERA FOREGROUND_SERVICE FOREGROUND_SERVICE_LOCATION POST_NOTIFICATIONS WAKE_LOCK; do
             grep -q "android.permission.$P" $M || sed -i "s#<application#<uses-permission android:name=\"android.permission.$P\" />\n    <application#" $M
           done
           grep -n "uses-permission" $M
+          # textos da notificação de localização em segundo plano
+          S=android/app/src/main/res/values/strings.xml
+          sed -i 's#</resources>#    <string name="capacitor_background_geolocation_notification_channel_name">Localização ao vivo</string>\n    <string name="capacitor_background_geolocation_notification_color">\#FF6A1F</string>\n</resources>#' $S
+          cat $S
 
       - name: Plugin de atualização
         run: |

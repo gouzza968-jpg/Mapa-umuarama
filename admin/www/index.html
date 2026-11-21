@@ -17,6 +17,18 @@
   .page{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom));overflow:auto;padding:calc(env(safe-area-inset-top) + 18px) 14px 24px;display:none}
   .page.open{display:block}
   .page.mapa{padding:0;overflow:hidden}
+  .page.home{padding:0}
+  .page.home > *{max-width:none}
+  #homeMap{position:relative;height:58vh;min-height:320px;background:var(--bg)}
+  body.mapfull #homeMap{height:100%}
+  body.mapfull .homeBody{display:none}
+  .hstats{position:absolute;left:10px;right:56px;top:calc(env(safe-area-inset-top) + 10px);display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+  .hstats span{background:rgba(20,26,34,.88);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:600;backdrop-filter:blur(8px)}
+  #mapFull{position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 10px);width:38px;height:34px;padding:0;font-size:17px;background:rgba(20,26,34,.88)}
+  .homeBody{padding:14px 14px 24px;max-width:640px;margin:0 auto}
+  h2{font-size:16px;margin:16px 4px 8px}
+  .tab .cnt{position:absolute;top:2px;left:calc(50% + 10px);min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:800;display:none;place-items:center;padding:0 5px}
+  .tab .cnt.show{display:grid}
   .page.mapa > *{max-width:none}
   #mapFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
   .page > *{max-width:640px;margin-left:auto;margin-right:auto}
@@ -97,32 +109,49 @@
   <p class="d" id="lmsg" style="text-align:center;margin-top:12px"></p>
 </div></div>
 
-<div class="page open" id="pChat">
+<div class="page home open" id="pHome">
+  <div id="homeMap"><iframe id="mapFrame" title="Mapa Principal com as atividades"></iframe>
+    <div class="hstats"><span>🏍️ <b id="sOn">–</b> online</span><span>🚨 <b id="sBlz">–</b> blitz</span><span>💬 <b id="sHoje">–</b> hoje</span></div>
+    <button class="btn sm" id="mapFull" aria-label="Tela cheia">⤢</button>
+  </div>
+  <div class="homeBody">
+    <h2>🏍️ Motoboys online</h2>
+    <div class="card" id="onList"><div class="empty">Conectando…</div></div>
+    <h2>🚨 Blitz ativas</h2>
+    <div class="card" id="blitzList"><div class="empty">Carregando…</div></div>
+    <h2>💬 Últimas mensagens</h2>
+    <div class="card" id="ultMsgs"><div class="empty">Carregando…</div></div>
+  </div>
+</div>
+
+<div class="page" id="pChat">
   <h1>Chat</h1><p class="sub">Todas as mensagens, em tempo real</p>
-  <div class="stats"><div class="stat"><b id="sMsg">–</b><span>mensagens</span></div><div class="stat"><b id="sOn">–</b><span>online agora</span></div><div class="stat"><b id="sBan">–</b><span>bloqueados</span></div></div>
-  <div class="card" style="display:flex;align-items:center;gap:12px"><div class="grow"><b>Chat dos motoboys</b><div class="d" id="chatStD">Carregando…</div></div><label class="sw"><input type="checkbox" id="chatOn"><span></span></label></div>
+  <div class="stats"><div class="stat"><b id="sMsg">–</b><span>mensagens</span></div><div class="stat"><b id="sOn2">–</b><span>online agora</span></div><div class="stat"><b id="sBan">–</b><span>bloqueados</span></div></div>
   <div class="card"><div class="sendbar"><input id="admIn" maxlength="500" placeholder="Mensagem como Administrador"><button class="btn primary" id="admSend">Enviar</button></div></div>
   <div class="card"><input id="msgBusca" placeholder="Buscar nas mensagens (texto ou apelido)" style="width:100%;box-sizing:border-box"></div>
   <div class="card" id="msgList"><div class="empty">Carregando…</div></div>
   <div style="text-align:center;margin:6px 0 18px"><button class="btn" id="maisMsgs" style="display:none">Carregar mensagens mais antigas</button></div>
-</div>
-
-<div class="page" id="pBan">
-  <h1>Bloqueados</h1><p class="sub">Motoboys que não podem escrever no chat</p>
+  <h2>🚫 Bloqueados</h2>
   <div class="card" id="banList"><div class="empty">Carregando…</div></div>
 </div>
 
-<div class="page mapa" id="pMap"><iframe id="mapFrame" title="Mapa Principal com motoboys online"></iframe></div>
-
-<div class="page" id="pOn">
-  <h1>Online</h1><p class="sub">Motoboys compartilhando a localização agora</p>
-  <div class="card" id="onList"><div class="empty">Conectando…</div></div>
-  <h1 style="margin-top:22px">🚨 Blitz</h1><p class="sub">Alertas ativos reportados pelos motoboys</p>
-  <div class="card" id="blitzList"><div class="empty">Carregando…</div></div>
-</div>
-
 <div class="page" id="pAcc">
-  <h1>Conta</h1><p class="sub" id="accEm"></p>
+  <h1>Configurações</h1><p class="sub">Do painel e do app dos motoboys</p>
+  <h2>📱 App dos motoboys</h2>
+  <div class="card">
+    <div class="row"><div class="grow"><b>Chat</b><div class="d" id="chatStD">Carregando…</div></div><label class="sw"><input type="checkbox" id="chatOn"><span></span></label></div>
+    <div class="row"><div class="grow"><b>Alertas de blitz</b><div class="d">Motoboys reportam e veem blitz no mapa.</div></div><label class="sw"><input type="checkbox" class="rec" data-k="blitz"><span></span></label></div>
+    <div class="row"><div class="grow"><b>Motoboys ao vivo</b><div class="d">Compartilhar a localização e ver os outros no mapa (também em segundo plano).</div></div><label class="sw"><input type="checkbox" class="rec" data-k="aoVivo"><span></span></label></div>
+    <div class="row"><div class="grow"><b>Rota pelo Google Maps e Waze</b><div class="d">Mostra a opção experimental de abrir a rota em outro app.</div></div><label class="sw"><input type="checkbox" class="rec" data-k="rotas"><span></span></label></div>
+    <div class="row"><div class="grow"><b>Mapa inicial</b><div class="d">Mapa que abre para todos (cada um ainda pode trocar).</div></div>
+      <select id="recMapa" style="background:var(--raised);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px"><option value="">Não mudar</option><option value="principal">Mapa Principal</option><option value="mapa1">Mapa 1</option><option value="mapa2">Mapa 2</option><option value="mapa3">Mapa 3 (online)</option></select></div>
+    <div style="padding-top:12px;border-top:1px solid var(--line)"><b>Aviso para todos</b><div class="d" style="margin-bottom:8px">Aparece no mapa de todos os motoboys até fecharem.</div>
+      <textarea id="recAviso" rows="3" maxlength="300" placeholder="Ex.: Atenção, obra na Av. Paraná hoje"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="avisoPub">Publicar aviso</button><button class="btn" id="avisoRm">Remover</button></div></div>
+    <div class="d" id="recSt" style="margin-top:10px"></div>
+  </div>
+  <h2>🔧 Painel</h2>
+  <p class="sub" id="accEm"></p>
   <div class="card">
     <div class="row"><div class="grow"><b>Versão do app</b><div class="d" id="ver">–</div></div></div>
     <div class="row"><div class="grow"><b>Testar conexão</b><div class="d">Confere o servidor: chat, bloqueios, perfis, fotos e tempo real.</div></div><button class="btn" id="diagBtn">Testar</button></div>
@@ -138,11 +167,9 @@
 </div>
 
 <nav class="tabs">
-  <button class="tab on" data-p="pChat"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>Chat</button>
-  <button class="tab" data-p="pBan"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span>Bloqueados</button>
-  <button class="tab" data-p="pMap"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></span>Mapa</button>
-  <button class="tab" data-p="pOn"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>Online</button>
-  <button class="tab" data-p="pAcc"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>Conta</button>
+  <button class="tab on" data-p="pHome"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></span>Início</button>
+  <button class="tab" data-p="pChat"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>Chat<span class="cnt" id="chatNovas"></span></button>
+  <button class="tab" data-p="pAcc"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Configurações</button>
 </nav>
 
 <div id="dlg"><div class="box"><h3 id="dT"></h3><div class="d" id="dD"></div><div id="dExtra"></div><div class="bt"><button class="btn" id="dNo">Cancelar</button><button class="btn danger" id="dYes">Confirmar</button></div></div></div>
@@ -267,7 +294,7 @@ $('#cadQ').oninput = renderCadastro;
 $('#cadRe').onclick = loadCadastro;
 $('#cadList').addEventListener('click', e => {
   const row = e.target.closest('[data-u]'); if (!row) return; const p = cadastro.find(x => x.uid === row.dataset.u); if (!p) return;
-  if (e.target.closest('[data-map]')) return document.querySelector('.tab[data-p="pMap"]').click();
+  if (e.target.closest('[data-map]')) return irMapa();
   const t = e.target.closest('[data-tel]'); if (t) return abrir('tel:' + t.dataset.tel);
   const w = e.target.closest('[data-wa]'); if (w){ const d = w.dataset.wa; return abrir('https://wa.me/' + (d.startsWith('55') ? d : '55' + d)); }
   const a = e.target.closest('[data-a]'); if (!a) return;
@@ -279,13 +306,22 @@ $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload();
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
   document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('open', p.id === t.dataset.p));
-  if (t.dataset.p === 'pMap' && !$('#mapFrame').src) $('#mapFrame').src = 'mapa/index.html#admin';
+  if (t.dataset.p === 'pChat'){ novasChat = 0; paintNovas(); }
 });
 const back = plug('App'); if (back) back.addListener('backButton', () => { if ($('#dlg').classList.contains('show')) return $('#dNo').click(); const f = document.querySelector('.tab'); if (!f.classList.contains('on')) f.click(); else back.exitApp(); });
 
 const hora = d => new Date(d).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'});
-let totalMsgs = null, temMais = false;
+let totalMsgs = null, temMais = false, novasChat = 0;
+function paintNovas(){ const c = $('#chatNovas'); c.textContent = novasChat > 99 ? '99+' : novasChat; c.classList.toggle('show', novasChat > 0); }
+function renderUlt(){
+  const hoje = new Date().toDateString();
+  $('#sHoje').textContent = msgs.filter(m => new Date(m.criado_em).toDateString() === hoje).length;
+  const ult = msgs.slice(-5).reverse();
+  $('#ultMsgs').innerHTML = ult.length ? ult.map(m => `<div class="row"><div class="av ${m.admin?'adm':''}">${esc((m.apelido||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(m.apelido)}</b> <span class="d" style="display:inline">${hora(m.criado_em)}</span><div class="d" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.foto ? '📷 ' : ''}${m.lat != null ? '📍 ' : ''}${esc(m.texto || (m.foto ? 'Foto' : ''))}</div></div></div>`).join('') + '<div style="text-align:center;padding-top:8px"><button class="btn sm" id="verChat">Abrir o chat</button></div>' : '<div class="empty">Nenhuma mensagem.</div>';
+}
+$('#ultMsgs').addEventListener('click', e => { if (e.target.closest('#verChat')) document.querySelector('.tab[data-p="pChat"]').click(); });
 function renderMsgs(){
+  renderUlt();
   $('#sMsg').textContent = totalMsgs != null ? Math.max(totalMsgs, msgs.length) : msgs.length;
   $('#maisMsgs').style.display = temMais ? '' : 'none';
   const q = ($('#msgBusca').value || '').trim().toLowerCase();
@@ -303,12 +339,20 @@ function renderBans(){
   $('#sBan').textContent = bans.size;
   $('#banList').innerHTML = bans.size ? [...bans.values()].map(b => `<div class="row" data-u="${b.autor}"><div class="av">${esc((b.apelido||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(b.apelido||'Sem apelido')}</b><div class="d">${b.motivo?esc(b.motivo)+' · ':''}desde ${hora(b.criado_em)}</div></div><button class="btn sm" data-a="unban">Desbloquear</button></div>`).join('') : '<div class="empty">Ninguém bloqueado.</div>';
 }
+function irMapa(){ document.querySelector('.tab[data-p="pHome"]').click(); $('#pHome').scrollTop = 0; }
+let posOn = new Map();   // posições enviadas com o app em segundo plano
+async function loadPos(){
+  const r = await sb.from('posicoes').select('*').gt('atualizado_em', new Date(Date.now() - 180000).toISOString()).limit(500);
+  if (!r.error && r.data){ posOn = new Map(r.data.map(x => [x.uid, {id: x.uid, apelido: x.apelido, lat: x.lat, lon: x.lon, t: Date.parse(x.atualizado_em), bg: true}])); loadPerfis([...posOn.keys()].filter(id => !perfis.has(id))); renderOnline(); }
+}
 function renderOnline(){
-  const vivos = online.filter(o => Date.now() - (o.t||0) < 180000);
-  $('#sOn').textContent = vivos.length;
+  const m = new Map(online.map(o => [o.id, o]));
+  for (const [id, o] of posOn){ const q = m.get(id); if (!q || o.t > (q.t||0) + 5000) m.set(id, o); }
+  const vivos = [...m.values()].filter(o => Date.now() - (o.t||0) < 180000 && !String(o.id).startsWith('admin-'));
+  $('#sOn').textContent = vivos.length; $('#sOn2').textContent = vivos.length;
   $('#onList').innerHTML = vivos.length ? vivos.map(o => { const p = perfis.get(o.id) || {};
     return `<div class="row"><div class="av">🏍️</div><div class="grow"><b>${esc(o.apelido)}</b>${bans.has(o.id)?' <span class="tag ban">Bloqueado</span>':''}
-      <div class="d">${p.nome ? esc(p.nome) + ' · ' : ''}${p.telefone ? '📞 ' + esc(fmtTel(p.telefone)) + (p.telefone_visivel ? '' : ' (oculto para os outros)') + ' · ' : ''}atualizado ${Math.max(0, Math.round((Date.now()-o.t)/1000))} s atrás</div>
+      <div class="d">${p.nome ? esc(p.nome) + ' · ' : ''}${p.telefone ? '📞 ' + esc(fmtTel(p.telefone)) + (p.telefone_visivel ? '' : ' (oculto para os outros)') + ' · ' : ''}atualizado ${Math.max(0, Math.round((Date.now()-o.t)/1000))} s atrás${o.bg ? ' · app minimizado' : ''}</div>
       <div class="acts" style="display:flex;gap:6px;margin-top:6px">${p.telefone ? `<button class="btn sm" data-tel="${esc(telD(p.telefone))}">Ligar</button><button class="btn sm" data-wa="${esc(telD(p.telefone))}">WhatsApp</button>` : ''}<button class="btn sm" data-map>Ver no mapa</button></div></div></div>`; }).join('') : '<div class="empty">Nenhum motoboy compartilhando agora.</div>';
 }
 async function delMsg(id){
@@ -345,7 +389,7 @@ $('#msgList').addEventListener('click', e => {
   if (b.dataset.a === 'del') delMsg(id); else if (b.dataset.a === 'ban') ban(m.autor, m.apelido); else unban(m.autor);
 });
 $('#onList').addEventListener('click', e => {
-  if (e.target.closest('[data-map]')) return document.querySelector('.tab[data-p="pMap"]').click();
+  if (e.target.closest('[data-map]')) return irMapa();
   const t = e.target.closest('[data-tel]'); if (t) return abrir('tel:' + t.dataset.tel);
   const w = e.target.closest('[data-wa]'); if (w){ const d = w.dataset.wa; return abrir('https://wa.me/' + (d.startsWith('55') ? d : '55' + d)); }
 });
@@ -359,6 +403,26 @@ $('#admSend').onclick = async () => {
   if (data && !msgs.some(x => x.id === data.id)){ msgs.push(data); ordena(); renderMsgs(); }
 };
 
+// opções do app dos motoboys (config "recursos")
+let REC = {blitz: true, aoVivo: true, rotas: true, mapa: '', aviso: ''};
+async function loadRec(){
+  const {data, error} = await sb.from('config').select('valor').eq('chave', 'recursos').maybeSingle();
+  if (error){ $('#recSt').textContent = 'Rode o config.sql para usar estas opções.'; document.querySelectorAll('.rec,#recMapa,#avisoPub,#avisoRm').forEach(x => x.disabled = true); return; }
+  REC = Object.assign({blitz: true, aoVivo: true, rotas: true, mapa: '', aviso: ''}, data && data.valor || {});
+  document.querySelectorAll('.rec').forEach(x => x.checked = REC[x.dataset.k] !== false);
+  $('#recMapa').value = REC.mapa || ''; $('#recAviso').value = REC.aviso || '';
+  $('#recSt').textContent = REC.aviso ? 'Aviso publicado para todos.' : '';
+}
+async function saveRec(msg){
+  const {error} = await sb.from('config').upsert({chave: 'recursos', valor: REC, atualizado_em: new Date().toISOString()});
+  if (error){ toast('Não foi possível salvar'); return loadRec(); }
+  toast(msg || 'Salvo: os apps dos motoboys já recebem'); loadRec();
+}
+document.querySelectorAll('.rec').forEach(x => x.onchange = () => { REC[x.dataset.k] = x.checked; saveRec(); });
+$('#recMapa').onchange = () => { REC.mapa = $('#recMapa').value; saveRec(REC.mapa ? 'Mapa inicial alterado para todos' : 'Mapa inicial: cada um escolhe'); };
+$('#avisoPub').onclick = () => { const t = $('#recAviso').value.trim().slice(0, 300); if (!t) return toast('Escreva o aviso'); REC.aviso = t; saveRec('Aviso publicado'); };
+$('#avisoRm').onclick = () => { REC.aviso = ''; $('#recAviso').value = ''; saveRec('Aviso removido'); };
+$('#mapFull').onclick = () => { document.body.classList.toggle('mapfull'); $('#mapFull').textContent = document.body.classList.contains('mapfull') ? '⤡' : '⤢'; };
 async function loadChatCfg(){
   const {data, error} = await sb.from('config').select('valor').eq('chave', 'chat').maybeSingle();
   if (error){ $('#chatStD').textContent = 'Rode o SQL de configuração (config.sql) para usar esta chave.'; $('#chatOn').disabled = true; return; }
@@ -413,6 +477,7 @@ async function loadBlitz(){
 }
 function renderBlitz(){
   const vivos = blitz.filter(a => new Date(a.expira_em) > Date.now());
+  $('#sBlz').textContent = vivos.length;
   $('#blitzList').innerHTML = vivos.length ? vivos.map(a => `<div class="row" data-b="${a.id}"><div class="av" style="background:#dc2626;color:#fff">🚨</div><div class="grow"><b>Blitz ${haMin(a.criado_em)}</b><div class="d">${a.apelido ? 'por ' + esc(a.apelido) + ' · ' : ''}👍 ${a.sim} · 👋 ${a.nao} · <a style="color:var(--accent)" data-ver="${a.lat},${a.lon}" href="#">ver no mapa</a></div></div><button class="btn sm danger" data-a="rmb">Remover</button></div>`).join('') : '<div class="empty">Nenhuma blitz ativa.</div>';
 }
 $('#blitzList').addEventListener('click', async e => {
@@ -436,10 +501,14 @@ async function start(){
   renderAll();
   loadChatCfg();
   sb.channel('admin-chat')
-    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens'}, p => { if (!msgs.some(x => x.id === p.new.id)){ msgs.push(p.new); if (totalMsgs != null) totalMsgs++; ordena(); renderMsgs(); } })
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens'}, p => { if (!msgs.some(x => x.id === p.new.id)){ msgs.push(p.new); if (totalMsgs != null) totalMsgs++; ordena(); renderMsgs(); if (!p.new.admin && !$('#pChat').classList.contains('open')){ novasChat++; paintNovas(); } } })
     .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { msgs = msgs.filter(x => x.id !== (p.old && p.old.id)); renderMsgs(); })
     .on('postgres_changes', {event: '*', schema: 'public', table: 'banidos'}, async () => { const r = await sb.from('banidos').select('*'); bans = new Map((r.data||[]).map(x => [x.autor, x])); renderAll(); })
     .subscribe();
+  $('#mapFrame').src = 'mapa/index.html#admin';
+  loadPos(); setInterval(() => { if (!document.hidden) loadPos(); }, 20000);
+  sb.channel('admin-pos').on('postgres_changes', {event: '*', schema: 'public', table: 'posicoes'}, () => loadPos()).subscribe();
+  loadRec();
   loadBlitz(); setInterval(() => { if (!document.hidden) loadBlitz(); else renderBlitz(); }, 30000);
   sb.channel('admin-blitz').on('postgres_changes', {event: '*', schema: 'public', table: 'alertas'}, () => loadBlitz()).subscribe();
   const live = sb.channel('motoboys-umuarama', {config: {presence: {key: 'admin-' + me.id}}});

@@ -4,6 +4,7 @@
   "webDir": "www",
   "backgroundColor": "#0e1217",
   "android": {
-    "backgroundColor": "#0e1217"
+    "backgroundColor": "#0e1217",
+    "useLegacyBridge": true
   }
 }
