@@ -41,6 +41,9 @@ jobs:
           npx cap add android
           npx cap sync android
           cp -r native/res/. android/app/src/main/res/
+          cp native/AppUpdatePlugin.java native/MainActivity.java android/app/src/main/java/com/mapaumuarama/admin/
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q REQUEST_INSTALL_PACKAGES $M || sed -i "s#<application#<uses-permission android:name=\"android.permission.REQUEST_INSTALL_PACKAGES\" />\n    <application#" $M
       - name: Versão e assinatura
         run: |
           VC=$((100 + GITHUB_RUN_NUMBER)); VN="1.$GITHUB_RUN_NUMBER"
@@ -48,6 +51,7 @@ jobs:
           sed -i "s/versionCode [0-9]*/versionCode $VC/; s/versionName \"[^\"]*\"/versionName \"$VN\"/" $G
           sed -i "0,/^android {/s//android {\n    signingConfigs {\n        debug {\n            storeFile rootProject.file('..\/..\/native\/mapaumuarama.keystore')\n            storePassword 'mapaumuarama'\n            keyAlias 'mapaumuarama'\n            keyPassword 'mapaumuarama'\n        }\n    }/" $G
           echo "VN=$VN" >> $GITHUB_ENV
+          echo "VC=$VC" >> $GITHUB_ENV
       - name: Compilar APK
         working-directory: admin/android
         run: |
@@ -65,4 +69,6 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk mapa-admin.apk
           gh release create "admin-v$VN" mapa-admin.apk --title "Mapa Admin $VN" --notes "App de administração" --latest=false
           # link fixo, sempre com a versão mais nova: releases/download/admin/mapa-admin.apk
-          gh release upload admin mapa-admin.apk --clobber || gh release create admin mapa-admin.apk --title "Mapa Admin (sempre a última versão)" --notes "Link fixo do app de administração" --latest=false
+          printf '{"versionCode":%s,"versionName":"%s","url":"https://github.com/%s/releases/download/admin/mapa-admin.apk"}' "$VC" "$VN" "$GITHUB_REPOSITORY" > update.json
+          cat update.json
+          gh release upload admin mapa-admin.apk update.json --clobber || gh release create admin mapa-admin.apk update.json --title "Mapa Admin (sempre a última versão)" --notes "Link fixo do app de administração" --latest=false

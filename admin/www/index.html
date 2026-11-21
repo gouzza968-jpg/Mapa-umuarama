@@ -63,6 +63,13 @@
   #login{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:var(--bg);z-index:20}
   #login .box{width:100%;max-width:380px}
   #login .logo{width:72px;height:72px;border-radius:22px;background:#0e1217;display:grid;place-items:center;margin:0 auto 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  #upd{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 10px);z-index:35;max-width:640px;margin:0 auto;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border-radius:16px;padding:12px 14px;display:none;box-shadow:var(--shadow)}
+  #upd.show{display:block}
+  #upd .t{font-weight:800;font-size:15px}
+  #upd .s{font-size:12.5px;opacity:.9;margin-top:2px}
+  #upd .bar{height:5px;border-radius:5px;background:rgba(255,255,255,.25);margin-top:8px;overflow:hidden}
+  #upd .bar i{display:block;height:100%;width:0;background:#fff;transition:width .3s}
+  #upd button{margin-top:10px;border:0;border-radius:10px;padding:9px 12px;font-weight:800;background:#fff;color:#1d4ed8;display:none}
   #toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 20px);transform:translateX(-50%);background:var(--raised);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:600;z-index:40;display:none;max-width:calc(100% - 24px)}
   #toast.show{display:block}
   #dlg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30;display:none;place-items:center;padding:20px}
@@ -128,6 +135,7 @@
 </nav>
 
 <div id="dlg"><div class="box"><h3 id="dT"></h3><div class="d" id="dD"></div><div id="dExtra"></div><div class="bt"><button class="btn" id="dNo">Cancelar</button><button class="btn danger" id="dYes">Confirmar</button></div></div></div>
+<div id="upd"><div class="t" id="updT">Atualizando o painel</div><div class="s" id="updS"></div><div class="bar"><i id="updB"></i></div><button id="updBtn"></button></div>
 <div id="toast"></div>
 
 <script>
@@ -144,7 +152,41 @@ function ask(title, desc, extra){ return new Promise(res => {
   $('#dYes').onclick = () => { const v = $('#dExtra input') ? $('#dExtra input').value : true; $('#dlg').classList.remove('show'); res(v === '' ? true : v); };
   $('#dNo').onclick = () => { $('#dlg').classList.remove('show'); res(false); };
 }); }
-try{ const P = plug('App'); if (P && P.getInfo){ const i = await P.getInfo(); $('#ver').textContent = i.version + ' (' + i.build + ')'; } }catch(e){}
+// ---------- atualização automática do painel (sempre a versão mais recente) ----------
+const UPD_URL = 'https://github.com/gouzza968-jpg/Mapa-umuarama/releases/download/admin/update.json';
+let updBusy = false;
+async function getJson(u){
+  const H = plug('CapacitorHttp'), url = u + '?t=' + Date.now();
+  if (H){ const r = await H.request({url, method: 'GET', connectTimeout: 15000, readTimeout: 30000}); if (r.status !== 200) throw new Error('http ' + r.status); return typeof r.data === 'string' ? JSON.parse(r.data) : r.data; }
+  const r = await fetch(url, {cache: 'no-store'}); return r.json();
+}
+function updShow(t, s, pct, btn, fn){
+  $('#upd').classList.add('show'); $('#updT').textContent = t; $('#updS').textContent = s || '';
+  $('#updB').style.width = (pct || 0) + '%';
+  const b = $('#updBtn'); if (btn){ b.textContent = btn; b.style.display = 'inline-block'; b.onclick = fn; } else b.style.display = 'none';
+}
+async function checkUpdate(){
+  const P = plug('AppUpdate'); if (!NATIVE || !P || updBusy) return;
+  try{
+    const cur = await P.info(); $('#ver').textContent = `${cur.versionName} (${cur.versionCode})`;
+    const u = await getJson(UPD_URL);
+    if (!(Number(u.versionCode) > Number(cur.versionCode))) return;
+    const ok = await P.canInstall();
+    if (!ok.ok){ updShow(`Nova versão ${u.versionName} do painel`, 'Permita instalar apps desta fonte para atualizar.', 0, 'Permitir', () => P.openInstallSettings()); return; }
+    updBusy = true; updShow(`Atualizando para a versão ${u.versionName}`, 'Baixando…', 0);
+    await P.download({url: u.url});
+    const poll = async () => {
+      const st = await P.status();
+      if (st.error){ updBusy = false; updShow('Falha ao baixar a atualização', 'Confira a internet.', 0, 'Tentar de novo', checkUpdate); return; }
+      if (st.done){ updBusy = false; updShow(`Versão ${u.versionName} pronta`, 'Toque em Instalar na tela do Android.', 100, 'Instalar', () => P.install()); P.install().catch(() => {}); return; }
+      updShow(`Atualizando para a versão ${u.versionName}`, `Baixando… ${st.pct || 0}%`, st.pct || 0); setTimeout(poll, 400);
+    };
+    poll();
+  }catch(e){ updBusy = false; }
+}
+checkUpdate();
+setInterval(checkUpdate, 15 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !updBusy) checkUpdate(); });
 
 if (!window.supabase){ $('#lmsg').textContent = 'Biblioteca do servidor não carregou.'; return; }
 const sb = window.supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true}});
