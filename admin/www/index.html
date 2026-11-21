@@ -107,6 +107,8 @@
   <h1>Conta</h1><p class="sub" id="accEm"></p>
   <div class="card">
     <div class="row"><div class="grow"><b>Versão do app</b><div class="d" id="ver">–</div></div></div>
+    <div class="row"><div class="grow"><b>Testar conexão</b><div class="d">Confere o servidor: chat, bloqueios, perfis, fotos e tempo real.</div></div><button class="btn" id="diagBtn">Testar</button></div>
+    <div id="diagOut" style="display:none;font-size:13.5px;line-height:1.7;padding:6px 0 10px"></div>
     <div class="row"><div class="grow"><b>Limpeza automática</b><div class="d">Fotos com mais de 15 dias e mensagens com mais de 30 dias são apagadas todo dia às 03:17.</div></div></div>
   </div>
   <button class="btn danger" id="logout" style="width:100%">Sair</button>
@@ -166,6 +168,22 @@ async function enter(){
   start();
 }
 $('#enter').onclick = enter; $('#pw').onkeydown = e => { if (e.key === 'Enter') enter(); };
+$('#diagBtn').onclick = async () => {
+  const out = $('#diagOut'), L = []; out.style.display = ''; out.innerHTML = 'Testando…';
+  const ok = (b, t, d) => L.push(`${b ? '✅' : '❌'} <b>${t}</b>${d ? ' — ' + esc(d) : ''}`);
+  ok(!!window.supabase, 'Biblioteca do servidor');
+  const u = (await sb.auth.getUser()).data.user; ok(!!u, 'Login do administrador', u ? u.email : 'não logado');
+  const a = await sb.rpc('eh_admin'); ok(a.data === true, 'Permissão de administrador', a.error ? a.error.message : (a.data ? '' : 'conta não está em public.admins'));
+  for (const [t, nome, dica] of [['mensagens', 'Tabela de mensagens', 'rode o SQL do chat'], ['banidos', 'Tabela de bloqueios', 'rode o SQL do admin'], ['perfis', 'Tabela de perfis', 'rode o SQL de perfis']]){
+    const r = await sb.from(t).select('*', {count: 'exact', head: true}); ok(!r.error, nome, r.error ? r.error.message + ' → ' + dica : (r.count ?? 0) + ' registro(s)');
+  }
+  const pp = await sb.rpc('perfil_publico', {p_uid: '00000000-0000-0000-0000-000000000000'}); ok(!pp.error, 'Função de contato (perfil_publico)', pp.error ? pp.error.message : '');
+  const st = await sb.storage.from('chat-fotos').list('', {limit: 1}); ok(!st.error, 'Armazenamento de fotos', st.error ? st.error.message + ' → rode o SQL do chat' : '');
+  const rt = await new Promise(res => { const c = sb.channel('diag-' + Date.now()); const t = setTimeout(() => { res('sem resposta'); sb.removeChannel(c); }, 6000); c.subscribe(s => { if (s === 'SUBSCRIBED' || s === 'CHANNEL_ERROR' || s === 'TIMED_OUT'){ clearTimeout(t); res(s); sb.removeChannel(c); } }); });
+  ok(rt === 'SUBSCRIBED', 'Tempo real', rt === 'SUBSCRIBED' ? '' : rt);
+  ok(true, 'Motoboys online agora', String(online.filter(o => Date.now() - (o.t||0) < 180000).length));
+  out.innerHTML = L.join('<br>') + '<div class="d" style="margin-top:8px">O login anônimo dos motoboys não dá para testar daqui: se o chat não funcionar no app deles, confira “Allow anonymous sign-ins” em Authentication.</div>';
+};
 $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
