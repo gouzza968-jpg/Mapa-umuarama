@@ -1,6 +1,14 @@
 {
-  "latest": "1.1.0",
+  "latest": "1.1.1",
   "versions": [
+    {
+      "version": "1.1.1",
+      "date": "21/11/2026",
+      "notes": [
+        "Quando o número pesquisado não está no mapa, a rua inteira fica destacada",
+        "Os números da rua pesquisada aparecem marcados"
+      ]
+    },
     {
       "version": "1.1.0",
       "date": "21/11/2026",

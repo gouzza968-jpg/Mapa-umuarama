@@ -1,6 +1,6 @@
 // Service worker do Mapa Umuarama
 // A versão abaixo é preenchida automaticamente pelo build.py — cada versão nova cria um cache novo.
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const CACHE = 'mapa-umuarama-' + VERSION;
 const ASSETS = ['./', './index.html', './data/mapa.json?v=' + VERSION, './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png'];
 

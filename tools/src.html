@@ -315,12 +315,12 @@ texts.forEach((t,i) => {
 // ---------- temas ----------
 const THEMES = {
   dark: {
-    bg:'#0e1217', halo:'rgba(14,18,23,.92)', hl:'rgba(255,196,0,.92)', hlInk:'#111', hlNum:'#7a0019',
+    bg:'#0e1217', halo:'rgba(14,18,23,.92)', hl:'rgba(255,196,0,.92)', soft:'rgba(255,196,0,.28)', hlInk:'#111', hlNum:'#7a0019',
     line:{outro:'#2b333d', verde:'#1f6f43', rio:'#2f74d0', lote:'#323b46', circ:'#3a4451', num:'#6b2a44', quadra:'#7d8896', bairro:'#a78bfa', via:'#f59e0b'},
     text:{lote:'#7c8794', quadra:'#60a5fa', num:'#ff6b9a', outro:'#6b7583', local:'#34d399', rio:'#60a5fa', rua:'#eef1f4', bairro:'#c4b5fd'},
   },
   light: {
-    bg:'#f4f1ea', halo:'rgba(244,241,234,.92)', hl:'rgba(255,216,77,.95)', hlInk:'#111', hlNum:'#b00020',
+    bg:'#f4f1ea', halo:'rgba(244,241,234,.92)', hl:'rgba(255,216,77,.95)', soft:'rgba(255,200,0,.30)', hlInk:'#111', hlNum:'#b00020',
     line:{outro:'#d4d0c6', verde:'#7cc48a', rio:'#4f8fe8', lote:'#c9c3b7', circ:'#b8b2a6', num:'#e9a3bb', quadra:'#59606b', bairro:'#8b5cf6', via:'#f59e0b'},
     text:{lote:'#8a8478', quadra:'#2563eb', num:'#d6336c', outro:'#9ca3af', local:'#047857', rio:'#1d4ed8', rua:'#111827', bairro:'#7c3aed'},
   }
@@ -475,13 +475,14 @@ function drawTexts(){
   const byCat = TC.map(()=>[]);
   for (const i of cand) byCat[texts[i][6]].push(i);
   const isHL = i => highlight && (highlight.labels.has(i) || highlight.nums.has(i));
+  const isSoft = i => highlight && highlight.soft && highlight.soft.has(i);
   for (const name of T_ORDER){
     const st = TSTY[name]; const ci = TI[name]; if (ci==null) continue;
     let list = byCat[ci]; if (!list.length) continue;
     if (!vis[st.layer]) { list = list.filter(isHL); if(!list.length) continue; }
     if (name==='rua' && highlight) list.sort((a,b)=> (isHL(b)?1:0)-(isHL(a)?1:0));
     for (const i of list){
-      const t = texts[i]; let px = t[2]*k; const hl = isHL(i);
+      const t = texts[i]; let px = t[2]*k; const hl = isHL(i); const soft = !hl && isSoft(i);
       if (name==='rua'){ if (k*10 < 0.9 && !hl) continue; px = Math.max(Math.min(px, 22), 11); }
       else if (name==='bairro'){ px = Math.max(10, Math.min(px, 22)); if (k*10 > 6) continue; }
       else { if (px < st.min && !hl) continue; if (st.minPx) px = Math.max(px, st.minPx); px = Math.min(px, 60); }
@@ -509,8 +510,8 @@ function drawTexts(){
       ctx.translate(sx, sy); ctx.rotate(rot);
       if (flipped){ ax = -ax - w; ay = (t[5]===0||t[5]===1) ? px*0.8 : (t[5]===3? 0 : ay); }
       if (name==='bairro'){ ax=-w/2; ay=px*0.35; }
-      if (hl){
-        ctx.fillStyle = TH.hl; const pad = px*0.25;
+      if (hl || soft){
+        ctx.fillStyle = hl ? TH.hl : TH.soft; const pad = px*0.25;
         const bx=ax-pad, by=ay-px*0.85-pad*0.4, bw2=w+2*pad, bh2=px*1.15+pad*0.8;
         ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx,by,bw2,bh2,px*0.3); else ctx.rect(bx,by,bw2,bh2); ctx.fill();
       } else if (name!=='lote' && name!=='outro'){
@@ -776,30 +777,31 @@ function choose(idx){
     const list = [r.st].concat(r.more||[]);
     const labs = new Set(list.flatMap(s=>s.labs));
     const gname = cleanStreetName(r.st.name);
+    const nums = new Set(list.flatMap(s=>s.nums));
+    const vals = [...nums].map(i=>numVal(texts[i][7])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
+    const faixa = vals.length ? `Numeração no mapa: ${vals[0]} a ${vals[vals.length-1]}` : 'Sem numeração predial no mapa';
     if (P.num && !r.exactName){
       const a = resolveAddress(list, P.num);
-      if (a){
+      if (a && a.exact){
         const t = texts[a.i];
-        highlight = {labels: labs, nums: new Set([a.i])};
+        highlight = {labels: labs, nums: new Set([a.i]), soft: nums};
         pin = {x: t[0], y: t[1]};
         animateTo(t[0], t[1] - 30/0.8, 0.8);
         const b = nearestBairro(t[0], t[1]);
-        const dest = `${gname}, ${a.exact ? t[7] : P.num} - Umuarama - PR`;
-        if (a.exact) showCard(`${esc(r.st.name)}, ${esc(t[7])}`, `${b? 'Região: '+esc(b)+' · ':''}Número encontrado no mapa`, dest);
-        else showCard(`${esc(r.st.name)}, ${esc(P.num)}`, `Número exato não está no mapa. Mostrando o mais próximo: <b>${esc(t[7])}</b>`, dest);
+        showCard(`${esc(r.st.name)}, ${esc(t[7])}`, `${b? 'Região: '+esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - Umuarama - PR`);
         return;
       }
-      showCard(esc(r.st.name), `Esta rua não tem numeração predial no mapa. Mostrando a rua.`, `${gname}, ${P.num} - Umuarama - PR`);
     }
-    const nums = new Set(list.flatMap(s=>s.nums));
-    highlight = {labels: labs, nums: new Set()}; pin = null;
+    // rua inteira (sem número, ou número não encontrado)
+    highlight = {labels: labs, nums: new Set(), soft: nums}; pin = null;
     let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
     for (const i of [...labs, ...nums]){ const t=texts[i]; x0=Math.min(x0,t[0]); y0=Math.min(y0,t[1]); x1=Math.max(x1,t[0]); y1=Math.max(y1,t[1]); }
     fitBox(x0-300, y0-300, x1+300, y1+300, 60, 2.5);
-    if (!P.num || r.exactName){
-      const vals = [...nums].map(i=>numVal(texts[i][7])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
-      const b = nearestBairro(x0/2+x1/2, y0/2+y1/2);
-      showCard(esc(r.st.name), (vals.length ? `Numeração de ${vals[0]} a ${vals[vals.length-1]}` : 'Sem numeração predial no mapa') + (b? ` · perto de ${esc(b)}`:'') + `<br>Dica: digite o número junto, ex.: “${esc(r.st.name.split(' (')[0])} ${vals.length? vals[Math.floor(vals.length/2)] : '100'}”`, `${gname} - Umuarama - PR`);
+    const b = nearestBairro(x0/2+x1/2, y0/2+y1/2);
+    if (P.num && !r.exactName){
+      showCard(`${esc(r.st.name)}, ${esc(P.num)}`, `O número <b>${esc(P.num)}</b> não está no mapa. Rua inteira destacada.<br>${faixa}${b? ' · perto de '+esc(b):''}`, `${gname}, ${P.num} - Umuarama - PR`);
+    } else {
+      showCard(esc(r.st.name), `${faixa}${b? ' · perto de '+esc(b):''}<br>Dica: digite o número junto, ex.: “${esc(r.st.name.split(' (')[0])} ${vals.length? vals[Math.floor(vals.length/2)] : '100'}”`, `${gname} - Umuarama - PR`);
     }
     return;
   }
