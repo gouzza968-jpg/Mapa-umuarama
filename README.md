@@ -51,3 +51,9 @@ O app consulta `releases/latest/download/update.json`; quando o `versionCode` é
 - `tools/osm/referencias.py` encaixa o Mapa 1 nas coordenadas reais (erro mediano ~3 m) e grava as referências nele
 - `tools/osm/mapa_osm.py` gera o Mapa 2 (`www/data/mapa2.json`) direto do OpenStreetMap
 - `tools/osm/rotas.py` gera a malha de ruas para as rotas no app (`www/data/rotas.json`), com mãos únicas e velocidade por tipo de via
+
+## Chat e limpeza automática
+
+- `supabase/chat.sql`: rode uma vez no SQL Editor do Supabase (tabela de mensagens, fotos e regras de segurança)
+- `.github/workflows/limpeza.yml`: todo dia apaga fotos com mais de 15 dias (e as mais antigas se passar de 800 MB) e mensagens com mais de 30 dias
+- Precisa do segredo `SUPABASE_SERVICE_KEY` em Settings → Secrets and variables → Actions

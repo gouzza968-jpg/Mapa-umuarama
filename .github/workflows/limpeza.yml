@@ -1,0 +1,23 @@
+name: Limpeza do chat (fotos antigas)
+
+on:
+  schedule:
+    - cron: '17 6 * * *'   # todo dia às 03:17 (horário de Brasília)
+  workflow_dispatch:
+
+jobs:
+  limpar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apagar fotos e mensagens antigas
+        env:
+          SUPABASE_URL: https://mktrdlffzwhiurafbvuo.supabase.co
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          DIAS_FOTOS: '15'
+          DIAS_MSG: '30'
+          LIMITE_MB: '800'
+          ALVO_MB: '700'
+        run: |
+          if [ -z "$SUPABASE_SERVICE_KEY" ]; then echo "Falta o segredo SUPABASE_SERVICE_KEY no GitHub"; exit 1; fi
+          python3 tools/limpeza/limpar_chat.py

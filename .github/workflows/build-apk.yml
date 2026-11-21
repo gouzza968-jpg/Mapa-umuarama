@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     branches: [main]
-    paths-ignore: ['dados-osm/**', 'tools/osm/**', '.github/workflows/osm.yml', 'README.md', 'mapas/**']
+    paths-ignore: ['dados-osm/**', 'tools/osm/**', '.github/workflows/osm.yml', '.github/workflows/limpeza.yml', 'tools/limpeza/**', 'supabase/**', 'README.md', 'mapas/**']
   workflow_dispatch:
 
 jobs:
