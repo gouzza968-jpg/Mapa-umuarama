@@ -1501,7 +1501,7 @@ $('#optShare').onchange = async () => {
 setInterval(() => { if (prefs.share) liveSend(true); paintLive(); requestDraw(); }, 30000);
 
 // ---------- chat ----------
-let chatOff = false, chatBanned = false, chatCh = null, chatReady = false, chatMsgs = [], chatUnread = 0, chatLastSend = 0, chatLoading = false;
+let chatOff = !!prefs.chatOff, chatBanned = false, chatCh = null, chatReady = false, chatMsgs = [], chatUnread = 0, chatLastSend = 0, chatLoading = false;
 const fmtHora = d => d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
 const fmtDia = d => { const h = new Date(); const y = new Date(Date.now() - 864e5); return d.toDateString() === h.toDateString() ? 'Hoje' : d.toDateString() === y.toDateString() ? 'Ontem' : d.toLocaleDateString('pt-BR'); };
 function chatNote(t){ $('#msgs').innerHTML = `<div class="chatnote">${t}</div>`; }
@@ -1533,8 +1533,19 @@ async function chatInit(){
   }catch(e){ chatNote('Não foi possível carregar o chat.'); }
   finally{ chatLoading = false; }
 }
+let cfgCh = null;
+async function chatCfgInit(){
+  if (!sb || cfgCh) return;
+  try{ const c = await sb.from('config').select('valor').eq('chave', 'chat').maybeSingle(); if (!c.error){ chatOff = !!(c.data && c.data.valor && c.data.valor.ativo === false); paintChatOff(); } }catch(e){}
+  cfgCh = sb.channel('cfg-app').on('postgres_changes', {event: '*', schema: 'public', table: 'config'}, p => {
+    const r = p.new; if (!r || r.chave !== 'chat') return;
+    chatOff = !!(r.valor && r.valor.ativo === false); paintChatOff();
+  }).subscribe();
+}
 function paintChatOff(){
   const n = $('#offNote');
+  $('#tabChat').style.display = chatOff ? 'none' : ''; prefs.chatOff = chatOff; savePrefs();
+  if (chatOff && curTab === 'chat') showTab('map');
   if (chatOff){
     $('#msgs').style.display = 'none'; $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none';
     if (!n) $('#pageChat').insertAdjacentHTML('beforeend', '<div class="chatnote" id="offNote">💬 O chat está desativado pelo administrador.<br>Volte mais tarde.</div>');
@@ -1542,6 +1553,7 @@ function paintChatOff(){
   } else {
     if (n) n.remove(); $('#msgs').style.display = '';
     if (curTab === 'chat') openChat();
+    if (!chatReady && (prefs.nick||'').length >= 2) chatInit();
   }
 }
 function paintBanned(){ if (!chatBanned) return; $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none'; if (!$('#banNote')) $('#pageChat').insertAdjacentHTML('beforeend', '<div class="chatnote" id="banNote" style="margin:0;padding:12px">🚫 Você foi bloqueado no chat pelo administrador. Ainda pode ler as mensagens.</div>'); }
@@ -2122,7 +2134,8 @@ try{
 }catch(e){ $('#lmsg').textContent = 'Erro: ' + e.message; return; }
 if (!local && !EMBED){ try{ local = await (await fetch('version.json')).json(); }catch(e){} }
 paintUpdate(); paintRecent();
-if (!EMBED){ liveConnect().then(() => { if (prefs.share && !locWatch) startLoc(); if ((prefs.nick||'').length >= 2) chatInit(); }); }
+if (chatOff) $('#tabChat').style.display = 'none';
+if (!EMBED){ liveConnect().then(() => { chatCfgInit(); if (prefs.share && !locWatch) startLoc(); if ((prefs.nick||'').length >= 2 && !chatOff) chatInit(); }); }
 paintLive();
 refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => { showTab('map'); openMapSheet(); }, 'Ver'); } if ($('#mapSheet').classList.contains('open')) renderMaps(); });
 if (NATIVE){
