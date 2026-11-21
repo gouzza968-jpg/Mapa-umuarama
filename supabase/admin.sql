@@ -57,6 +57,10 @@ do $$ begin
   alter publication supabase_realtime add table public.banidos;
 exception when duplicate_object then null; end $$;
 
+grant select on public.admins to authenticated;
+grant select, insert, delete on public.banidos to authenticated;
+notify pgrst, 'reload schema';
+
 -- >>> torne a sua conta administradora (troque o e-mail) <<<
 insert into public.admins (uid)
 select id from auth.users where email = 'SEU_EMAIL'

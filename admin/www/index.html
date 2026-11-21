@@ -222,7 +222,9 @@ $('#diagBtn').onclick = async () => {
   const u = (await sb.auth.getUser()).data.user; ok(!!u, 'Login do administrador', u ? u.email : 'não logado');
   const a = await sb.rpc('eh_admin'); ok(a.data === true, 'Permissão de administrador', a.error ? a.error.message : (a.data ? '' : 'conta não está em public.admins'));
   for (const [t, nome, dica] of [['mensagens', 'Tabela de mensagens', 'rode o SQL do chat'], ['banidos', 'Tabela de bloqueios', 'rode o SQL do admin'], ['perfis', 'Tabela de perfis', 'rode o SQL de perfis']]){
-    const r = await sb.from(t).select('*', {count: 'exact', head: true}); ok(!r.error, nome, r.error ? r.error.message + ' → ' + dica : (r.count ?? 0) + ' registro(s)');
+    const r = await sb.from(t).select('*', {count: 'exact'}).limit(1);
+    const em = r.error ? [r.error.code, r.error.message || (r.status ? 'HTTP ' + r.status : ''), r.error.hint].filter(Boolean).join(' · ') : '';
+    ok(!r.error, nome, r.error ? em + (/42501|permission|denied|401|403/i.test(em) ? ' → rode o corrigir-permissoes.sql' : ' → ' + dica) : (r.count ?? 0) + ' registro(s)');
   }
   const pp = await sb.rpc('perfil_publico', {p_uid: '00000000-0000-0000-0000-000000000000'}); ok(!pp.error, 'Função de contato (perfil_publico)', pp.error ? pp.error.message : '');
   const st = await sb.storage.from('chat-fotos').list('', {limit: 1}); ok(!st.error, 'Armazenamento de fotos', st.error ? st.error.message + ' → rode o SQL do chat' : '');

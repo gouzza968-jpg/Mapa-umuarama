@@ -35,3 +35,6 @@ as $$
   from public.perfis p where p.uid = p_uid
 $$;
 grant execute on function public.perfil_publico(uuid) to authenticated;
+
+grant select, insert, update, delete on public.perfis to authenticated;
+notify pgrst, 'reload schema';

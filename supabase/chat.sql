@@ -58,3 +58,9 @@ drop policy if exists "chat fotos apagar" on storage.objects;
 create policy "chat fotos apagar" on storage.objects
   for delete to authenticated
   using (bucket_id = 'chat-fotos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- acesso do app à tabela (as regras acima continuam valendo)
+grant usage on schema public to anon, authenticated;
+grant select, insert, delete on public.mensagens to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+notify pgrst, 'reload schema';
