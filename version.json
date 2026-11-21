@@ -1,6 +1,15 @@
 {
-  "latest": "1.1.1",
+  "latest": "2.0.0",
   "versions": [
+    {
+      "version": "2.0.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Agora é um app Android (APK)",
+        "Atualização por dentro do app, em Configurações",
+        "Rota abre direto no app do Google Maps"
+      ]
+    },
     {
       "version": "1.1.1",
       "date": "21/11/2026",

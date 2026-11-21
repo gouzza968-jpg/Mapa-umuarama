@@ -1,43 +1,35 @@
-# Mapa Umuarama
+# Mapa Umuarama — app Android
 
-Web app (PWA) com o **Mapa Oficial de Numeração Predial de Umuarama-PR**, feito para entregadores.
+App Android com o **Mapa Oficial de Numeração Predial de Umuarama-PR**, feito para motoboys.
 
-- Busca por **rua + número** (ex.: `ney braga 1520`), bairro ou local
+- Busca por **rua + número** (ex.: `ney braga 1520`), bairro ou local; se o número não estiver no mapa, a rua inteira fica destacada
 - Ruas, quadras, lotes, numeração predial, bairros, rios e rodovias
 - Tema escuro (e claro)
-- Guia **Configurações** com as atualizações do app
+- Funciona **sem internet**
+- Guia **Configurações**: atualizações do app (baixa e instala por dentro do app)
 - Opção experimental: **abrir rota no Google Maps**
-- Instalável na tela inicial e funciona **sem internet**
 
-## Publicar no GitHub Pages
+## Baixar o APK
 
-1. No repositório: **Settings → Pages**
-2. Em *Source*, escolha **Deploy from a branch**
-3. Branch **main**, pasta **/ (root)** → **Save**
-4. Em 1–2 minutos o app fica em `https://SEU-USUARIO.github.io/NOME-DO-REPO/`
+Sempre a versão mais recente:
+**https://github.com/gouzza968-jpg/Mapa-umuarama/releases/latest/download/mapa-umuarama.apk**
 
-Mande esse link para os motoboys. No celular, eles podem tocar em **Configurações → Instalar** (Android) ou em **Compartilhar → Adicionar à Tela de Início** (iPhone).
+## Como o APK é gerado
+
+A cada push na `main`, o GitHub Actions (`.github/workflows/build-apk.yml`):
+1. gera `www/index.html` com `tools/build.py`
+2. cria o projeto Android com Capacitor e copia ícones, tela de abertura e o plugin de atualização (`native/`)
+3. compila e assina sempre com a mesma chave (`native/mapaumuarama.keystore`), para o app poder ser atualizado por cima
+4. publica um **Release** com `mapa-umuarama.apk` e `update.json`
+
+O app consulta `releases/latest/download/update.json`; quando o `versionCode` é maior que o instalado, aparece **“Nova versão disponível”** em Configurações.
 
 ## Lançar uma atualização
 
 1. Altere o app em `tools/src.html`
-2. Em `version.json`, mude `"latest"` para a nova versão (ex.: `1.2.0`) e adicione um item no começo de `"versions"` com a data e as novidades
-3. Rode `python3 tools/build.py` (gera `index.html` e `sw.js` com a nova versão)
-4. Faça commit e push
-
-Quem já usa o app vê o aviso **“Nova versão disponível”** e atualiza em **Configurações → Atualizar agora**.
+2. Em `version.json`, mude `"latest"` e adicione as novidades no começo de `"versions"`
+3. Commit e push — o APK novo sai sozinho em alguns minutos
 
 ## Atualizar o mapa (novo DWG)
 
-`tools/extrair_dwg.py` converte o JSON gerado pelo [LibreDWG](https://www.gnu.org/software/libredwg/) (`dwgread -O JSON`) em `data/mapa.json`.
-
-## Estrutura
-
-| Arquivo | O que é |
-|---|---|
-| `index.html` | O app (gerado) |
-| `sw.js` | Service worker: cache offline e atualizações (gerado) |
-| `version.json` | Versão atual e lista de novidades |
-| `data/mapa.json` | Dados do mapa compactados |
-| `manifest.webmanifest`, `icons/` | Instalação como app |
-| `tools/` | Código-fonte e scripts de build |
+`tools/extrair_dwg.py` converte o JSON do [LibreDWG](https://www.gnu.org/software/libredwg/) (`dwgread -O JSON`) em `www/data/mapa.json`.

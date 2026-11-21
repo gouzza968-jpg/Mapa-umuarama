@@ -4,12 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0e1217">
+<link rel="icon" href="data:,">
 <meta name="description" content="Mapa oficial de Umuarama com busca de ruas e numeração predial, para entregadores.">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Mapa Umuarama</title>
 <style>
   :root{
@@ -209,16 +205,9 @@
 
   <div class="sec">
     <div class="ttl">Aplicativo</div>
-    <div class="row" id="installRow" style="display:none">
-      <div class="grow"><div class="l">Instalar na tela inicial</div><div class="d">Abre como um app, em tela cheia.</div></div>
-      <button class="btn primary" id="installBtn">Instalar</button>
-    </div>
-    <div class="row" id="iosRow" style="display:none">
-      <div class="grow"><div class="l">Instalar no iPhone</div><div class="d">No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.</div></div>
-    </div>
     <div class="row">
-      <div class="grow"><div class="l">Uso sem internet</div><div class="d" id="offd">Verificando…</div></div>
-      <span class="badge" id="offb">…</span>
+      <div class="grow"><div class="l">Mapa salvo no aparelho</div><div class="d" id="offd">Funciona sem internet. Só a busca de atualizações e a rota precisam de conexão.</div></div>
+      <span class="badge ok" id="offb">Offline</span>
     </div>
   </div>
 
@@ -242,7 +231,7 @@
 <div id="loading"><div><div class="spin"></div><div class="b">Carregando mapa de Umuarama</div><div class="m" id="lmsg">Baixando dados do mapa…</div></div></div>
 
 <script>
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "2.0.0";
 const EMBED = null;          // dados embutidos (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -821,14 +810,13 @@ function showTab(t){
   $('#settings').classList.toggle('open', set);
   $('#tabSet').classList.toggle('on', set); $('#tabMap').classList.toggle('on', !set);
   ['#topbar','#ctrls'].forEach(s => $(s).style.display = set ? 'none' : '');
-  if (set){ closePanels(); $('#card').style.visibility='hidden'; refreshSettings(); }
+  if (set){ closePanels(); $('#toast').classList.remove('show'); $('#card').style.visibility='hidden'; refreshSettings(); }
   else { $('#card').style.visibility=''; }
 }
 $('#tabMap').onclick = () => showTab('map');
 $('#tabSet').onclick = () => showTab('set');
 
 // ---------- configurações ----------
-$('#vcur').textContent = APP_VERSION;
 const optRoute = $('#optRoute');
 optRoute.checked = !!prefs.route; $('#routeWarn').classList.toggle('show', !!prefs.route);
 optRoute.onchange = () => { prefs.route = optRoute.checked; savePrefs(); $('#routeWarn').classList.toggle('show', prefs.route); updateRouteBtn(); };
@@ -844,70 +832,99 @@ document.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => {
 function renderChangelog(log){
   if (!log || !log.versions) { $('#changelog').innerHTML = '<div class="d" style="color:var(--muted);font-size:13px;padding-top:8px">Sem informações de versão.</div>'; return; }
   $('#changelog').innerHTML = log.versions.map(v => `
-    <div class="v"><b>v${esc(v.version)}</b><span>${esc(v.date||'')}</span>${v.version===APP_VERSION?'<span class="badge ok">instalada</span>':''}${cmpVer(v.version, APP_VERSION)>0?'<span class="badge new">nova</span>':''}</div>
+    <div class="v"><b>v${esc(v.version)}</b><span>${esc(v.date||'')}</span>${v.version===cur.versionName?'<span class="badge ok">instalada</span>':''}${cmpVer(v.version, cur.versionName)>0?'<span class="badge new">nova</span>':''}</div>
     <ul>${(v.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`).join('');
 }
 function cmpVer(a,b){ const pa=a.split('.').map(Number), pb=b.split('.').map(Number); for(let i=0;i<3;i++){ if((pa[i]||0)!==(pb[i]||0)) return (pa[i]||0)-(pb[i]||0); } return 0; }
 
-let remote = CHANGELOG_EMBED, swReg = null, updateReady = false;
-async function checkUpdates(manual){
-  const btn = $('#updbtn');
-  if (manual){ btn.disabled = true; btn.textContent = 'Verificando…'; }
-  try{
-    if (EMBED) throw new Error('embed');
-    const r = await fetch('version.json?t=' + Date.now(), {cache:'no-store'});
-    if (!r.ok) throw new Error(r.status);
-    remote = await r.json();
-    if (swReg) { try{ await swReg.update(); }catch(e){} }
-  }catch(e){ if (manual && !EMBED) toast('Sem conexão. Tente de novo mais tarde.'); }
-  btn.disabled = false;
-  paintUpdate();
+// ---------- app Android (Capacitor) ----------
+const CAP = window.Capacitor, NATIVE = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
+const plug = n => CAP && CAP.Plugins && CAP.Plugins[n];
+const UPD_URL = 'https://github.com/gouzza968-jpg/Mapa-umuarama/releases/latest/download/update.json';
+let cur = {versionName: APP_VERSION, versionCode: 0}, remote = null, local = CHANGELOG_EMBED, updBusy = false, updPct = 0;
+async function httpJson(u){
+  const Hh = NATIVE && plug('CapacitorHttp');
+  if (Hh){ const r = await Hh.request({url: u + '?t=' + Date.now(), method:'GET', connectTimeout:10000, readTimeout:10000});
+    if (r.status !== 200) throw new Error('http ' + r.status); return typeof r.data === 'string' ? JSON.parse(r.data) : r.data; }
+  const r = await fetch(u + '?t=' + Date.now(), {cache:'no-store'}); if (!r.ok) throw new Error('http'); return r.json();
 }
+const hasUpdate = () => !!(remote && Number(remote.versionCode) > Number(cur.versionCode));
 function paintUpdate(){
-  renderChangelog(remote);
-  const latest = remote && remote.latest;
-  const has = latest && cmpVer(latest, APP_VERSION) > 0;
-  $('#updbox').classList.toggle('has', !!has);
-  $('#setDot').classList.toggle('show', !!has);
-  const btn = $('#updbtn');
-  if (EMBED){
+  renderChangelog(remote && remote.changelog ? {versions: remote.changelog} : local);
+  const btn = $('#updbtn'), has = NATIVE && hasUpdate();
+  $('#updbox').classList.toggle('has', has);
+  $('#setDot').classList.toggle('show', has);
+  if (!NATIVE){
     $('#updic').textContent = 'ℹ️'; $('#updt').textContent = 'Versão de demonstração';
-    $('#updd').innerHTML = `Versão: <b>${APP_VERSION}</b> · para receber atualizações, use o app pelo link oficial.`;
+    $('#updd').innerHTML = `Versão: <b>${esc(cur.versionName)}</b> · as atualizações funcionam no app Android.`;
     btn.style.display = 'none'; return;
   }
+  btn.style.display = '';
+  if (updBusy){ btn.disabled = true; btn.textContent = updPct >= 100 ? 'Instalando…' : `Baixando ${updPct}%`; return; }
+  btn.disabled = false;
   if (has){
-    $('#updic').textContent = '⬇️'; $('#updt').textContent = `Nova versão ${latest} disponível`;
-    $('#updd').innerHTML = `Versão instalada: <b>${APP_VERSION}</b>`;
+    $('#updic').textContent = '⬇️'; $('#updt').textContent = `Nova versão ${remote.versionName} disponível`;
+    $('#updd').innerHTML = `Versão instalada: <b>${esc(cur.versionName)}</b>`;
     btn.textContent = 'Atualizar agora'; btn.classList.add('primary'); btn.onclick = applyUpdate;
   } else {
     $('#updic').textContent = '✓'; $('#updt').textContent = 'Você está na versão mais recente';
-    $('#updd').innerHTML = `Versão instalada: <b>${APP_VERSION}</b>`;
+    $('#updd').innerHTML = `Versão instalada: <b>${esc(cur.versionName)}</b>`;
     btn.textContent = 'Verificar'; btn.classList.remove('primary'); btn.onclick = () => checkUpdates(true);
   }
 }
-async function applyUpdate(){
-  const btn = $('#updbtn'); btn.disabled = true; btn.textContent = 'Atualizando…';
+async function checkUpdates(manual){
+  if (!NATIVE){ paintUpdate(); return; }
+  const btn = $('#updbtn');
+  if (manual && !updBusy){ btn.disabled = true; btn.textContent = 'Verificando…'; }
   try{
-    if (swReg){
-      await swReg.update();
-      const w = swReg.waiting || swReg.installing;
-      if (w){
-        navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), {once:true});
-        if (w.state === 'installed') w.postMessage('skipWaiting');
-        else w.addEventListener('statechange', () => { if (w.state==='installed') w.postMessage('skipWaiting'); });
-        setTimeout(() => location.reload(), 15000);
-        return;
-      }
-    }
-  }catch(e){}
-  location.reload();
+    const P = plug('AppUpdate'); if (P) cur = await P.info();
+    remote = await httpJson(UPD_URL);
+    if (manual && !hasUpdate()) toast('Seu app já está atualizado');
+  }catch(e){ if (manual) toast('Sem conexão para verificar. Confira a internet.'); }
+  paintUpdate();
+  return hasUpdate();
 }
-function refreshSettings(){ paintUpdate(); paintOffline(); }
-async function paintOffline(){
-  let ok = false;
-  try{ ok = !!(navigator.serviceWorker && navigator.serviceWorker.controller) && !!(await caches.keys()).length; }catch(e){}
-  $('#offb').textContent = ok ? 'Ativo' : 'Inativo'; $('#offb').className = 'badge' + (ok?' ok':'');
-  $('#offd').textContent = ok ? 'O mapa está salvo no aparelho e abre mesmo sem internet.' : (EMBED ? 'Disponível no app instalado pelo link oficial.' : 'Será ativado depois da primeira abertura com internet.');
+async function applyUpdate(){
+  const P = plug('AppUpdate'); if (!P || !remote || updBusy) return;
+  try{
+    const r = await P.canInstall();
+    if (!r.ok){ toast('Permita instalar apps desta fonte e toque em Atualizar de novo.'); P.openInstallSettings(); return; }
+    updBusy = true; updPct = 0; paintUpdate();
+    await P.download({url: remote.url});
+    const poll = async () => {
+      const st = await P.status(); updPct = st.pct || 0; paintUpdate();
+      if (st.error){ updBusy = false; paintUpdate(); toast('Falha no download. Tente de novo.'); return; }
+      if (st.done){ updBusy = false; paintUpdate(); try{ await P.install(); }catch(e){ toast('Não foi possível abrir o instalador'); }
+        const btn = $('#updbtn'); btn.textContent = 'Instalar'; btn.onclick = () => P.install().catch(()=>toast('Não foi possível abrir o instalador')); return; }
+      setTimeout(poll, 400);
+    };
+    poll();
+  }catch(e){ updBusy = false; paintUpdate(); toast('Não foi possível atualizar agora.'); }
+}
+function refreshSettings(){ paintUpdate(); }
+// rota: no app abre direto o Google Maps
+$('#route').addEventListener('click', e => {
+  if (!NATIVE) return;
+  e.preventDefault();
+  const url = $('#route').href, L = plug('AppLauncher');
+  if (L) L.openUrl({url}).catch(() => { location.href = url; }); else location.href = url;
+});
+// barra de status e botão voltar
+function paintStatusBar(){
+  const SB = NATIVE && plug('StatusBar'); if (!SB) return;
+  const dark = prefs.theme !== 'light';
+  SB.setBackgroundColor({color: dark ? '#0e1217' : '#f4f1ea'}).catch(()=>{});
+  SB.setStyle({style: dark ? 'DARK' : 'LIGHT'}).catch(()=>{});
+}
+paintStatusBar();
+document.querySelectorAll('#themeSeg button').forEach(b => b.addEventListener('click', paintStatusBar));
+if (NATIVE && plug('App')){
+  plug('App').addListener('backButton', () => {
+    if ($('#settings').classList.contains('open')) return showTab('map');
+    if ($('#results').classList.contains('open') || $('#layers').classList.contains('open')) return closePanels();
+    if ($('#card').classList.contains('open')){ hideCard(); pin=null; highlight=null; requestDraw(true); return; }
+    plug('App').exitApp();
+  });
 }
 
 // toast
@@ -919,30 +936,15 @@ function toast(msg, action, label='Ver'){
 }
 $('#toastb').onclick = () => { $('#toast').classList.remove('show'); if (toastAction) toastAction(); };
 
-// instalar
-let deferredPrompt = null;
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; $('#installRow').style.display = ''; });
-$('#installBtn').onclick = async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; $('#installRow').style.display = 'none'; };
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-if (isIOS && !standalone && !EMBED) $('#iosRow').style.display = '';
-
-// service worker
-if (!EMBED && 'serviceWorker' in navigator && location.protocol.startsWith('http')){
-  try{
-    swReg = await navigator.serviceWorker.register('sw.js');
-    swReg.addEventListener('updatefound', () => { const w = swReg.installing; w && w.addEventListener('statechange', () => { if (w.state==='installed' && navigator.serviceWorker.controller) { updateReady = true; } }); });
-  }catch(e){}
-}
-
 // ---------- início ----------
 resize(); fitAll();
 $('#loading').remove();
+if (!local && !EMBED){ try{ local = await (await fetch('version.json')).json(); }catch(e){} }
 paintUpdate();
-if (!EMBED){
-  await checkUpdates(false);
-  if (remote && remote.latest && cmpVer(remote.latest, APP_VERSION) > 0) toast(`Nova versão ${remote.latest} disponível`, () => showTab('set'), 'Ver');
+if (NATIVE){
+  if (await checkUpdates(false)) toast(`Nova versão ${remote.versionName} disponível`, () => showTab('set'), 'Ver');
+  setInterval(() => { if (document.visibilityState === 'visible' && !updBusy) checkUpdates(false); }, 30*60*1000);
 }
-setInterval(() => { if (!EMBED && document.visibilityState==='visible') checkUpdates(false); }, 30*60*1000);
 })();
 </script>
 </body>
