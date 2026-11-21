@@ -111,6 +111,11 @@
     <div id="diagOut" style="display:none;font-size:13.5px;line-height:1.7;padding:6px 0 10px"></div>
     <div class="row"><div class="grow"><b>Limpeza automática</b><div class="d">Fotos com mais de 15 dias e mensagens com mais de 30 dias são apagadas todo dia às 03:17.</div></div></div>
   </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><b style="flex:1;font-size:16px">Motoboys cadastrados <span id="cadN" class="d" style="display:inline"></span></b><button class="btn sm" id="cadRe">Atualizar</button></div>
+    <input id="cadQ" placeholder="Buscar por apelido, nome ou telefone" autocomplete="off">
+    <div id="cadList" style="margin-top:6px"><div class="empty">Carregando…</div></div>
+  </div>
   <button class="btn danger" id="logout" style="width:100%">Sair</button>
 </div>
 
@@ -184,6 +189,36 @@ $('#diagBtn').onclick = async () => {
   ok(true, 'Motoboys online agora', String(online.filter(o => Date.now() - (o.t||0) < 180000).length));
   out.innerHTML = L.join('<br>') + '<div class="d" style="margin-top:8px">O login anônimo dos motoboys não dá para testar daqui: se o chat não funcionar no app deles, confira “Allow anonymous sign-ins” em Authentication.</div>';
 };
+let cadastro = [];
+async function loadCadastro(){
+  const {data, error} = await sb.from('perfis').select('*').order('atualizado_em', {ascending: false}).limit(2000);
+  if (error){ $('#cadList').innerHTML = `<div class="empty">Não foi possível carregar (${esc(error.message)}). Rode o SQL de perfis.</div>`; return; }
+  cadastro = data || []; cadastro.forEach(p => perfis.set(p.uid, p)); renderCadastro();
+}
+const semAcento = t => (t||'').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function renderCadastro(){
+  const q = semAcento($('#cadQ').value.trim()), qd = telD(q);
+  const vivos = new Set(online.filter(o => Date.now() - (o.t||0) < 180000).map(o => o.id));
+  const lista = cadastro.filter(p => !q || semAcento(p.apelido).includes(q) || semAcento(p.nome).includes(q) || (qd.length >= 3 && telD(p.telefone).includes(qd)));
+  $('#cadN').textContent = `(${cadastro.length})`;
+  $('#cadList').innerHTML = lista.length ? lista.map(p => { const on = vivos.has(p.uid), ban = bans.has(p.uid);
+    return `<div class="row" data-u="${p.uid}"><div class="av">${esc((p.apelido||p.nome||'?')[0].toUpperCase())}</div><div class="grow">
+      <b>${esc(p.apelido || 'Sem apelido')}</b> ${on ? '<span class="tag" style="background:rgba(52,211,153,.14);color:var(--ok)">online</span>' : ''}${ban ? ' <span class="tag ban">Bloqueado</span>' : ''}
+      <div class="d">${p.nome ? esc(p.nome) + ' · ' : ''}${p.telefone ? '📞 ' + esc(fmtTel(p.telefone)) + (p.telefone_visivel ? '' : ' (oculto)') : 'sem telefone'} · atualizado ${hora(p.atualizado_em)}</div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${p.telefone ? `<button class="btn sm" data-tel="${esc(telD(p.telefone))}">Ligar</button><button class="btn sm" data-wa="${esc(telD(p.telefone))}">WhatsApp</button>` : ''}${on ? '<button class="btn sm" data-map>Ver no mapa</button>' : ''}${ban ? '<button class="btn sm" data-a="unban">Desbloquear</button>' : '<button class="btn sm danger" data-a="ban">Bloquear</button>'}</div>
+    </div></div>`; }).join('') : `<div class="empty">${cadastro.length ? 'Ninguém encontrado.' : 'Nenhum motoboy cadastrou o perfil ainda.'}</div>`;
+}
+$('#cadQ').oninput = renderCadastro;
+$('#cadRe').onclick = loadCadastro;
+$('#cadList').addEventListener('click', e => {
+  const row = e.target.closest('[data-u]'); if (!row) return; const p = cadastro.find(x => x.uid === row.dataset.u); if (!p) return;
+  if (e.target.closest('[data-map]')) return document.querySelector('.tab[data-p="pMap"]').click();
+  const t = e.target.closest('[data-tel]'); if (t) return abrir('tel:' + t.dataset.tel);
+  const w = e.target.closest('[data-wa]'); if (w){ const d = w.dataset.wa; return abrir('https://wa.me/' + (d.startsWith('55') ? d : '55' + d)); }
+  const a = e.target.closest('[data-a]'); if (!a) return;
+  if (a.dataset.a === 'ban') ban(p.uid, p.apelido || 'motoboy').then(renderCadastro); else unban(p.uid).then(renderCadastro);
+});
+document.querySelector('.tab[data-p="pAcc"]').addEventListener('click', loadCadastro);
 $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
@@ -244,7 +279,7 @@ async function unban(autor){
   if (error) return toast('Não foi possível desbloquear');
   bans.delete(autor); renderAll(); toast('Desbloqueado');
 }
-function renderAll(){ renderMsgs(); renderBans(); renderOnline(); }
+function renderAll(){ renderMsgs(); renderBans(); renderOnline(); if (cadastro.length) renderCadastro(); }
 $('#msgList').addEventListener('click', e => {
   const b = e.target.closest('button[data-a]'); if (!b) return;
   const id = +b.closest('.msg').dataset.id, m = msgs.find(x => x.id === id); if (!m) return;
