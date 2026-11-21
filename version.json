@@ -1,6 +1,19 @@
 {
-  "latest": "2.13.0",
+  "latest": "2.14.0",
   "versions": [
+    {
+      "version": "2.14.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Novo Mapa Principal, o mais completo: junta o mapa da prefeitura, o OpenStreetMap, o IBGE (Censo 2022) e o Overture",
+        "Mais de 29 mil números de casas novos e ruas de loteamentos novos",
+        "Ruas sem nome ganharam o nome atual",
+        "Nova camada Comércios: busque lojas e empresas pelo nome",
+        "Gire o mapa com dois dedos (toque na bússola para voltar ao norte)",
+        "A busca procura o endereço em todos os mapas",
+        "Semáforos, postos e motoboys ao vivo já vêm ligados"
+      ]
+    },
     {
       "version": "2.13.0",
       "date": "21/11/2026",

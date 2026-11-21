@@ -327,6 +327,7 @@
   <div class="group glass" id="locGroup" style="display:none">
     <button class="fab" id="loc" aria-label="Minha localização"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
   </div>
+  <div class="group glass" style="display:none"><button class="fab" id="compass" aria-label="Apontar para o norte"><svg width="24" height="24" viewBox="0 0 24 24" style="transition:none"><path d="M12 2 16 12H8Z" fill="#ef4444"/><path d="M12 22 8 12h8Z" fill="currentColor" opacity=".55"/></svg></button></div>
   <div class="group glass">
     <button class="fab" id="zin" aria-label="Aproximar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
     <button class="fab" id="zout" aria-label="Afastar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
@@ -509,7 +510,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.13.0";
+const APP_VERSION = "2.14.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -523,10 +524,11 @@ const UPD_URL = 'https://github.com/gouzza968-jpg/Mapa-umuarama/releases/latest/
 
 // ---------- preferências ----------
 const PREF_KEY = 'mapaUmuarama.prefs';
-const prefs = Object.assign({theme:'dark', route:false, mapa:'mapa1', recent:[]}, (()=>{ try{ return JSON.parse(localStorage.getItem(PREF_KEY))||{}; }catch(e){ return {}; } })());
+const prefs = Object.assign({theme:'dark', route:false, mapa:'principal', recent:[]}, (()=>{ try{ return JSON.parse(localStorage.getItem(PREF_KEY))||{}; }catch(e){ return {}; } })());
 const savePrefs = () => { try{ localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); }catch(e){} };
 document.body.classList.toggle('light', prefs.theme==='light');
 const ADMIN_VIEW = /admin/.test(location.hash);   // mapa dentro do app de administração
+if (!prefs.principalV1){ prefs.principalV1 = 1; if (!ADMIN_VIEW && (!prefs.mapa || prefs.mapa === 'mapa1')) prefs.mapa = 'principal'; }   // o Mapa Principal passa a ser o padrão
 if (ADMIN_VIEW){ prefs.mapa = 'mapa1'; prefs.showLive = true; document.body.classList.add('adminview'); }
 
 // ---------- rede & armazenamento ----------
@@ -611,7 +613,7 @@ function syncGL(){
   if (!GL || !GEO || !VW) return;
   const [lat, lon] = llOf(view.x, view.y), mpp = 1 / (view.k * S);
   const z = Math.log2(40075016.686 * Math.cos(lat * Math.PI / 180) / (512 * mpp));
-  GL.jumpTo({center: [lon, lat], zoom: Math.max(0, Math.min(22, z)), bearing: GLbearing});
+  GL.jumpTo({center: [lon, lat], zoom: Math.max(0, Math.min(22, z)), bearing: GLbearing - view.r * 180 / Math.PI});
 }
 function glResize(){ if (GL) GL.resize(); }
 const isOnline = () => !!(MAP && MAP.online);
@@ -711,16 +713,16 @@ const POI_STY = {
   saude:{e:'🏥', c:'#ef4444'}, farmacia:{e:'💊', c:'#10b981'}, mercado:{e:'🛒', c:'#3b82f6'}, posto:{e:'⛽', c:'#f59e0b'},
   borracharia:{e:'tire', c:'#334155'}, oficina:{e:'🔧', c:'#64748b'}, seguranca:{e:'🚓', c:'#1d4ed8'}, escola:{e:'🏫', c:'#8b5cf6'},
   servico:{e:'🏦', c:'#0ea5e9'}, comida:{e:'🍴', c:'#f97316'}, igreja:{e:'⛪', c:'#a855f7'},
-  semaforo:{e:'🚦', c:'#1f2937'}, radar:{e:'📷', c:'#dc2626'},
+  semaforo:{e:'🚦', c:'#1f2937'}, radar:{e:'📷', c:'#dc2626'}, comercio:{e:'🏪', c:'#0d9488'},
 };
-const POI_SHORT = {saude:'Saúde', farmacia:'Farmácias', mercado:'Mercados', posto:'Postos', borracharia:'Borracharias', oficina:'Oficinas', seguranca:'Polícia', escola:'Escolas', servico:'Serviços', comida:'Comida', igreja:'Igrejas', semaforo:'Semáforos', radar:'Radares'};
-const poiVis = Object.assign({}, prefs.poiVis||{});   // começa tudo desligado: o usuário escolhe o que mostrar
+const POI_SHORT = {saude:'Saúde', farmacia:'Farmácias', mercado:'Mercados', posto:'Postos', borracharia:'Borracharias', oficina:'Oficinas', seguranca:'Polícia', escola:'Escolas', servico:'Serviços', comida:'Comida', igreja:'Igrejas', semaforo:'Semáforos', radar:'Radares', comercio:'Comércios'};
+const poiVis = Object.assign({semaforo: true, posto: true}, prefs.poiVis||{});   // semáforos e postos ligados por padrão; o resto o usuário escolhe
 const vis = Object.assign({rua:true,num:true,lote:true,quadra:true,via:true,rio:true,bairro:true,outro:false}, prefs.vis||{});
 
 // ---------- canvas & vista ----------
 const cv = $('#map'), ctx = cv.getContext('2d');
 let dpr = Math.min(window.devicePixelRatio||1, 3), VW=0, VH=0;
-const view = {x:0, y:0, k:1};
+const view = {x:0, y:0, k:1, r:0};   // r = giro do mapa (radianos)
 const KMAX = 12; let kmin = 0.01;
 function resize(){
   const r = cv.getBoundingClientRect();
@@ -748,8 +750,17 @@ function fillTarget(){
 }
 function expandIn(){ const [x,y,k] = fillTarget(); animateTo(x, y, k, 1100); }
 function setView(x,y,k){ view.x=x; view.y=y; view.k=Math.max(kmin, Math.min(KMAX, k)); requestDraw(); }
-const toScreen = (x,y) => [ (x-view.x)*view.k + VW/2, VH/2 - (y-view.y)*view.k ];
-const toWorld = (sx,sy) => [ (sx-VW/2)/view.k + view.x, view.y - (sy-VH/2)/view.k ];
+const rotv = (dx, dy, a) => { const c = Math.cos(a), s_ = Math.sin(a); return [dx*c - dy*s_, dx*s_ + dy*c]; };
+const toScreen = (x,y) => { const [u, v] = rotv((x-view.x)*view.k, -(y-view.y)*view.k, view.r); return [u + VW/2, v + VH/2]; };
+const toWorld = (sx,sy) => { const [u, v] = rotv(sx-VW/2, sy-VH/2, -view.r); return [u/view.k + view.x, view.y - v/view.k]; };
+// deslocamento na tela (px) -> deslocamento no mapa, com o giro atual
+const scrToWorldD = (dx, dy, k = view.k) => { const [u, v] = rotv(dx, dy, -view.r); return [u/k, -v/k]; };
+// caixa do mapa visível na tela (com giro), com margem m em px
+function viewBBox(m = 0){
+  const cs = [toWorld(-m,-m), toWorld(VW+m,-m), toWorld(-m,VH+m), toWorld(VW+m,VH+m)];
+  return [Math.min(...cs.map(c=>c[0])), Math.min(...cs.map(c=>c[1])), Math.max(...cs.map(c=>c[0])), Math.max(...cs.map(c=>c[1]))];
+}
+const rotCtx = () => { if (view.r){ ctx.translate(VW/2, VH/2); ctx.rotate(view.r); ctx.translate(-VW/2, -VH/2); } };
 
 function buildOverview(){
   const max = (Math.min(screen.width, screen.height) * (window.devicePixelRatio||1) > 1200) ? 3072 : 2304;
@@ -784,20 +795,21 @@ function requestDraw(forceFull){
 function scheduleFull(){ clearTimeout(fullTimer); fullTimer = setTimeout(()=>{ needFull = true; requestDraw(); }, 140); }
 function drawOverview(){
   const s = OV.s, k = view.k;
-  const sx0 = (view.x - VW/2/k)*s, sy0 = (H - (view.y + VH/2/k))*s;
   ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle = TH.bg; ctx.fillRect(0,0,VW,VH);
-  ctx.drawImage(OV.c, -sx0 * (k/s), -sy0 * (k/s), OV.c.width*(k/s), OV.c.height*(k/s));
+  ctx.translate(VW/2, VH/2); ctx.rotate(view.r); ctx.translate(-view.x*k, -(H - view.y)*k); ctx.scale(k/s, k/s);
+  ctx.drawImage(OV.c, 0, 0);
   ctx.restore();
 }
 const vectorMode = () => view.k * dpr > OV.s * 1.6;
 function drawVectors(){
   const k = view.k;
-  const [wx0, wy1] = toWorld(0,0), [wx1, wy0] = toWorld(VW,VH);
+  const [wx0, wy0, wx1, wy1] = viewBBox(0);
   const cx0=Math.max(0,Math.floor(wx0/CELL)), cx1=Math.min(GX-1,Math.floor(wx1/CELL));
   const cy0=Math.max(0,Math.floor(wy0/CELL)), cy1=Math.min(GY-1,Math.floor(wy1/CELL));
   ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle = TH.bg; ctx.fillRect(0,0,VW,VH);
+  rotCtx();
   ctx.lineJoin='round'; ctx.lineCap='round';
   stamp++;
   const buckets = LC.map(()=>[]);
@@ -826,7 +838,7 @@ function drawVectors(){
   ctx.restore();
 }
 function textCandidates(){
-  const [wx0, wy1] = toWorld(-200,-200), [wx1, wy0] = toWorld(VW+200,VH+200);
+  const [wx0, wy0, wx1, wy1] = viewBBox(200);
   const cx0=Math.max(0,Math.floor(wx0/CELL)), cx1=Math.min(GX-1,Math.floor(wx1/CELL));
   const cy0=Math.max(0,Math.floor(wy0/CELL)), cy1=Math.min(GY-1,Math.floor(wy1/CELL));
   const out=[];
@@ -862,7 +874,7 @@ function drawTexts(){
       else if (name==='bairro'){ px = Math.max(10, Math.min(px, 22)); if (k*10 > 6) continue; }
       else { if (px < st.min && !hl) continue; if (st.minPx) px = Math.max(px, st.minPx); px = Math.min(px, 60); }
       const [sx, sy] = toScreen(t[0], t[1]);
-      let rot = -t[3];
+      let rot = -t[3] + view.r;
       ctx.font = `${st.italic?'italic ':''}${st.bold?'650 ':''}${px.toFixed(1)}px system-ui,-apple-system,Roboto,sans-serif`;
       const s = t[7]; const w = ctx.measureText(s).width;
       let ax = t[4]===1 ? -w/2 : t[4]===2 ? -w : 0;
@@ -978,7 +990,7 @@ function mapOfLL(lat, lon){
 function drawMoto(sx, sy, label, mine, head){
   ctx.setTransform(dpr,0,0,dpr,sx*dpr,sy*dpr);
   if (head != null && !isNaN(head)){
-    ctx.save(); ctx.rotate(head * Math.PI/180);
+    ctx.save(); ctx.rotate(head * Math.PI/180 + view.r);
     ctx.fillStyle = mine ? 'rgba(255,106,31,.9)' : 'rgba(124,58,237,.9)';
     ctx.beginPath(); ctx.moveTo(0,-27); ctx.lineTo(7,-17); ctx.lineTo(-7,-17); ctx.closePath(); ctx.fill(); ctx.restore();
   }
@@ -1074,8 +1086,9 @@ function draw(){
   else if (interacting && !needFull && snap){
     drawOverview();
     const r = view.k / snap.k; const [sx, sy] = toScreen(snap.x, snap.y);
-    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
-    ctx.drawImage(snap.c, (sx - VW/2*r)*dpr, (sy - VH/2*r)*dpr, snap.c.width*r, snap.c.height*r);
+    ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.translate(sx, sy); ctx.rotate(view.r - snap.r); ctx.scale(r, r); ctx.translate(-VW/2, -VH/2);
+    ctx.drawImage(snap.c, 0, 0, VW, VH);
     ctx.restore();
     scheduleFull();
   } else {
@@ -1083,7 +1096,7 @@ function draw(){
     if (!snap) snap = {c: document.createElement('canvas')};
     snap.c.width = cv.width; snap.c.height = cv.height;
     snap.c.getContext('2d').drawImage(cv,0,0);
-    snap.x = view.x; snap.y = view.y; snap.k = view.k;
+    snap.x = view.x; snap.y = view.y; snap.k = view.k; snap.r = view.r;
     needFull = false;
   }
   drawLive(); drawMe(); drawPin(); drawScale();
@@ -1103,11 +1116,17 @@ cv.addEventListener('pointermove', e => {
   if (pts.length === 1 && gesture.n === 1){
     const dx = pts[0].x - gesture.p.x, dy = pts[0].y - gesture.p.y;
     if (Math.abs(dx)+Math.abs(dy) > 4){ moved = true; if (follow){ follow = false; $('#loc').classList.remove('follow'); } }
-    view.x = gesture.vx - dx/view.k; view.y = gesture.vy + dy/view.k;
+    const [ux, uy] = scrToWorldD(dx, dy); view.x = gesture.vx - ux; view.y = gesture.vy - uy;
   } else if (pts.length >= 2 && gesture.n >= 2){
     const c = mid(pts[0],pts[1]), d = dist(pts[0],pts[1]);
     const k = Math.max(kmin, Math.min(KMAX, gesture.k * d / gesture.d));
-    view.k = k; view.x = gesture.wc[0] - (c.x - VW/2)/k; view.y = gesture.wc[1] + (c.y - VH/2)/k;
+    // girar com dois dedos: só começa depois de ~12° para não girar sem querer ao dar zoom
+    let da = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x) - gesture.a;
+    da = Math.atan2(Math.sin(da), Math.cos(da));
+    if (!gesture.rot && Math.abs(da) > 0.21){ gesture.rot = true; gesture.a += da; da = 0; }
+    if (gesture.rot) view.r = normR(gesture.r + da);
+    view.k = k; const [ux, uy] = scrToWorldD(c.x - VW/2, c.y - VH/2, k); view.x = gesture.wc[0] - ux; view.y = gesture.wc[1] - uy;
+    paintCompass();
     moved = true;
   }
   requestDraw();
@@ -1132,13 +1151,13 @@ cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', e
 function startGesture(){
   const pts=[...ptrs.values()];
   if (pts.length===1) gesture = {n:1, p:pts[0], vx:view.x, vy:view.y};
-  else { const c=mid(pts[0],pts[1]); gesture = {n:2, d:Math.max(10,dist(pts[0],pts[1])), k:view.k, wc:toWorld(c.x,c.y)}; }
+  else { const c=mid(pts[0],pts[1]); gesture = {n:2, d:Math.max(10,dist(pts[0],pts[1])), k:view.k, wc:toWorld(c.x,c.y), r:view.r, a:Math.atan2(pts[1].y-pts[0].y, pts[1].x-pts[0].x), rot:false}; }
 }
 const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2}), dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 function zoomAt(sx, sy, f, animate=true){
   const [wx, wy] = toWorld(sx, sy);
   const k = Math.max(kmin, Math.min(KMAX, view.k*f));
-  const nx = wx - (sx - VW/2)/k, ny = wy + (sy - VH/2)/k;
+  const [ux, uy] = scrToWorldD(sx - VW/2, sy - VH/2, k); const nx = wx - ux, ny = wy - uy;
   if (animate) animateTo(nx, ny, k); else setView(nx, ny, k);
 }
 let wheelT=null;
@@ -1161,14 +1180,31 @@ function animateTo(x, y, k, ms=480){
   };
   anim = requestAnimationFrame(step);
 }
-function focusOn(x, y, k){ const off = 150/2; animateTo(x, y - off/k, k); }
+function focusOn(x, y, k){ const [dx, dy] = scrToWorldD(0, 75, Math.max(kmin, Math.min(KMAX, k))); animateTo(x + dx, y + dy, k); }
 function fitBox(x0,y0,x1,y1, padPx=60, maxK=4){
   const k = Math.min((VW-2*padPx)/Math.max(1,x1-x0), (VH-2*padPx-260)/Math.max(1,y1-y0), maxK);
-  animateTo((x0+x1)/2, (y0+y1)/2 - 70/k, k);
+  const [dx, dy] = scrToWorldD(0, 70, Math.max(kmin, Math.min(KMAX, k))); animateTo((x0+x1)/2 + dx, (y0+y1)/2 + dy, k);
 }
 $('#zin').onclick = () => zoomAt(VW/2, VH/2, 2);
 $('#zout').onclick = () => zoomAt(VW/2, VH/2, 0.5);
-$('#home').onclick = () => animateTo(W/2, H/2 + 30/homeK(), homeK());
+$('#home').onclick = () => { girarPara(0); animateTo(W/2, H/2 + 30/homeK(), homeK()); };
+// ---------- giro do mapa ----------
+function normR(r){ r = r % (2*Math.PI); if (r > Math.PI) r -= 2*Math.PI; if (r < -Math.PI) r += 2*Math.PI; return Math.abs(r) < 0.02 ? 0 : r; }
+function paintCompass(){
+  const b = $('#compass'); if (!b) return;
+  b.parentElement.style.display = view.r ? '' : 'none';
+  b.querySelector('svg').style.transform = `rotate(${view.r}rad)`;
+}
+let girAnim = null;
+function girarPara(r1){
+  cancelAnimationFrame(girAnim); const r0 = view.r; let d = Math.atan2(Math.sin(r1 - r0), Math.cos(r1 - r0)); if (!d) return;
+  const t0 = performance.now(), wc = [view.x, view.y]; interacting = true;
+  const step = now => { const t = Math.min(1, (now - t0)/350), e = 1 - Math.pow(1 - t, 3);
+    view.r = t < 1 ? r0 + d*e : normR(r1); paintCompass(); requestDraw();
+    if (t < 1) girAnim = requestAnimationFrame(step); else { interacting = false; requestDraw(true); } };
+  girAnim = requestAnimationFrame(step);
+}
+$('#compass').onclick = () => girarPara(0);
 addEventListener('resize', () => { resize(); glResize(); });
 
 // ---------- camadas ----------
@@ -1260,6 +1296,65 @@ const IC = {
   clock:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
 };
 
+// ---------- busca em todos os mapas ----------
+const OUTROS = {};   // id -> {nome, texts, sIdx, TI, G}
+let outrosCarregando = false;
+async function carregarOutrosMapas(){
+  if (outrosCarregando || EMBED) return; outrosCarregando = true;
+  const baseAtual = MAP && (MAP.online ? (MAP.base || 'mapa1') : MAP.id);
+  for (const m of catalog){
+    if (m.online || m.id === baseAtual || OUTROS[m.id] || !available(m)) continue;
+    if (baseAtual === 'principal' && m.id === 'mapa1') continue;   // o Principal já contém o Mapa 1
+    try{
+      const D = await readMapData(m);
+      if (!D.georef) continue;
+      const tx = JSON.parse(new TextDecoder().decode(await gunzip(D.txt)));
+      const st = JSON.parse(new TextDecoder().decode(await gunzip(D.streets)));
+      const TIx = Object.fromEntries(D.meta.tcats.map((c, i) => [c, i]));
+      OUTROS[m.id] = {id: m.id, nome: m.nome, texts: tx, TI: TIx, G: D.georef,
+        sIdx: st.map(([name, labs, nums, alias]) => ({name, labs, nums, alias: !!alias, key: strip(name), words: strip(name).split(' ')}))};
+    }catch(e){}
+    await new Promise(r => setTimeout(r, 50));
+  }
+  outrosCarregando = false;
+}
+const GENW = new Set(['RUA','R','AV','AVENIDA','DE','DA','DO','DOS','DAS','E','TRAVESSA','TRAV','ALAMEDA','AL','RODOVIA','ESTRADA','PRACA','PC','PROJETADA','PROJ','DR','DOUTOR','PROF','PROFESSOR','PE','PADRE','SAO','STA','SANTA','SANTO','GOV','GOVERNADOR','VER','VEREADOR','CEL','CORONEL','ENG','ENGENHEIRO','DEP','DEPUTADO','PRES','PRESIDENTE','MAL','MARECHAL','GAL','GEN','GENERAL','DONA','D','SEN','SENADOR','CAP','CAPITAO','TEN','TENENTE','DECRETO']);
+const nucleo = s => strip(s.replace(/\(.*?\)/g, ' ')).split(' ').filter(w => w && !GENW.has(w) && !/^\d+\/\d+$/.test(w)).join(' ');
+let nucleosAtuais = null;
+const llDe = (G, x, y) => [G.lat[0] + G.lat[1]*x + G.lat[2]*y, G.lon[0] + G.lon[1]*x + G.lon[2]*y];
+function exatoEm(idx, lista, num){
+  for (const st of lista) for (const i of st.nums){ const s = idx.texts[i][7]; if (s === num || s.replace(/^0+/,'') === num.replace(/^0+/,'')) return i; }
+  return null;
+}
+function buscarOutros(P, atuais){
+  const out = [];
+  if (!P.qt.length || !GEO) return out;
+  if (!nucleosAtuais) nucleosAtuais = new Map(sIdx.map(st => [nucleo(st.name), st]));
+  const pertoDeAtual = (idx, st) => {   // mesma rua com outro nome: rótulos a menos de 40 m de uma rua que também combina com a busca
+    const alvo = atuais.filter(a => a.st).flatMap(a => a.st.labs).map(i => texts[i]);
+    if (!alvo.length) return null;
+    for (const i of st.labs.slice(0, 6)){ const t = idx.texts[i], m = mapOfLL(...llDe(idx.G, t[0], t[1])); if (!m) continue;
+      for (const a of alvo) if (Math.hypot(a[0]-m[0], a[1]-m[1]) < 400) return atuais.find(x => x.st && x.st.labs.includes(texts.indexOf(a)))?.st || true; }
+    return null;
+  };
+  for (const idx of Object.values(OUTROS)){
+    const cand = [];
+    for (const st of idx.sIdx){ const sc = matchScore(st.words, P.qt); if (sc >= 0) cand.push({sc, st}); }
+    cand.sort((a, b) => b.sc - a.sc);
+    for (const {sc, st} of cand.slice(0, 6)){
+      let daqui = nucleosAtuais.get(nucleo(st.name)) || null;
+      if (!daqui){ const p = pertoDeAtual(idx, st); if (p) daqui = p === true ? null : p; if (p === true) continue; }
+      let ex = P.num ? exatoEm(idx, [st], P.num) : null;
+      if (daqui){
+        if (!P.num || ex == null) continue;                 // a rua já existe no mapa aberto
+        const r = daqui ? resolveAddress([daqui], P.num) : null; if (r && r.exact) continue;   // número também existe aqui
+      }
+      out.push({kind: 'outro', sc, idx, st, ex, temAqui: !!daqui});
+    }
+  }
+  return out;
+}
+
 const qEl = $('#q'), resEl = $('#results');
 let lastResults = [];
 function renderRecent(){
@@ -1275,7 +1370,10 @@ function renderResults(){
   $('#clear').style.display = q ? '' : 'none';
   $('#chips').style.display = document.activeElement === qEl ? 'none' : '';
   if (q.length < 2){ if (document.activeElement === qEl) renderRecent(); else resEl.classList.remove('open'); return; }
-  const {P, out} = search(q);
+  const {P, out: atuais} = search(q);
+  const outros = buscarOutros(P, atuais);
+  const topoExato = atuais[0] && atuais[0].st && P.num ? (() => { const a = resolveAddress([atuais[0].st].concat(atuais[0].more||[]), P.num); return a && a.exact; })() : true;
+  const out = (!atuais.length || (P.num && !topoExato)) ? outros.concat(atuais) : atuais.concat(outros);
   lastResults = out;
   if (!out.length){ resEl.innerHTML = '<div class="empty">Nada encontrado. Tente só uma parte do nome, ex.: <b>ney braga 1520</b>.</div>'; resEl.classList.add('open'); return; }
   resEl.innerHTML = out.map((r, idx) => {
@@ -1285,6 +1383,12 @@ function renderResults(){
       const isAddr = P.num && !r.exactName;
       const title = isAddr ? `${esc(r.st.name)}, <span style="color:var(--accent)">${esc(P.num)}</span>` : esc(r.st.name);
       return `<div class="res" data-i="${idx}"><div class="ri ${isAddr?'end':'rua'}">${isAddr?IC.end:IC.rua}</div><div><div class="t">${title}</div><div class="s">${r.st.alias ? 'nome usado em outros mapas · ' : ''}${b? esc(b)+' · ':''}${nn ? nn+' números' : 'sem numeração'}</div></div></div>`;
+    }
+    if (r.kind === 'outro'){
+      const isAddr = P.num && r.ex != null;
+      const title = isAddr ? `${esc(r.st.name)}, <span style="color:var(--accent)">${esc(r.idx.texts[r.ex][7])}</span>` : esc(r.st.name) + (P.num ? `, ${esc(P.num)}` : '');
+      const sub = isAddr ? `número encontrado no ${esc(r.idx.nome)}` : (r.temAqui ? `rua também no ${esc(r.idx.nome)}` : `rua encontrada só no ${esc(r.idx.nome)}`);
+      return `<div class="res" data-i="${idx}"><div class="ri ${isAddr?'end':'rua'}">${isAddr?IC.end:IC.rua}</div><div><div class="t">${title} <span class="badge acc">${esc(r.idx.nome)}</span></div><div class="s">${sub}</div></div></div>`;
     }
     if (r.kind === 'poi'){ const pz = POIS[r.pl.poi], [cat, lab] = POICATS[pz[2]], st = POI_STY[cat];
       return `<div class="res" data-i="${idx}"><div class="ri" style="background:${st.c}22;font-size:18px">${st.e==='tire'?'🛞':st.e}</div><div><div class="t">${esc(pz[3])}</div><div class="s">${esc(lab)}${pz[4]? ' · '+esc(pz[4]):''}</div></div></div>`; }
@@ -1369,8 +1473,34 @@ function hideCard(){ curStreet = null; $('#numIn').blur(); $('#card').classList.
 $('#center').onclick = () => { if (cardFocus) cardFocus(); };
 $('#copy').onclick = async () => { try{ await navigator.clipboard.writeText(cardText); toast('Endereço copiado'); }catch(e){ toast('Não foi possível copiar'); } };
 
+function chooseOutro(r){
+  const {P} = search(qEl.value); addRecent(qEl.value);
+  resEl.classList.remove('open'); qEl.blur();
+  const idx = r.idx, gname = cleanStreetName(r.st.name);
+  highlight = null;
+  if (r.ex != null){
+    const t = idx.texts[r.ex], [lat, lon] = llDe(idx.G, t[0], t[1]), m = mapOfLL(lat, lon);
+    pin = {x: m[0], y: m[1]};
+    const go = () => focusOn(m[0], m[1], 0.8); go();
+    const b = nearestBairro(m[0], m[1]);
+    nextTarget = {label: `${gname}, ${t[7]}`, lat, lon};
+    showCard('end', `${esc(r.st.name)}, ${esc(t[7])}`, `${b ? esc(b) + ' · ' : ''}Número encontrado no ${esc(idx.nome)}`, `${lat.toFixed(6)},${lon.toFixed(6)}`, `${gname}, ${t[7]} - ${cityName()}`, go);
+  } else {
+    const pts = r.st.labs.map(i => { const t = idx.texts[i]; return mapOfLL(...llDe(idx.G, t[0], t[1])); });
+    let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12; for (const [x,y] of pts){ x0=Math.min(x0,x); y0=Math.min(y0,y); x1=Math.max(x1,x); y1=Math.max(y1,y); }
+    const cx = (x0+x1)/2, cy = (y0+y1)/2; let c = pts[0], cd = 1e18; for (const p of pts){ const d = (p[0]-cx)**2 + (p[1]-cy)**2; if (d < cd){ cd = d; c = p; } }
+    pin = {x: c[0], y: c[1]};
+    const go = () => fitBox(x0-300, y0-300, x1+300, y1+300, 50, 2.5); go();
+    const [lat, lon] = llOf(c[0], c[1]);
+    nextTarget = {label: P.num ? `${gname}, ${P.num}` : gname, lat, lon};
+    const vals = r.st.nums.map(i => numVal(idx.texts[i][7])).filter(v => !isNaN(v)).sort((a,b)=>a-b);
+    showCard('rua', esc(r.st.name) + (P.num ? `, ${esc(P.num)}` : ''), `Rua encontrada no ${esc(idx.nome)}${P.num ? ` (o número ${esc(P.num)} não está nos mapas)` : ''}${vals.length ? `<br>Numeração no ${esc(idx.nome)}: ${vals[0]} a ${vals[vals.length-1]}` : ''}`, `${gname}${P.num ? ', ' + P.num : ''} - ${cityName()}`, `${gname}${P.num ? ', ' + P.num : ''} - ${cityName()}`, go);
+  }
+  requestDraw(true);
+}
 function choose(idx){
   const r = lastResults[idx]; if (!r) return;
+  if (r.kind === 'outro') return chooseOutro(r);
   const {P} = search(qEl.value);
   addRecent(qEl.value);
   resEl.classList.remove('open'); qEl.blur();
@@ -1972,7 +2102,7 @@ async function openMap(m){
     }
     $('#mapChipName').textContent = m.nome; $('#mapChipCity').textContent = m.cidade ? '· ' + m.cidade.replace(/ - [A-Z]{2}$/,'') : '';
     hideCard(); qEl.value = ''; $('#clear').style.display='none';
-    computeCore(); RGmapId = null; if (stops.length && GEO) setTimeout(() => computeRoute(false), 600); paintRoute(); $('#locGroup').style.display = GEO ? '' : 'none'; if (!GEO && locWatch) stopLoc(); resize(); fitAll();
+    computeCore(); RGmapId = null; nucleosAtuais = null; for (const k in OUTROS) delete OUTROS[k]; setTimeout(carregarOutrosMapas, 1500); if (stops.length && GEO) setTimeout(() => computeRoute(false), 600); paintRoute(); $('#locGroup').style.display = GEO ? '' : 'none'; if (!GEO && locWatch) stopLoc(); resize(); fitAll();
     setTimeout(expandIn, 350);
   }catch(e){
     $('#lmsg').textContent = 'Erro: ' + e.message; await new Promise(r => setTimeout(r, 1800));

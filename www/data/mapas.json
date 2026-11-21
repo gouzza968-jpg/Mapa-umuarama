@@ -1,6 +1,16 @@
 {
   "mapas": [
     {
+      "id": "principal",
+      "nome": "Mapa Principal",
+      "descricao": "O mais completo: prefeitura + OpenStreetMap + IBGE (CNEFE 2022) + Overture · mais números e comércios",
+      "cidade": "Umuarama - PR",
+      "arquivo": "data/principal.json",
+      "ruas": 1837,
+      "data": "21/11/2026",
+      "embutido": true
+    },
+    {
       "id": "mapa1",
       "nome": "Mapa 1",
       "descricao": "Mapa oficial da prefeitura · numeração predial completa",
@@ -23,10 +33,10 @@
     {
       "id": "mapa3",
       "nome": "Mapa 3",
-      "descricao": "Mapa online (OpenFreeMap) · precisa de internet · com a numeração do Mapa 1",
+      "descricao": "Mapa online (OpenFreeMap) · precisa de internet · com a numeração do Mapa Principal",
       "cidade": "Umuarama - PR",
       "online": true,
-      "base": "mapa1",
+      "base": "principal",
       "embutido": true,
       "data": "sempre atualizado"
     }
