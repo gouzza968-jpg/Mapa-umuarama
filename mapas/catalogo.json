@@ -1,6 +1,19 @@
 {
   "mapas": [
-    {"id": "mapa1", "nome": "Mapa 1", "embutido": true},
-    {"id": "mapa2", "nome": "Mapa 2", "embutido": true}
+    {
+      "id": "mapa1",
+      "nome": "Mapa 1",
+      "embutido": true
+    },
+    {
+      "id": "mapa2",
+      "nome": "Mapa 2",
+      "embutido": true
+    },
+    {
+      "id": "mapa3",
+      "nome": "Mapa 3",
+      "embutido": true
+    }
   ]
 }

@@ -34,6 +34,7 @@ jobs:
         run: |
           mkdir -p www/vendor
           cp node_modules/@supabase/supabase-js/dist/umd/supabase.js www/vendor/supabase.js
+          cp node_modules/maplibre-gl/dist/maplibre-gl.js node_modules/maplibre-gl/dist/maplibre-gl.css www/vendor/
           ls -la www/vendor
 
       - name: Criar projeto Android

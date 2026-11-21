@@ -1,6 +1,14 @@
 {
-  "latest": "2.10.1",
+  "latest": "2.11.0",
   "versions": [
+    {
+      "version": "2.11.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Novo Mapa 3: mapa online, com ruas, comércios e prédios (precisa de internet)",
+        "No Mapa 3 continuam a numeração da prefeitura, as rotas, os motoboys e as referências"
+      ]
+    },
     {
       "version": "2.10.0",
       "date": "21/11/2026",

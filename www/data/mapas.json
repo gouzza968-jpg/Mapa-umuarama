@@ -19,6 +19,16 @@
       "ruas": 1128,
       "data": "21/11/2026",
       "embutido": true
+    },
+    {
+      "id": "mapa3",
+      "nome": "Mapa 3",
+      "descricao": "Mapa online (OpenFreeMap) · precisa de internet · com a numeração do Mapa 1",
+      "cidade": "Umuarama - PR",
+      "online": true,
+      "base": "mapa1",
+      "embutido": true,
+      "data": "sempre atualizado"
     }
   ]
 }

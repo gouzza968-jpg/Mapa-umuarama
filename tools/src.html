@@ -24,6 +24,9 @@
   html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
   button{font:inherit;color:inherit;cursor:pointer}
   .glass{background:var(--surface);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--line);box-shadow:var(--shadow)}
+  #gl{position:fixed;left:0;top:0;width:100%;height:calc(100% - var(--tabh) - env(safe-area-inset-bottom));display:none;pointer-events:none;background:var(--bg)}
+  body.online #gl{display:block}
+  body.online .maplibregl-ctrl-bottom-left, body.online .maplibregl-ctrl-bottom-right{bottom:0}
   #map{position:fixed;left:0;top:0;width:100%;height:calc(100% - var(--tabh) - env(safe-area-inset-bottom));touch-action:none;display:block}
 
   /* ---------- topo ---------- */
@@ -304,6 +307,7 @@
 </style>
 </head>
 <body>
+<div id="gl"></div>
 <canvas id="map"></canvas>
 
 <div class="top" id="topbar">
@@ -584,6 +588,34 @@ async function refreshRemoteCatalog(){
 const mapById = id => catalog.find(m => m.id === id);
 const available = m => m.embutido || downloaded.has(m.id);
 
+// ---------- Mapa online (MapLibre + OpenFreeMap) ----------
+let GL = null, GLready = false, GLbearing = 0, GLstyle = '';
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+function loadCss(href){ if (document.querySelector(`link[href="${href}"]`)) return; const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); }
+const glStyleUrl = () => prefs.theme === 'light' ? 'https://tiles.openfreemap.org/styles/liberty' : 'https://tiles.openfreemap.org/styles/dark';
+async function ensureGL(){
+  if (GL) return GL;
+  loadCss('vendor/maplibre-gl.css');
+  if (!window.maplibregl) await loadScript('vendor/maplibre-gl.js');
+  GLstyle = glStyleUrl();
+  GL = new maplibregl.Map({container: 'gl', style: GLstyle, interactive: false, attributionControl: {compact: true}, fadeDuration: 0, maxZoom: 22, center: [-53.325, -23.766], zoom: 13});
+  GL.on('load', () => { GLready = true; });
+  GL.on('error', e => {
+    const msg = String((e && e.error && e.error.message) || '');
+    if (GLstyle.endsWith('/dark') && /style|404|Failed/i.test(msg)){ GLstyle = 'https://tiles.openfreemap.org/styles/liberty'; GL.setStyle(GLstyle); }
+    else if (!navigator.onLine || /Failed to fetch|NetworkError/i.test(msg)){ if (!ensureGL.warned){ ensureGL.warned = true; toast('O Mapa 3 precisa de internet'); } }
+  });
+  return GL;
+}
+function syncGL(){
+  if (!GL || !GEO || !VW) return;
+  const [lat, lon] = llOf(view.x, view.y), mpp = 1 / (view.k * S);
+  const z = Math.log2(40075016.686 * Math.cos(lat * Math.PI / 180) / (512 * mpp));
+  GL.jumpTo({center: [lon, lat], zoom: Math.max(0, Math.min(22, z)), bearing: GLbearing});
+}
+function glResize(){ if (GL) GL.resize(); }
+const isOnline = () => !!(MAP && MAP.online);
+
 // ---------- motor do mapa ----------
 let MAP = null; // dados do mapa atual
 let POIS = [], POICATS = [], GEO = null;
@@ -810,16 +842,17 @@ function drawTexts(){
   ctx.textBaseline = 'alphabetic';
   occupied.length = 0;
   let cand;
-  if (vectorMode()) cand = textCandidates();
+  if (vectorMode() || isOnline()) cand = textCandidates();
   else { cand = []; for (let i=0;i<texts.length;i++){ const c=texts[i][6]; if (c===TI.bairro || (highlight && highlight.labels.has(i))) cand.push(i); } }
   const byCat = TC.map(()=>[]);
   for (const i of cand) byCat[texts[i][6]].push(i);
+  const ONLY = isOnline() ? new Set(['num']) : null;
   const isHL = i => highlight && (highlight.labels.has(i) || highlight.nums.has(i));
   const isSoft = i => highlight && highlight.soft && highlight.soft.has(i);
   for (const name of T_ORDER){
     const st = TSTY[name]; const ci = TI[name]; if (ci==null) continue;
     let list = byCat[ci]; if (!list.length) continue;
-    if (!vis[st.layer]) { list = list.filter(isHL); if(!list.length) continue; }
+    if (!vis[st.layer] || (ONLY && !ONLY.has(name))) { list = list.filter(isHL); if(!list.length) continue; }
     if (name==='rua' && highlight) list.sort((a,b)=> (isHL(b)?1:0)-(isHL(a)?1:0));
     for (const i of list){
       const t = texts[i]; let px = t[2]*k; const hl = isHL(i); const soft = !hl && isSoft(i);
@@ -1030,6 +1063,11 @@ function drawScale(){
 }
 function draw(){
   if (!VW || !MAP) return;
+  if (isOnline()){
+    ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0, 0, cv.width, cv.height);
+    syncGL(); drawRoute(); drawTexts(); drawPois(); drawLive(); drawMe(); drawPin(); drawScale();
+    return;
+  }
   if (!vectorMode()){ drawOverview(); drawRoute(); drawTexts(); drawPois(); snap=null; }
   else if (interacting && !needFull && snap){
     drawOverview();
@@ -1129,7 +1167,7 @@ function fitBox(x0,y0,x1,y1, padPx=60, maxK=4){
 $('#zin').onclick = () => zoomAt(VW/2, VH/2, 2);
 $('#zout').onclick = () => zoomAt(VW/2, VH/2, 0.5);
 $('#home').onclick = () => animateTo(W/2, H/2 + 30/homeK(), homeK());
-addEventListener('resize', resize);
+addEventListener('resize', () => { resize(); glResize(); });
 
 // ---------- camadas ----------
 function renderLayers(){
@@ -1875,10 +1913,17 @@ async function openMap(m){
   $('#lttl').textContent = m.nome; $('#lmsg').textContent = 'Abrindo o mapa…';
   await new Promise(r => setTimeout(r, 30));
   try{
-    const D = await readMapData(m);
+    const base = m.online ? (mapById(m.base || 'mapa1') || m) : m;
+    const D = await readMapData(base);
     $('#lmsg').textContent = 'Montando o mapa…'; await new Promise(r => setTimeout(r, 20));
     await buildMap(D);
     MAP = m; prefs.mapa = m.id; savePrefs();
+    document.body.classList.toggle('online', !!m.online);
+    if (m.online){
+      try{ await ensureGL(); }catch(e){ toast('Não foi possível carregar o mapa online'); }
+      if (GEO){ const [a0,a1,a2] = GEO.lat, [b0,b1,b2] = GEO.lon; GLbearing = -Math.atan2(a1 * KYm, b1 * KXm) * 180 / Math.PI; }  // pequena rotação do desenho da prefeitura
+      setTimeout(glResize, 50);
+    }
     $('#mapChipName').textContent = m.nome; $('#mapChipCity').textContent = m.cidade ? '· ' + m.cidade.replace(/ - [A-Z]{2}$/,'') : '';
     hideCard(); qEl.value = ''; $('#clear').style.display='none';
     computeCore(); RGmapId = null; if (stops.length && GEO) setTimeout(() => computeRoute(false), 600); paintRoute(); $('#locGroup').style.display = GEO ? '' : 'none'; if (!GEO && locWatch) stopLoc(); resize(); fitAll();
@@ -1901,6 +1946,7 @@ document.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => {
   document.body.classList.toggle('light', prefs.theme==='light');
   document.querySelector('meta[name=theme-color]').content = prefs.theme==='light' ? '#eef1f4' : '#0b0f14';
   TH = THEMES[prefs.theme]; if (MAP){ buildOverview(); snap = null; requestDraw(true); }
+  if (GL){ GLstyle = glStyleUrl(); GL.setStyle(GLstyle); }
   paintStatusBar();
 });
 function paintRecent(){ const n = (prefs.recent||[]).length; $('#recd').textContent = n ? `${n} salva${n>1?'s':''} neste aparelho` : 'Nenhuma'; $('#recClear').disabled = !n; }
