@@ -1,11 +1,6 @@
 {
   "mapas": [
-    {
-      "id": "mapa1",
-      "nome": "Mapa 1",
-      "descricao": "Mapa oficial de numeração predial",
-      "cidade": "Umuarama - PR",
-      "embutido": true
-    }
+    {"id": "mapa1", "nome": "Mapa 1", "embutido": true},
+    {"id": "mapa2", "nome": "Mapa 2", "embutido": true}
   ]
 }

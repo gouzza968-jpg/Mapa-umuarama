@@ -1,6 +1,17 @@
 {
-  "latest": "2.3.0",
+  "latest": "2.4.0",
   "versions": [
+    {
+      "version": "2.4.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Novo Mapa 2, do OpenStreetMap (mais atualizado), escolha no botão do mapa",
+        "Referências no mapa: saúde, farmácias, mercados, postos, borracharias e mais",
+        "Escolha o que mostrar nos botões abaixo da busca",
+        "Toque num ícone para ver detalhes, copiar ou abrir a rota",
+        "Busque por “farmácia”, “posto”, “mercado”…"
+      ]
+    },
     {
       "version": "2.3.0",
       "date": "21/11/2026",

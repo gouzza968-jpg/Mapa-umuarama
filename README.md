@@ -44,3 +44,9 @@ O app consulta `releases/latest/download/update.json`; quando o `versionCode` é
    {"id": "mapa2", "nome": "Mapa 2", "descricao": "…", "cidade": "Umuarama - PR", "url": "mapas/mapa2.json", "tamanho": 2945649}
    ```
 3. Commit e push — o app mostra “Novo mapa disponível” e o usuário baixa no botão do mapa, na guia Explorar, sem precisar de APK novo.
+
+## Referências e Mapa 2 (OpenStreetMap)
+
+- `.github/workflows/osm.yml` baixa o extrato do OpenStreetMap do Paraná e recorta Umuarama em `dados-osm/`
+- `tools/osm/referencias.py` encaixa o Mapa 1 nas coordenadas reais (erro mediano ~3 m) e grava as referências nele
+- `tools/osm/mapa_osm.py` gera o Mapa 2 (`www/data/mapa2.json`) direto do OpenStreetMap
