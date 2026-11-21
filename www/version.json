@@ -1,6 +1,13 @@
 {
-  "latest": "2.4.0",
+  "latest": "2.4.1",
   "versions": [
+    {
+      "version": "2.4.1",
+      "date": "21/11/2026",
+      "notes": [
+        "Na escolha de mapas, cada mapa mostra quantas ruas tem e a data"
+      ]
+    },
     {
       "version": "2.4.0",
       "date": "21/11/2026",

@@ -6,14 +6,18 @@
       "descricao": "Mapa oficial da prefeitura · numeração predial completa",
       "cidade": "Umuarama - PR",
       "arquivo": "data/mapa.json",
+      "ruas": 1680,
+      "data": "Out/2026",
       "embutido": true
     },
     {
       "id": "mapa2",
       "nome": "Mapa 2",
-      "descricao": "OpenStreetMap, atualizado em 21/11/2026 · ruas novas e referências",
+      "descricao": "OpenStreetMap · ruas mais novas e referências",
       "cidade": "Umuarama - PR",
       "arquivo": "data/mapa2.json",
+      "ruas": 1128,
+      "data": "21/11/2026",
       "embutido": true
     }
   ]
