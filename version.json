@@ -1,6 +1,15 @@
 {
-  "latest": "2.19.0",
+  "latest": "2.20.0",
   "versions": [
+    {
+      "version": "2.20.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Notificações: mensagens do chat, blitz e avisos do administrador com o app minimizado",
+        "Escolha quais receber em Configurações → Notificações",
+        "Toque na notificação para abrir o chat ou ver a blitz no mapa"
+      ]
+    },
     {
       "version": "2.19.0",
       "date": "21/11/2026",

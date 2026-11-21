@@ -588,6 +588,26 @@
     <div class="warnbox show" style="color:var(--muted);background:var(--raised)">🔒 Só aparece quem ligar esta opção. Fica guardada só a sua última posição, e ela é apagada quando você desliga. Depois de 3 minutos sem sinal, você some do mapa.</div>
   </div>
 
+  <div class="sec" id="secNotif">
+    <div class="ttl">Notificações</div>
+    <div class="row">
+      <div class="ri"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+      <div class="grow"><div class="l">Mensagens do chat</div><div class="d">Avisa quando chega mensagem com o app minimizado.</div></div>
+      <label class="switch"><input type="checkbox" id="nChat"><span></span></label>
+    </div>
+    <div class="row">
+      <div class="ri" style="font-size:17px">🚨</div>
+      <div class="grow"><div class="l">Alertas de blitz</div><div class="d">Avisa quando um motoboy reporta uma blitz.</div></div>
+      <label class="switch"><input type="checkbox" id="nBlitz"><span></span></label>
+    </div>
+    <div class="row">
+      <div class="ri" style="font-size:17px">📢</div>
+      <div class="grow"><div class="l">Avisos do administrador</div><div class="d">Mensagens e avisos da administração.</div></div>
+      <label class="switch"><input type="checkbox" id="nAdm"><span></span></label>
+    </div>
+    <div class="note" id="nNote" style="margin:4px 16px 14px;font-size:12.5px;color:var(--muted);line-height:1.45">Funciona com o app aberto ou minimizado. Com <b>Compartilhar minha localização</b> e <b>Continuar com o app minimizado</b> ligados, os avisos chegam mesmo com a tela apagada.</div>
+  </div>
+
   <div class="sec" id="secRotas">
     <div class="ttl">Rotas</div>
     <div class="row">
@@ -643,7 +663,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.19.0";
+const APP_VERSION = "2.20.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -1748,7 +1768,7 @@ async function startBg(){
       if (err){ if (err.code === 'NOT_AUTHORIZED') toast('Permita a localização para compartilhar em segundo plano', () => BG().openSettings(), 'Abrir'); return; }
       if (!loc) return;
       if (document.hidden){ const prev = me; me = {lat: loc.latitude, lon: loc.longitude, acc: loc.accuracy, head: (loc.speed && loc.speed > 0.8 && loc.bearing != null) ? loc.bearing : (prev ? prev.head : null)}; liveSend(false); }
-      posSend(false);
+      posSend(false); notifConfere();
     });
   }catch(e){ bgWatch = null; }
 }
@@ -1864,6 +1884,7 @@ async function alertasInit(){
   alertasCh = sb.channel('alertas-blitz')
     .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'alertas'}, p => {
       const a = p.new; const novo = !alertas.some(x => x.id === a.id); upsertAlerta(a); paintBlitzOpt(); requestDraw(true);
+      if (novo) notifBlitz(a);
       if (novo && a.autor !== sbUid && prefs.showBlitz && REC.blitz) toast(`🚨 Blitz reportada${a.apelido ? ' por ' + a.apelido : ''}`, () => verBlitz(a), 'Ver');
     })
     .on('postgres_changes', {event: 'UPDATE', schema: 'public', table: 'alertas'}, p => { upsertAlerta(p.new); paintBlitzOpt(); requestDraw(true); })
@@ -1950,6 +1971,77 @@ $('#pickOk').onclick = async () => {
   } finally { $('#pickOk').disabled = false; }
 };
 
+// ---------- notificações (app minimizado) ----------
+if (!prefs.notif) prefs.notif = {chat: true, blitz: true, adm: true};
+const LN = () => NATIVE && plug('LocalNotifications');
+let notifPerm = null, notifMsgs = [];
+async function notifPermissao(pedir){
+  const L = LN(); if (!L) return false;
+  try{ let st = await L.checkPermissions(); if (st.display !== 'granted' && pedir) st = await L.requestPermissions(); notifPerm = st.display === 'granted'; }catch(e){ notifPerm = false; }
+  return notifPerm;
+}
+let notifCanal = false;
+async function notificar(id, titulo, texto, extra){
+  const L = LN(); if (!L || !document.hidden) return;
+  if (notifPerm == null) await notifPermissao(false); if (!notifPerm) return;
+  try{
+    if (!notifCanal && L.createChannel){ notifCanal = true; await L.createChannel({id: 'avisos', name: 'Chat e alertas', description: 'Mensagens do chat e alertas de blitz', importance: 4, visibility: 1, vibration: true}).catch(() => {}); }
+    await L.schedule({notifications: [{id, title: titulo, body: texto, largeBody: texto, channelId: 'avisos', extra: extra || {}, autoCancel: true}]});
+  }catch(e){}
+}
+const resumoMsg = m => m.audio ? '🎤 Áudio' : m.foto ? '📷 Foto' + (m.texto ? ': ' + m.texto : '') : m.lat != null ? '📍 Localização' : (m.texto || '');
+function notifChat(m){
+  if (!m || m.autor === sbUid || chatOff || !document.hidden) return;
+  if (m.admin ? !prefs.notif.adm : !prefs.notif.chat) return;
+  if (prefs.nLastMsg && m.id <= prefs.nLastMsg) return; prefs.nLastMsg = m.id; savePrefs();
+  notifMsgs.push(m); if (notifMsgs.length > 6) notifMsgs.shift();
+  const n = notifMsgs.length;
+  const titulo = m.admin ? '📢 Administrador' : n > 1 ? `💬 ${n} mensagens novas` : `💬 ${m.apelido}`;
+  const texto = n > 1 ? notifMsgs.map(x => `${x.apelido}: ${resumoMsg(x)}`).join('\n') : resumoMsg(m);
+  notificar(m.admin ? 1003 : 1001, titulo, texto, {abrir: 'chat'});
+}
+function notifBlitz(a){
+  if (!a || a.autor === sbUid || !prefs.notif.blitz || !REC.blitz || !document.hidden) return;
+  if (prefs.nLastBlitz && a.id <= prefs.nLastBlitz) return; prefs.nLastBlitz = a.id; savePrefs();
+  let onde = ''; try{ const m = mapOfLL(a.lat, a.lon); const b = m && nearestBairro(m[0], m[1]); if (b) onde = ' perto de ' + cleanStreetName(b); }catch(e){}
+  notificar(2000000 + (a.id % 1000000), '🚨 Blitz reportada', `${a.apelido ? a.apelido + ' avisou' : 'Um motoboy avisou'}: blitz${onde}. Toque para ver no mapa.`, {abrir: 'blitz', id: a.id});
+}
+function notifAviso(av){ if (av && prefs.notif.adm && document.hidden && prefs.nLastAviso !== av){ prefs.nLastAviso = av; savePrefs(); notificar(1004, '📢 Aviso do administrador', av, {abrir: 'mapa'}); } }
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ notifMsgs = []; const L = LN(); if (L) L.removeAllDeliveredNotifications && L.removeAllDeliveredNotifications().catch(() => {}); } });
+// com o app minimizado o tempo real do navegador pode dormir: confere o servidor pelo HTTP nativo
+let notifPoll = 0;
+async function notifConfere(){
+  if (!document.hidden || !NATIVE || !sb || Date.now() - notifPoll < 30000) return; notifPoll = Date.now();
+  const Hh = plug('CapacitorHttp'); const tk = await tokenAtual(); if (!Hh || !tk) return;
+  const h = {apikey: SB_KEY, Authorization: 'Bearer ' + tk};
+  const get = async q => { try{ const r = await Hh.request({url: SB_URL + '/rest/v1/' + q, method: 'GET', headers: h, connectTimeout: 15000, readTimeout: 15000}); return r.status === 200 ? (typeof r.data === 'string' ? JSON.parse(r.data) : r.data) : null; }catch(e){ return null; } };
+  if ((prefs.notif.chat || prefs.notif.adm) && !chatOff){
+    const desde = prefs.nLastMsg || (chatMsgs.length ? chatMsgs[chatMsgs.length - 1].id : 0);
+    const ms = await get(`mensagens?select=*&sala=eq.geral&id=gt.${desde}&order=id.asc&limit=20`);
+    if (ms && ms.length){ for (const m of ms){ if (!chatMsgs.some(x => x.id === m.id)) chatMsgs.push(m); notifChat(m); } if (!desde) { prefs.nLastMsg = ms[ms.length - 1].id; savePrefs(); } }
+  }
+  if (prefs.notif.blitz && REC.blitz){
+    const desde = prefs.nLastBlitz || Math.max(0, ...alertas.map(a => a.id));
+    const bs = await get(`alertas?select=*&id=gt.${desde}&expira_em=gt.${encodeURIComponent(new Date().toISOString())}&order=id.asc&limit=10`);
+    if (bs && bs.length) for (const a of bs){ upsertAlerta(a); notifBlitz(a); }
+  }
+}
+setInterval(notifConfere, 30000);
+function paintNotifOpts(){ $('#nChat').checked = !!prefs.notif.chat; $('#nBlitz').checked = !!prefs.notif.blitz; $('#nAdm').checked = !!prefs.notif.adm; $('#secNotif').style.display = NATIVE ? '' : 'none'; }
+for (const [id, k] of [['#nChat', 'chat'], ['#nBlitz', 'blitz'], ['#nAdm', 'adm']]){
+  $(id).onchange = async () => { prefs.notif[k] = $(id).checked; savePrefs(); if ($(id).checked && !(await notifPermissao(true))) toast('Permita as notificações do app nas configurações do Android'); };
+}
+paintNotifOpts();
+if (NATIVE && LN()){
+  setTimeout(() => notifPermissao(true), 4000);
+  LN().addListener('localNotificationActionPerformed', ev => {
+    const x = (ev && ev.notification && ev.notification.extra) || {};
+    if (x.abrir === 'chat') showTab('chat');
+    else if (x.abrir === 'blitz'){ const a = alertas.find(y => y.id === x.id); if (a) verBlitz(a); else showTab('map'); }
+    else showTab('map');
+  });
+}
+
 // ---------- chat ----------
 let chatOff = !!prefs.chatOff, chatBanned = false, chatCh = null, chatReady = false, chatMsgs = [], chatUnread = 0, chatLastSend = 0, chatLoading = false;
 const fmtHora = d => d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
@@ -1990,7 +2082,7 @@ let chatSyncing = false, reabrindo = null;
 function addMsgs(lista, contar){
   let novas = 0;
   for (const m of lista){ if (chatMsgs.some(x => x.id === m.id)) continue; chatMsgs.push(m); novas++;
-    if (contar && curTab !== 'chat' && m.autor !== sbUid && !chatOff){ chatUnread++; } }
+    if (contar && (curTab !== 'chat' || document.hidden) && m.autor !== sbUid && !chatOff){ chatUnread++; notifChat(m); } }
   if (!novas) return 0;
   chatMsgs.sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em) || a.id - b.id);
   while (chatMsgs.length > 300) chatMsgs.shift();
@@ -2037,7 +2129,7 @@ function applyRec(){
   $('#liveOpt').style.display = REC.aoVivo || ADMIN_VIEW ? '' : 'none';
   $('#secRotas').style.display = REC.rotas ? '' : 'none';
   const av = (REC.aviso || '').trim();
-  $('#avisoT').textContent = av;
+  $('#avisoT').textContent = av; notifAviso(av);
   $('#aviso').classList.toggle('show', !!av && prefs.avisoLido !== av);
   updateRouteBtn(); requestDraw(true);
 }
