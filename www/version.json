@@ -1,6 +1,15 @@
 {
-  "latest": "2.4.2",
+  "latest": "2.5.0",
   "versions": [
+    {
+      "version": "2.5.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Sua localização no mapa: toque no botão de mira",
+        "Semáforos em Camadas do mapa",
+        "Categoria de radares pronta para receber os pontos"
+      ]
+    },
     {
       "version": "2.4.2",
       "date": "21/11/2026",

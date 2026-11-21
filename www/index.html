@@ -67,6 +67,8 @@
   .fab{width:50px;height:50px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink)}
   .fab:active{background:var(--raised)}
   .group .fab + .fab{border-top:1px solid var(--line)}
+  #loc.on{color:#3b82f6}
+  #loc.follow{color:#fff;background:#3b82f6}
   .single{border-radius:16px}
   #scale{position:fixed;left:14px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 10px);font-size:11px;font-weight:600;color:var(--muted);z-index:3;pointer-events:none}
   #scale .bar{height:5px;border:1.5px solid var(--muted);border-top:0;border-radius:0 0 2px 2px;margin-bottom:3px}
@@ -232,6 +234,9 @@
 </div>
 
 <div class="ctrls" id="ctrls">
+  <div class="group glass" id="locGroup" style="display:none">
+    <button class="fab" id="loc" aria-label="Minha localização"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+  </div>
   <div class="group glass">
     <button class="fab" id="zin" aria-label="Aproximar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
     <button class="fab" id="zout" aria-label="Afastar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
@@ -349,7 +354,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.4.2";
+const APP_VERSION = "2.5.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -520,8 +525,9 @@ const POI_STY = {
   saude:{e:'🏥', c:'#ef4444'}, farmacia:{e:'💊', c:'#10b981'}, mercado:{e:'🛒', c:'#3b82f6'}, posto:{e:'⛽', c:'#f59e0b'},
   borracharia:{e:'tire', c:'#334155'}, oficina:{e:'🔧', c:'#64748b'}, seguranca:{e:'🚓', c:'#1d4ed8'}, escola:{e:'🏫', c:'#8b5cf6'},
   servico:{e:'🏦', c:'#0ea5e9'}, comida:{e:'🍴', c:'#f97316'}, igreja:{e:'⛪', c:'#a855f7'},
+  semaforo:{e:'🚦', c:'#1f2937'}, radar:{e:'📷', c:'#dc2626'},
 };
-const POI_SHORT = {saude:'Saúde', farmacia:'Farmácias', mercado:'Mercados', posto:'Postos', borracharia:'Borracharias', oficina:'Oficinas', seguranca:'Polícia', escola:'Escolas', servico:'Serviços', comida:'Comida', igreja:'Igrejas'};
+const POI_SHORT = {saude:'Saúde', farmacia:'Farmácias', mercado:'Mercados', posto:'Postos', borracharia:'Borracharias', oficina:'Oficinas', seguranca:'Polícia', escola:'Escolas', servico:'Serviços', comida:'Comida', igreja:'Igrejas', semaforo:'Semáforos', radar:'Radares'};
 const poiVis = Object.assign({}, prefs.poiVis||{});   // começa tudo desligado: o usuário escolhe o que mostrar
 const vis = Object.assign({rua:true,num:true,lote:true,quadra:true,via:true,rio:true,bairro:true,outro:false}, prefs.vis||{});
 
@@ -742,6 +748,67 @@ function showPoi(i){
   showCard('poi:' + cat, esc(pz[3]), `${esc(label)}${pz[4] ? ' · ' + esc(pz[4]) : ''}${b ? ' · ' + esc(b) : ''}`, `${pz[5]},${pz[6]}`, `${pz[3]}${pz[4] ? ', ' + pz[4] : ''} - ${cityName()}`, go);
   requestDraw(true);
 }
+// ---------- minha localização ----------
+let me = null, locWatch = null, follow = false;
+function mapOfLL(lat, lon){
+  if (!GEO) return null;
+  const [a0,a1,a2] = GEO.lat, [b0,b1,b2] = GEO.lon, det = a1*b2 - a2*b1;
+  const dl = lat - a0, dn = lon - b0;
+  return [(dl*b2 - a2*dn)/det, (a1*dn - b1*dl)/det];
+}
+function drawMe(){
+  if (!me) return;
+  const p = mapOfLL(me.lat, me.lon); if (!p) return;
+  const [sx, sy] = toScreen(p[0], p[1]);
+  ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.translate(sx, sy);
+  const acc = Math.min(200, Math.max(8, (me.acc||20) * S * view.k));
+  ctx.fillStyle = 'rgba(59,130,246,.16)'; ctx.strokeStyle = 'rgba(59,130,246,.45)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0,0,acc,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  if (me.head != null && !isNaN(me.head)){
+    ctx.save(); ctx.rotate(me.head * Math.PI/180);
+    const g = ctx.createLinearGradient(0,-34,0,0); g.addColorStop(0,'rgba(59,130,246,0)'); g.addColorStop(1,'rgba(59,130,246,.55)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,34,-Math.PI/2-0.5,-Math.PI/2+0.5); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function onPos(pos){
+  const c = pos.coords || pos;
+  me = {lat: c.latitude, lon: c.longitude, acc: c.accuracy, head: (c.speed && c.speed > 1) ? c.heading : null};
+  const p = mapOfLL(me.lat, me.lon);
+  if (p && (p[0] < -20000 || p[0] > W + 20000 || p[1] < -20000 || p[1] > H + 20000)){ if (!onPos.warned){ toast('Você está fora da área deste mapa'); onPos.warned = true; } }
+  else if (p && follow) animateTo(p[0], p[1] - 60/Math.max(view.k, 0.25), Math.max(view.k, 0.25), 400);
+  $('#loc').classList.add('on');
+  requestDraw(true);
+}
+function onPosErr(e){
+  stopLoc();
+  toast(e && (e.code === 1 || /denied|permission/i.test(e.message||'')) ? 'Permita o acesso à localização para usar este botão' : 'Não foi possível obter sua localização');
+}
+async function startLoc(){
+  try{
+    const G = NATIVE && plug('Geolocation');
+    if (G){
+      const perm = await G.requestPermissions().catch(() => null);
+      if (perm && perm.location === 'denied'){ onPosErr({code:1}); return; }
+      locWatch = {native: await G.watchPosition({enableHighAccuracy:true, timeout:20000, maximumAge:3000}, (pos, err) => { if (err) onPosErr(err); else if (pos) onPos(pos); })};
+    } else if (navigator.geolocation){
+      locWatch = {web: navigator.geolocation.watchPosition(onPos, onPosErr, {enableHighAccuracy:true, timeout:20000, maximumAge:3000})};
+    } else { toast('Localização não disponível neste aparelho'); return; }
+    toast('Buscando sua localização…');
+  }catch(e){ onPosErr(e); }
+}
+function stopLoc(){
+  if (locWatch){ if (locWatch.native) plug('Geolocation').clearWatch({id: locWatch.native}).catch(()=>{}); if (locWatch.web != null) navigator.geolocation.clearWatch(locWatch.web); }
+  locWatch = null; me = null; follow = false; $('#loc').classList.remove('on','follow'); requestDraw(true);
+}
+$('#loc').onclick = () => {
+  if (!locWatch){ follow = true; $('#loc').classList.add('follow'); startLoc(); return; }
+  if (!follow && me){ follow = true; $('#loc').classList.add('follow'); onPos({latitude: me.lat, longitude: me.lon, accuracy: me.acc}); return; }
+  stopLoc();
+};
+
 function drawPin(){
   if (!pin) return;
   const [sx, sy] = toScreen(pin.x, pin.y);
@@ -781,7 +848,7 @@ function draw(){
     snap.x = view.x; snap.y = view.y; snap.k = view.k;
     needFull = false;
   }
-  drawPin(); drawScale();
+  drawMe(); drawPin(); drawScale();
 }
 
 // ---------- gestos ----------
@@ -797,7 +864,7 @@ cv.addEventListener('pointermove', e => {
   const pts = [...ptrs.values()];
   if (pts.length === 1 && gesture.n === 1){
     const dx = pts[0].x - gesture.p.x, dy = pts[0].y - gesture.p.y;
-    if (Math.abs(dx)+Math.abs(dy) > 4) moved = true;
+    if (Math.abs(dx)+Math.abs(dy) > 4){ moved = true; if (follow){ follow = false; $('#loc').classList.remove('follow'); } }
     view.x = gesture.vx - dx/view.k; view.y = gesture.vy + dy/view.k;
   } else if (pts.length >= 2 && gesture.n >= 2){
     const c = mid(pts[0],pts[1]), d = dist(pts[0],pts[1]);
@@ -1171,7 +1238,7 @@ async function openMap(m){
     MAP = m; prefs.mapa = m.id; savePrefs();
     $('#mapChipName').textContent = m.nome; $('#mapChipCity').textContent = m.cidade ? '· ' + m.cidade.replace(/ - [A-Z]{2}$/,'') : '';
     hideCard(); qEl.value = ''; $('#clear').style.display='none';
-    computeCore(); resize(); fitAll();
+    computeCore(); $('#locGroup').style.display = GEO ? '' : 'none'; if (!GEO && locWatch) stopLoc(); resize(); fitAll();
     setTimeout(expandIn, 350);
   }catch(e){
     $('#lmsg').textContent = 'Erro: ' + e.message; await new Promise(r => setTimeout(r, 1800));

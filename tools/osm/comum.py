@@ -56,14 +56,17 @@ CATS = [
     ('saude', 'Saúde'), ('farmacia', 'Farmácia'), ('mercado', 'Mercado'), ('posto', 'Posto de combustível'),
     ('borracharia', 'Borracharia'), ('oficina', 'Oficina de moto/carro'), ('seguranca', 'Polícia / Bombeiros'),
     ('escola', 'Escola'), ('servico', 'Serviço público / banco'), ('comida', 'Restaurante / lanchonete'), ('igreja', 'Igreja'),
+    ('semaforo', 'Semáforo'), ('radar', 'Radar'),
 ]
 CI = {c: i for i, (c, _) in enumerate(CATS)}
 DEF = {'saude': 'Unidade de saúde', 'farmacia': 'Farmácia', 'mercado': 'Mercado', 'posto': 'Posto de combustível',
-       'borracharia': 'Borracharia', 'oficina': 'Oficina'}
+       'borracharia': 'Borracharia', 'oficina': 'Oficina', 'semaforo': 'Semáforo', 'radar': 'Radar'}
 
 
 def cat_of(t):
     a, sh, nm = t.get('amenity', ''), t.get('shop', ''), (t.get('name') or '').lower()
+    if t.get('highway') == 'traffic_signals': return 'semaforo'
+    if t.get('highway') == 'speed_camera' or t.get('enforcement') in ('maxspeed', 'traffic_signals'): return 'radar'
     if 'highway' in t and not a and not sh: return None
     if 'borracharia' in nm or sh == 'tyres': return 'borracharia'
     if a in ('hospital', 'clinic', 'doctors') or (t.get('healthcare') and t.get('healthcare') != 'pharmacy'): return 'saude'
