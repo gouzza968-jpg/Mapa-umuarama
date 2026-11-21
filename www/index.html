@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0b0f14">
 <link rel="icon" href="data:,">
 <title>Mapa Umuarama</title>
+<script src="vendor/supabase.js"></script>
 <style>
   :root{
     --bg:#0b0f14; --surface:rgba(20,26,34,.86); --solid:#141a22; --raised:#1b232d; --ink:#eef2f6; --muted:#8e9aab; --faint:#5b6778; --line:rgba(255,255,255,.07);
@@ -194,6 +195,11 @@
   .seg{display:flex;background:var(--raised);border-radius:12px;padding:3px;gap:3px}
   .seg button{border:0;background:transparent;padding:8px 13px;border-radius:9px;font-size:13px;font-weight:700;color:var(--muted)}
   .seg button.on{background:var(--solid);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+  .field{display:flex;gap:8px;padding:0 16px 14px}
+  .field input{flex:1;min-width:0;border:1.5px solid var(--line);background:var(--raised);color:var(--ink);border-radius:12px;padding:11px 13px;font:600 15px var(--font);outline:0}
+  .field input:focus{border-color:var(--accent)}
+  .live{display:inline-flex;align-items:center;gap:6px}
+  .live i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(52,211,153,.25)}
   .foot{color:var(--faint);font-size:12px;text-align:center;margin-top:8px;line-height:1.5}
 
   /* mapas */
@@ -325,6 +331,8 @@
   <div class="handle"></div>
   <h3>Camadas do mapa</h3>
   <div class="lgrid" id="lgrid"></div>
+  <h4>Ao vivo</h4>
+  <div class="pgrid"><button class="popt" id="liveOpt"><span class="e" style="background:#7c3aed33;font-size:14px">🏍️</span><span id="liveOptT">Motoboys</span></button></div>
   <h4 id="poiTtl" style="display:none">Referências · toque para mostrar no mapa</h4>
   <div class="pgrid" id="pgrid"></div>
 </div>
@@ -347,6 +355,17 @@
     <div class="prog" id="prog"><i id="progi"></i></div>
     <div class="ttl" style="border-top:1px solid var(--line)">Novidades da última atualização</div>
     <div class="log" id="changelog"></div>
+  </div>
+
+  <div class="sec">
+    <div class="ttl">Motoboys ao vivo</div>
+    <div class="row">
+      <div class="ri"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h6l2-6h-5l-2-3H7M14 6h3l1.5 5"/></svg></div>
+      <div class="grow"><div class="l">Compartilhar minha localização</div><div class="d" id="liveD">Os outros motoboys veem você no mapa enquanto o app estiver aberto.</div></div>
+      <label class="switch"><input type="checkbox" id="optShare"><span></span></label>
+    </div>
+    <div class="field"><input id="nick" maxlength="20" placeholder="Seu apelido (ex.: Zé da Moto)" autocomplete="off"><button class="btn" id="nickSave">Salvar</button></div>
+    <div class="warnbox show" style="color:var(--muted);background:var(--raised)">🔒 Só aparece quem ligar esta opção. Sua posição não fica gravada: ela some do mapa quando você desliga, fecha o app ou fica sem sinal.</div>
   </div>
 
   <div class="sec">
@@ -399,7 +418,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.6.0";
+const APP_VERSION = "2.7.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -826,6 +845,7 @@ function onPos(pos){
   if (p && (p[0] < -20000 || p[0] > W + 20000 || p[1] < -20000 || p[1] > H + 20000)){ if (!onPos.warned){ toast('Você está fora da área deste mapa'); onPos.warned = true; } }
   else if (p && follow) animateTo(p[0], p[1] - 60/Math.max(view.k, 0.25), Math.max(view.k, 0.25), 400);
   $('#loc').classList.add('on');
+  if (prefs.share) liveSend(false);
   if (routeNeedsOrigin && stops.some(s => !s.done)){ routeNeedsOrigin = false; computeRoute(false); }
   requestDraw(true);
 }
@@ -851,6 +871,7 @@ function stopLoc(){
   locWatch = null; me = null; follow = false; $('#loc').classList.remove('on','follow'); requestDraw(true);
 }
 $('#loc').onclick = () => {
+  if (locWatch && prefs.share && follow){ follow = false; $('#loc').classList.remove('follow'); toast('Localização continua ligada para o compartilhamento'); return; }
   if (!locWatch){ follow = true; $('#loc').classList.add('follow'); startLoc(); return; }
   if (!follow && me){ follow = true; $('#loc').classList.add('follow'); onPos({latitude: me.lat, longitude: me.lon, accuracy: me.acc}); return; }
   stopLoc();
@@ -895,7 +916,7 @@ function draw(){
     snap.x = view.x; snap.y = view.y; snap.k = view.k;
     needFull = false;
   }
-  drawMe(); drawPin(); drawScale();
+  drawLive(); drawMe(); drawPin(); drawScale();
 }
 
 // ---------- gestos ----------
@@ -1198,6 +1219,74 @@ function choose(idx){
   showCard(r.kind, esc(pl.name), {bairro:'Bairro', local:'Local / empresa', rio:'Rio / córrego'}[r.kind] + (pl.ids.length>1? ` · aparece ${pl.ids.length}× no mapa`:''),
     r.kind==='rio' ? null : `${cleanStreetName(pl.name)} - ${cityName()}`, `${pl.name} - ${cityName()}`, go);
 }
+
+// ---------- motoboys ao vivo (Supabase Realtime Presence) ----------
+const SB_URL = 'https://mktrdlffzwhiurafbvuo.supabase.co', SB_KEY = 'sb_publishable_I1XNmE3dwoqDfXNunzD1qQ_jFc2tn9-';
+let sb = null, liveCh = null, liveId = null, liveOthers = [], liveSubscribed = false, lastSent = null;
+if (prefs.showLive == null) prefs.showLive = true;
+function devId(){ try{ let d = localStorage.getItem('mapaUmuarama.dev'); if (!d){ d = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('mapaUmuarama.dev', d); } return d; }catch(e){ return 'd' + Math.random().toString(36).slice(2); } }
+async function liveConnect(){
+  if (liveCh || EMBED || !window.supabase || !window.supabase.createClient) return;
+  try{
+    sb = sb || window.supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true}});
+    try{ const {data} = await sb.auth.getSession(); if (!data.session) await sb.auth.signInAnonymously(); }catch(e){}
+    let uid = null; try{ const {data} = await sb.auth.getUser(); uid = data && data.user && data.user.id; }catch(e){}
+    liveId = uid || devId();
+    liveCh = sb.channel('motoboys-umuarama', {config: {presence: {key: liveId}}});
+    liveCh.on('presence', {event: 'sync'}, () => {
+      const st = liveCh.presenceState(), out = [];
+      for (const [k, arr] of Object.entries(st)){ if (k === liveId) continue; const p = arr[arr.length - 1]; if (p && p.lat) out.push(Object.assign({id: k}, p)); }
+      liveOthers = out; paintLive(); requestDraw(true);
+    });
+    liveCh.subscribe(status => { liveSubscribed = status === 'SUBSCRIBED'; if (liveSubscribed) liveSend(true); paintLive(); });
+  }catch(e){ liveCh = null; }
+}
+async function liveSend(force){
+  if (!liveCh || !liveSubscribed) return;
+  if (!prefs.share || !me || !(prefs.nick||'').trim()){ if (lastSent){ try{ await liveCh.untrack(); }catch(e){} lastSent = null; } return; }
+  const now = Date.now();
+  if (!force && lastSent && now - lastSent.t < 5000 && Math.hypot((me.lat-lastSent.lat)*111000, (me.lon-lastSent.lon)*102000) < 15) return;
+  lastSent = {t: now, lat: me.lat, lon: me.lon};
+  try{ await liveCh.track({apelido: prefs.nick.trim().slice(0, 20), lat: +me.lat.toFixed(6), lon: +me.lon.toFixed(6), head: me.head, t: now}); }catch(e){}
+}
+function paintLive(){
+  const n = liveOthers.filter(o => Date.now() - (o.t||0) < 180000).length;
+  $('#liveOptT').textContent = `Motoboys${liveSubscribed ? ` (${n} online)` : ''}`;
+  $('#liveOpt').classList.toggle('on', !!prefs.showLive);
+  $('#liveD').innerHTML = prefs.share ? (liveSubscribed ? `<span class="live"><i></i>Compartilhando como <b>${esc(prefs.nick||'')}</b> · ${n} outro${n!==1?'s':''} online</span>` : 'Conectando…') : 'Os outros motoboys veem você no mapa enquanto o app estiver aberto.';
+}
+function drawLive(){
+  if (!prefs.showLive || !GEO || !liveOthers.length) return;
+  ctx.save();
+  for (const o of liveOthers){
+    if (Date.now() - (o.t||0) > 180000) continue;
+    const m = mapOfLL(o.lat, o.lon); if (!m) continue;
+    const [sx, sy] = toScreen(m[0], m[1]); if (sx < -40 || sx > VW+40 || sy < -40 || sy > VH+40) continue;
+    ctx.setTransform(dpr,0,0,dpr,sx*dpr,sy*dpr);
+    ctx.fillStyle = '#7c3aed'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.font = '14px system-ui,"Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🏍️', 0, 1);
+    ctx.font = '700 12px system-ui,Roboto,sans-serif'; ctx.lineWidth = 3.5; ctx.strokeStyle = TH.halo; ctx.strokeText(o.apelido||'', 0, 26); ctx.fillStyle = '#c4b5fd'; ctx.fillText(o.apelido||'', 0, 26);
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  }
+  ctx.restore();
+}
+$('#liveOpt').onclick = () => { prefs.showLive = !prefs.showLive; savePrefs(); paintLive(); requestDraw(true); };
+$('#nick').value = prefs.nick || '';
+$('#optShare').checked = !!prefs.share;
+function saveNick(){ const v = $('#nick').value.trim().slice(0, 20); prefs.nick = v; savePrefs(); return v; }
+$('#nickSave').onclick = () => { if (saveNick().length < 2){ toast('Digite um apelido com pelo menos 2 letras'); return; } toast('Apelido salvo'); liveSend(true); paintLive(); };
+$('#optShare').onchange = async () => {
+  if ($('#optShare').checked){
+    if (saveNick().length < 2){ $('#optShare').checked = false; toast('Defina seu apelido primeiro'); $('#nick').focus(); return; }
+    if (EMBED || !window.supabase){ $('#optShare').checked = false; toast('Disponível no app Android'); return; }
+    prefs.share = true; savePrefs(); await liveConnect();
+    if (!locWatch) startLoc(); else liveSend(true);
+    toast('Compartilhando sua localização');
+  } else { prefs.share = false; savePrefs(); liveSend(true); toast('Compartilhamento desligado'); }
+  paintLive();
+};
+setInterval(() => { if (prefs.share) liveSend(true); paintLive(); requestDraw(); }, 30000);
 
 // ---------- rotas no app ----------
 const LAT0 = -23.766, LON0 = -53.325, KXm = 111320 * Math.cos(LAT0 * Math.PI / 180), KYm = 110540;
@@ -1644,6 +1733,8 @@ try{
 }catch(e){ $('#lmsg').textContent = 'Erro: ' + e.message; return; }
 if (!local && !EMBED){ try{ local = await (await fetch('version.json')).json(); }catch(e){} }
 paintUpdate(); paintRecent();
+if (!EMBED){ liveConnect().then(() => { if (prefs.share && !locWatch) startLoc(); }); }
+paintLive();
 refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => { showTab('map'); openMapSheet(); }, 'Ver'); } if ($('#mapSheet').classList.contains('open')) renderMaps(); });
 if (NATIVE){
   await checkUpdates(false);

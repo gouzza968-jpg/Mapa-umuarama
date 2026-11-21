@@ -30,6 +30,12 @@ jobs:
       - name: Instalar dependências
         run: npm install
 
+      - name: Biblioteca do Supabase (tempo real)
+        run: |
+          mkdir -p www/vendor
+          cp node_modules/@supabase/supabase-js/dist/umd/supabase.js www/vendor/supabase.js
+          ls -la www/vendor
+
       - name: Criar projeto Android
         run: |
           npx cap add android

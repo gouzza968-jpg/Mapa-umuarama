@@ -1,6 +1,15 @@
 {
-  "latest": "2.6.0",
+  "latest": "2.7.0",
   "versions": [
+    {
+      "version": "2.7.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Motoboys ao vivo: veja no mapa os motoboys que estão compartilhando a localização",
+        "Compartilhe a sua com um apelido em Configurações → Motoboys ao vivo",
+        "Ligue ou desligue a camada “Motoboys” em Camadas do mapa"
+      ]
+    },
     {
       "version": "2.6.0",
       "date": "21/11/2026",
