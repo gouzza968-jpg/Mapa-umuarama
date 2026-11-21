@@ -1,6 +1,15 @@
 {
-  "latest": "2.15.0",
+  "latest": "2.16.0",
   "versions": [
+    {
+      "version": "2.16.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Alerta de blitz: toque no 🚨, escolha o local no mapa e todos os motoboys veem",
+        "Confirme “Ainda está lá” ou avise “Não está mais” tocando no alerta",
+        "Liga e desliga em Camadas → Ao vivo → Blitz"
+      ]
+    },
     {
       "version": "2.15.0",
       "date": "21/11/2026",

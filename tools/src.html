@@ -269,6 +269,16 @@
   .tab .cnt.show{display:grid}
   .chatfab{position:fixed;left:14px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 42px);width:56px;height:56px;border-radius:50%;border:0;background:var(--accent,#ff6a1f);color:#fff;display:grid;place-items:center;z-index:4;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .25s}
   .chatfab:active{transform:scale(.94)}
+  #pickCross{position:fixed;left:50%;top:50%;transform:translate(-50%,-100%);z-index:6;pointer-events:none;display:none}
+  #pickCross .pin{font-size:34px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));animation:pk 1.2s ease-in-out infinite}
+  #pickCross:after{content:'';position:absolute;left:50%;bottom:-4px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#dc2626;border:2px solid #fff}
+  @keyframes pk{50%{transform:translateY(-5px)}}
+  #pickBar{position:fixed;left:12px;right:12px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 12px);z-index:12;padding:14px;border-radius:20px;display:none;flex-direction:column;gap:12px}
+  #pickBar .t{display:flex;flex-direction:column;gap:3px;font-size:13.5px;color:var(--muted)} #pickBar .t b{color:var(--ink);font-size:16px}
+  #pickBar .b{display:flex;gap:10px} #pickBar .b .btn{flex:1;padding:12px}
+  #pickBar .btn.primary{background:#dc2626;border-color:#dc2626}
+  body.picking #pickCross{display:block} body.picking #pickBar{display:flex}
+  body.picking .ctrls, body.picking .chatfab, body.picking #card, body.picking #chips{visibility:hidden!important}
   .chatfab .cnt{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:10px;background:var(--bad);color:#fff;font-size:11px;font-weight:800;display:none;place-items:center;padding:0 5px;border:2px solid var(--solid)}
   .chatfab .cnt.show{display:grid}
   body.hascard .chatfab{transform:translateY(calc(-1 * var(--cardh, 150px)))}
@@ -333,6 +343,7 @@
 </div>
 
 <div class="ctrls" id="ctrls">
+  <div class="group glass" id="blitzGroup"><button class="fab" id="blitzBtn" aria-label="Reportar blitz" style="font-size:22px">🚨</button></div>
   <div class="group glass"><button class="fab" id="fitMoto" aria-label="Ver todos os motoboys" style="font-size:20px">🏍️</button></div>
   <div class="group glass" id="locGroup" style="display:none">
     <button class="fab" id="loc" aria-label="Minha localização"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
@@ -360,6 +371,10 @@
     <button class="btn primary" type="submit">Buscar</button>
   </form>
   <div class="acts">
+    <div class="go hide" id="blitzRow">
+      <button class="act primary" id="bSim">👍 Ainda está lá</button>
+      <button class="act" id="bNao">👋 Não está mais</button>
+    </div>
     <div class="go hide" id="contactRow">
       <a class="act primary" id="cCall" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Ligar</a>
       <a class="act" id="cWa" href="#" style="background:#25d366;color:#04230f;border-color:transparent"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/></svg>WhatsApp</a>
@@ -411,7 +426,7 @@
   <h3>Camadas do mapa</h3>
   <div class="lgrid" id="lgrid"></div>
   <h4>Ao vivo</h4>
-  <div class="pgrid"><button class="popt" id="liveOpt"><span class="e" style="background:#7c3aed33;font-size:14px">🏍️</span><span id="liveOptT">Motoboys</span></button></div>
+  <div class="pgrid"><button class="popt" id="liveOpt"><span class="e" style="background:#7c3aed33;font-size:14px">🏍️</span><span id="liveOptT">Motoboys</span></button><button class="popt" id="blitzOpt"><span class="e" style="background:#dc262633;font-size:14px">🚨</span><span id="blitzOptT">Blitz</span></button></div>
   <h4 id="poiTtl" style="display:none">Referências · toque para mostrar no mapa</h4>
   <div class="pgrid" id="pgrid"></div>
 </div>
@@ -505,6 +520,8 @@
   <button class="tab" id="tabSet"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Configurações<span class="dot" id="setDot"></span></button>
 </nav>
 
+<div id="pickCross" aria-hidden="true"><div class="pin">🚨</div></div>
+<div id="pickBar" class="glass"><div class="t"><b>Onde está a blitz?</b><span>Arraste o mapa ou toque no local até o 🚨 ficar em cima</span></div><div class="b"><button class="btn" id="pickNo">Cancelar</button><button class="btn primary" id="pickOk">Reportar aqui</button></div></div>
 <button id="tabChat" class="chatfab" aria-label="Chat dos motoboys"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5" stroke-linecap="round"/></svg><span class="cnt" id="chatCnt"></span></button>
 
 <div id="toast" class="glass"><span id="toastt"></span><button class="btn primary" id="toastb" style="padding:7px 12px">Ver</button></div>
@@ -1090,7 +1107,7 @@ function draw(){
   if (!VW || !MAP) return;
   if (isOnline()){
     ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0, 0, cv.width, cv.height);
-    syncGL(); drawRoute(); drawTexts(); drawPois(); drawLive(); drawMe(); drawPin(); drawScale();
+    syncGL(); drawRoute(); drawTexts(); drawPois(); drawBlitz(); drawLive(); drawMe(); drawPin(); drawScale();
     return;
   }
   if (!vectorMode()){ drawOverview(); drawRoute(); drawTexts(); drawPois(); snap=null; }
@@ -1110,7 +1127,7 @@ function draw(){
     snap.x = view.x; snap.y = view.y; snap.k = view.k; snap.r = view.r;
     needFull = false;
   }
-  drawLive(); drawMe(); drawPin(); drawScale();
+  drawBlitz(); drawLive(); drawMe(); drawPin(); drawScale();
 }
 
 // ---------- gestos ----------
@@ -1149,8 +1166,11 @@ function endPtr(e){
     interacting = false;
     if (!moved){
       const now = performance.now();
-      const r = cv.getBoundingClientRect(), hm = hitLive(e.clientX - r.left, e.clientY - r.top), hp = hm ? null : hitPoi(e.clientX - r.left, e.clientY - r.top);
-      if (hm){ showMoto(hm); lastTap = 0; }
+      const r = cv.getBoundingClientRect(), tx = e.clientX - r.left, ty = e.clientY - r.top;
+      const hb = picking ? null : hitBlitz(tx, ty), hm = hb || picking ? null : hitLive(tx, ty), hp = hm || hb || picking ? null : hitPoi(tx, ty);
+      if (picking){ const [wx, wy] = toWorld(tx, ty); animateTo(wx, wy, Math.max(view.k, 0.6), 300); lastTap = 0; }
+      else if (hb){ showBlitz(hb); lastTap = 0; }
+      else if (hm){ showMoto(hm); lastTap = 0; }
       else if (hp != null){ showPoi(hp); lastTap = 0; }
       else if (now - lastTap < 300 && lastTapPos && Math.hypot(e.clientX-lastTapPos.x, e.clientY-lastTapPos.y) < 30){ zoomAt(e.clientX, e.clientY, 2.2); lastTap = 0; }
       else { lastTap = now; lastTapPos = {x:e.clientX, y:e.clientY}; }
@@ -1460,7 +1480,7 @@ $('#numrow').addEventListener('submit', e => {
   showStreet(curStreet, n);
 });
 function showCard(kind, h, s, dest, copyText, focus, street){
-  $('#contactRow').classList.add('hide');
+  $('#contactRow').classList.add('hide'); $('#blitzRow').classList.add('hide');
   cardTarget = nextTarget; nextTarget = null;
   $('#numrow').classList.toggle('show', !!street);
   if (street) $('#numIn').value = street.num || '';
@@ -1642,6 +1662,110 @@ $('#optShare').onchange = async () => {
   paintLive();
 };
 setInterval(() => { if (prefs.share) liveSend(true); paintLive(); requestDraw(); }, 30000);
+
+// ---------- alertas de blitz ----------
+let alertas = [], blitzHits = [], picking = false, alertasCh = null, meusVotos = {};
+if (prefs.showBlitz == null) prefs.showBlitz = true;
+const blitzAtivos = () => alertas.filter(a => new Date(a.expira_em) > Date.now());
+const haQuanto = d => { const m = Math.max(0, Math.round((Date.now() - new Date(d)) / 60000)); return m < 1 ? 'agora' : m < 60 ? `há ${m} min` : `há ${Math.floor(m/60)} h${m%60 ? ' ' + (m%60) + ' min' : ''}`; };
+function paintBlitzOpt(){ const n = blitzAtivos().length; $('#blitzOptT').textContent = `Blitz${n ? ` (${n})` : ''}`; $('#blitzOpt').classList.toggle('on', !!prefs.showBlitz); }
+function upsertAlerta(a){ const i = alertas.findIndex(x => x.id === a.id); if (i >= 0) alertas[i] = a; else alertas.push(a); }
+async function alertasLoad(){
+  if (!sb) return;
+  const {data, error} = await sb.from('alertas').select('*').gt('expira_em', new Date().toISOString()).order('criado_em', {ascending: false}).limit(200);
+  if (!error && data){ alertas = data; paintBlitzOpt(); requestDraw(true); }
+}
+async function alertasInit(){
+  if (!sb || alertasCh || EMBED) return;
+  await alertasLoad();
+  alertasCh = sb.channel('alertas-blitz')
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'alertas'}, p => {
+      const a = p.new; const novo = !alertas.some(x => x.id === a.id); upsertAlerta(a); paintBlitzOpt(); requestDraw(true);
+      if (novo && a.autor !== sbUid && prefs.showBlitz) toast(`🚨 Blitz reportada${a.apelido ? ' por ' + a.apelido : ''}`, () => verBlitz(a), 'Ver');
+    })
+    .on('postgres_changes', {event: 'UPDATE', schema: 'public', table: 'alertas'}, p => { upsertAlerta(p.new); paintBlitzOpt(); requestDraw(true); })
+    .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'alertas'}, p => { alertas = alertas.filter(x => x.id !== (p.old && p.old.id)); paintBlitzOpt(); requestDraw(true); })
+    .subscribe(st => { if (st === 'SUBSCRIBED') alertasLoad(); if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT'){ try{ sb.removeChannel(alertasCh); }catch(e){} alertasCh = null; setTimeout(alertasInit, 5000); } });
+}
+setInterval(() => { if (!document.hidden){ alertasLoad(); } }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) alertasLoad(); });
+function drawBlitz(){
+  blitzHits = [];
+  if (!prefs.showBlitz || !GEO) return;
+  const lst = blitzAtivos(); if (!lst.length) return;
+  ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0);
+  for (const a of lst){
+    const m = mapOfLL(a.lat, a.lon); if (!m) continue;
+    const [sx, sy] = toScreen(m[0], m[1]); if (sx < -60 || sx > VW+60 || sy < -60 || sy > VH+60) continue;
+    ctx.globalAlpha = 0.22; ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(sx, sy, 30, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1; ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 6;
+    ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(sx, sy, 17, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0; ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.font = '17px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🚨', sx, sy + 1);
+    const lb = 'Blitz · ' + haQuanto(a.criado_em); ctx.font = '700 11.5px system-ui,sans-serif'; const w = ctx.measureText(lb).width + 12;
+    ctx.fillStyle = 'rgba(220,38,38,.95)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(sx - w/2, sy + 21, w, 19, 9) : ctx.rect(sx - w/2, sy + 21, w, 19); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(lb, sx, sy + 31);
+    blitzHits.push([sx, sy, a]);
+  }
+  ctx.restore();
+}
+function hitBlitz(x, y){ let best = null, bd = 30*30; for (const [sx, sy, a] of blitzHits){ const d = (sx-x)**2 + (sy-y)**2; if (d < bd){ bd = d; best = a; } } return best; }
+function verBlitz(a){ showTab('map'); const m = mapOfLL(a.lat, a.lon); if (m){ focusOn(m[0], m[1], Math.max(view.k, 0.6)); } showBlitz(a); }
+function showBlitz(a){
+  const m = mapOfLL(a.lat, a.lon); if (!m) return;
+  highlight = null; pin = null;
+  const go = () => focusOn(m[0], m[1], Math.max(view.k, 0.6));
+  const b = nearestBairro(m[0], m[1]);
+  const mine = sbUid && a.autor === sbUid;
+  const conf = a.sim ? ` · ${a.sim} confirmaç${a.sim > 1 ? 'ões' : 'ão'}` : '';
+  nextTarget = null;
+  showCard('blitz', 'Blitz policial', `Reportada ${haQuanto(a.criado_em)}${a.apelido ? ' por ' + esc(a.apelido) : ''}${b ? ' · ' + esc(b) : ''}${conf}`, `${a.lat.toFixed(6)},${a.lon.toFixed(6)}`, `Blitz - ${a.lat.toFixed(6)},${a.lon.toFixed(6)}`, go);
+  $('#cardic').innerHTML = '<span style="font-size:22px">🚨</span>';
+  $('#bNao').textContent = mine ? '🗑️ Remover alerta' : '👋 Não está mais';
+  $('#bSim').style.display = mine ? 'none' : '';
+  $('#blitzRow').classList.remove('hide'); $('#blitzRow').dataset.id = a.id;
+  requestAnimationFrame(() => document.body.style.setProperty('--cardh', ($('#card').offsetHeight + 4) + 'px'));
+}
+async function votarBlitz(ainda){
+  const id = +$('#blitzRow').dataset.id, a = alertas.find(x => x.id === id); if (!a) return;
+  if (!sb || !(await ensureAuth())){ toast('Sem conexão com o servidor'); return; }
+  if (meusVotos[id] === ainda){ toast('Você já respondeu este alerta'); return; }
+  const mine = a.autor === sbUid;
+  const {error} = mine && !ainda ? await sb.from('alertas').delete().eq('id', id) : await sb.rpc('votar_alerta', {p_id: id, p_ainda: ainda});
+  if (error){ toast('Não foi possível enviar'); return; }
+  meusVotos[id] = ainda;
+  if (mine && !ainda){ alertas = alertas.filter(x => x.id !== id); hideCard(); toast('Alerta removido'); }
+  else { toast(ainda ? 'Obrigado! Alerta confirmado' : 'Obrigado! Avisamos os outros'); hideCard(); alertasLoad(); }
+  paintBlitzOpt(); requestDraw(true);
+}
+$('#bSim').onclick = () => votarBlitz(true);
+$('#bNao').onclick = () => votarBlitz(false);
+$('#blitzOpt').onclick = () => { prefs.showBlitz = !prefs.showBlitz; savePrefs(); paintBlitzOpt(); requestDraw(true); };
+function startPick(){
+  if (EMBED || !window.supabase){ toast('Disponível no app Android'); return; }
+  if (!GEO){ toast('Este mapa não tem localização. Escolha o Mapa Principal'); return; }
+  showTab('map'); closePanels(); hideCard();
+  picking = true; document.body.classList.add('picking');
+  if (me){ const m = mapOfLL(me.lat, me.lon); if (m) animateTo(m[0], m[1], Math.max(view.k, 0.8), 500); }
+  else if (view.k < 0.3) animateTo(view.x, view.y, 0.5, 400);
+}
+function endPick(){ picking = false; document.body.classList.remove('picking'); }
+$('#blitzBtn').onclick = startPick;
+$('#pickNo').onclick = endPick;
+$('#pickOk').onclick = async () => {
+  const ll = llOf(view.x, view.y); if (!ll) return;
+  $('#pickOk').disabled = true;
+  try{
+    await liveConnect();
+    if (!sb || !(await ensureAuth())){ toast(/disabled|anonymous/i.test(sbAuthErr) ? 'Login anônimo desligado no servidor' : 'Sem conexão com o servidor'); return; }
+    const perto = blitzAtivos().find(a => Math.hypot((a.lat - ll[0]) * 111000, (a.lon - ll[1]) * 102000) < 150);
+    if (perto){ await sb.rpc('votar_alerta', {p_id: perto.id, p_ainda: true}); endPick(); toast('Já tinha uma blitz aqui: confirmamos o alerta'); alertasLoad(); return; }
+    const {data, error} = await sb.from('alertas').insert({tipo: 'blitz', lat: +ll[0].toFixed(6), lon: +ll[1].toFixed(6), apelido: (prefs.nick || '').trim().slice(0, 20)}).select().single();
+    if (error){ toast(/row-level|policy/i.test(error.message) ? 'Limite de alertas: espere alguns minutos' : /does not exist|schema cache|42P01/i.test(error.message + error.code) ? 'Alertas ainda não ativados no servidor' : 'Não foi possível reportar'); return; }
+    upsertAlerta(data); endPick(); paintBlitzOpt(); requestDraw(true);
+    toast('🚨 Blitz reportada! Todos os motoboys vão ver');
+  } finally { $('#pickOk').disabled = false; }
+};
 
 // ---------- chat ----------
 let chatOff = !!prefs.chatOff, chatBanned = false, chatCh = null, chatReady = false, chatMsgs = [], chatUnread = 0, chatLastSend = 0, chatLoading = false;
@@ -2296,6 +2420,7 @@ paintStatusBar();
 if (NATIVE && plug('App')){
   plug('App').addListener('backButton', () => {
     if ($('#viewer').classList.contains('show')) return $('#viewer').classList.remove('show');
+    if (picking) return endPick();
     if (curTab !== 'map') return showTab('map');
     if (nav) return stopNav();
     if ($('#veil').classList.contains('open') || $('#results').classList.contains('open')) return closePanels();
@@ -2322,7 +2447,8 @@ try{
 if (!local && !EMBED){ try{ local = await (await fetch('version.json')).json(); }catch(e){} }
 paintUpdate(); paintRecent();
 if (chatOff) $('#tabChat').style.display = 'none';
-if (!EMBED){ liveConnect().then(() => { chatCfgInit(); if (prefs.share && !locWatch) startLoc(); if ((prefs.nick||'').length >= 2 && !chatOff) chatInit(); }); }
+paintBlitzOpt();
+if (!EMBED){ liveConnect().then(() => { alertasInit(); chatCfgInit(); if (prefs.share && !locWatch) startLoc(); if ((prefs.nick||'').length >= 2 && !chatOff) chatInit(); }); }
 paintLive();
 refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => { showTab('map'); openMapSheet(); }, 'Ver'); } if ($('#mapSheet').classList.contains('open')) renderMaps(); });
 if (NATIVE){
