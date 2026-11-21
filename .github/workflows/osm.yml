@@ -20,7 +20,18 @@ jobs:
 
       - name: Baixar extrato do Sul do Brasil (Geofabrik) e recortar Umuarama
         run: |
-          curl -fsSL --retry 3 -o sul.osm.pbf https://download.geofabrik.de/south-america/brazil/sul-latest.osm.pbf
+          ok=0
+          for u in https://download.openstreetmap.fr/extracts/south-america/brazil/south/parana-latest.osm.pbf \
+                   http://download.openstreetmap.fr/extracts/south-america/brazil/south/parana-latest.osm.pbf \
+                   https://download.geofabrik.de/south-america/brazil/sul-latest.osm.pbf \
+                   http://download.geofabrik.de/south-america/brazil/sul-latest.osm.pbf; do
+            for i in 1 2 3; do
+              echo "baixando $u ($i)"
+              if curl -fSL --connect-timeout 30 --retry 2 -o sul.osm.pbf "$u"; then ok=1; break 2; fi
+              sleep 10
+            done
+          done
+          test $ok = 1
           ls -la sul.osm.pbf
           osmium extract -b -53.43,-23.86,-53.21,-23.68 sul.osm.pbf -o umu.osm.pbf --overwrite
           osmium tags-filter umu.osm.pbf nwr/highway nwr/waterway n/place nwr/addr:housenumber nwr/amenity nwr/shop nwr/healthcare nwr/craft w/leisure=park w/landuse=residential -o umu-f.osm.pbf --overwrite
