@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="data:,">
+<title>Mapa Umuarama · Admin</title>
+<script src="vendor/supabase.js"></script>
+<style>
+  :root{--bg:#0b0f14;--solid:#141a22;--raised:#1b232d;--ink:#eef2f6;--muted:#8e9aab;--faint:#5b6778;--line:rgba(255,255,255,.07);
+    --accent:#ff6a1f;--accent2:#ff8a3d;--accent-soft:rgba(255,106,31,.14);--ok:#34d399;--bad:#fb7185;--violet:#a78bfa;--tabh:66px;
+    --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--shadow:0 12px 32px rgba(0,0,0,.45)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .page{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom));overflow:auto;padding:calc(env(safe-area-inset-top) + 18px) 14px 24px;display:none}
+  .page.open{display:block}
+  .page > *{max-width:640px;margin-left:auto;margin-right:auto}
+  h1{font-size:26px;margin:6px 4px 2px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 4px 14px}
+  .card{background:var(--solid);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+  .btn{border:1px solid var(--line);background:var(--raised);border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;white-space:nowrap}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+  .btn.danger{background:rgba(251,113,133,.14);color:var(--bad);border-color:transparent}
+  .btn.sm{padding:7px 10px;font-size:12.5px;border-radius:10px}
+  .btn:disabled{opacity:.5}
+  input,textarea{width:100%;border:1.5px solid var(--line);background:var(--raised);color:var(--ink);border-radius:12px;padding:12px 13px;font:500 15.5px var(--font);outline:0}
+  input:focus,textarea:focus{border-color:var(--accent)}
+  label.f{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin:12px 2px 6px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  .stat{background:var(--solid);border:1px solid var(--line);border-radius:16px;padding:12px}
+  .stat b{display:block;font-size:22px}
+  .stat span{font-size:12px;color:var(--muted)}
+  .msg{display:flex;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+  .msg:first-child{border-top:0}
+  .av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;background:rgba(167,139,250,.18);color:var(--violet)}
+  .av.adm{background:var(--accent-soft);color:var(--accent)}
+  .msg .top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .msg .nm{font-weight:800;font-size:14.5px}
+  .msg .tm{font-size:12px;color:var(--muted)}
+  .msg .tx{font-size:15px;line-height:1.4;margin-top:3px;white-space:pre-wrap;word-wrap:break-word}
+  .msg img{display:block;max-width:220px;max-height:180px;border-radius:10px;margin-top:6px}
+  .msg .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .tag{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 6px;text-transform:uppercase;letter-spacing:.04em}
+  .tag.adm{background:var(--accent-soft);color:var(--accent)}
+  .tag.ban{background:rgba(251,113,133,.15);color:var(--bad)}
+  .row{display:flex;gap:10px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0}
+  .grow{flex:1;min-width:0}
+  .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .empty{color:var(--muted);font-size:14px;text-align:center;padding:20px}
+  .sendbar{display:flex;gap:8px}
+  .sendbar input{flex:1}
+  .tabs{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom));padding:6px 10px env(safe-area-inset-bottom);background:var(--solid);border-top:1px solid var(--line);display:flex;gap:6px}
+  .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:700;position:relative}
+  .tab .pill{width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
+  .tab.on{color:var(--ink)}
+  .tab.on .pill{background:var(--accent-soft);color:var(--accent)}
+  #login{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:var(--bg);z-index:20}
+  #login .box{width:100%;max-width:380px}
+  #login .logo{width:72px;height:72px;border-radius:22px;background:#0e1217;display:grid;place-items:center;margin:0 auto 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  #toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 20px);transform:translateX(-50%);background:var(--raised);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px;padding:11px 14px;font-size:14px;font-weight:600;z-index:40;display:none;max-width:calc(100% - 24px)}
+  #toast.show{display:block}
+  #dlg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30;display:none;place-items:center;padding:20px}
+  #dlg.show{display:grid}
+  #dlg .box{background:var(--solid);border:1px solid var(--line);border-radius:20px;padding:18px;width:100%;max-width:400px}
+  #dlg h3{margin:0 0 6px}
+  #dlg .bt{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<div id="login"><div class="box">
+  <div class="logo"><svg width="38" height="38" viewBox="0 0 24 24"><path fill="#ff6a1f" d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <h1 style="text-align:center">Administração</h1>
+  <p class="sub" style="text-align:center">Mapa Umuarama · motoboys</p>
+  <label class="f">E-mail</label><input id="em" type="email" autocomplete="username" inputmode="email">
+  <label class="f">Senha</label><input id="pw" type="password" autocomplete="current-password">
+  <button class="btn primary" id="enter" style="width:100%;margin-top:16px;padding:13px">Entrar</button>
+  <p class="d" id="lmsg" style="text-align:center;margin-top:12px"></p>
+</div></div>
+
+<div class="page open" id="pChat">
+  <h1>Chat</h1><p class="sub">Todas as mensagens, em tempo real</p>
+  <div class="stats"><div class="stat"><b id="sMsg">–</b><span>mensagens</span></div><div class="stat"><b id="sOn">–</b><span>online agora</span></div><div class="stat"><b id="sBan">–</b><span>bloqueados</span></div></div>
+  <div class="card"><div class="sendbar"><input id="admIn" maxlength="500" placeholder="Mensagem como Administrador"><button class="btn primary" id="admSend">Enviar</button></div></div>
+  <div class="card" id="msgList"><div class="empty">Carregando…</div></div>
+</div>
+
+<div class="page" id="pBan">
+  <h1>Bloqueados</h1><p class="sub">Motoboys que não podem escrever no chat</p>
+  <div class="card" id="banList"><div class="empty">Carregando…</div></div>
+</div>
+
+<div class="page" id="pOn">
+  <h1>Online</h1><p class="sub">Motoboys compartilhando a localização agora</p>
+  <div class="card" id="onList"><div class="empty">Conectando…</div></div>
+</div>
+
+<div class="page" id="pAcc">
+  <h1>Conta</h1><p class="sub" id="accEm"></p>
+  <div class="card">
+    <div class="row"><div class="grow"><b>Versão do app</b><div class="d" id="ver">–</div></div></div>
+    <div class="row"><div class="grow"><b>Limpeza automática</b><div class="d">Fotos com mais de 15 dias e mensagens com mais de 30 dias são apagadas todo dia às 03:17.</div></div></div>
+  </div>
+  <button class="btn danger" id="logout" style="width:100%">Sair</button>
+</div>
+
+<nav class="tabs">
+  <button class="tab on" data-p="pChat"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>Chat</button>
+  <button class="tab" data-p="pBan"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span>Bloqueados</button>
+  <button class="tab" data-p="pOn"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>Online</button>
+  <button class="tab" data-p="pAcc"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>Conta</button>
+</nav>
+
+<div id="dlg"><div class="box"><h3 id="dT"></h3><div class="d" id="dD"></div><div id="dExtra"></div><div class="bt"><button class="btn" id="dNo">Cancelar</button><button class="btn danger" id="dYes">Confirmar</button></div></div></div>
+<div id="toast"></div>
+
+<script>
+(async function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SB_URL = 'https://mktrdlffzwhiurafbvuo.supabase.co', SB_KEY = 'sb_publishable_I1XNmE3dwoqDfXNunzD1qQ_jFc2tn9-';
+const CAP = window.Capacitor, NATIVE = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform()), plug = n => CAP && CAP.Plugins && CAP.Plugins[n];
+function toast(t){ $('#toast').textContent = t; $('#toast').classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => $('#toast').classList.remove('show'), 2600); }
+function ask(title, desc, extra){ return new Promise(res => {
+  $('#dT').textContent = title; $('#dD').textContent = desc || ''; $('#dExtra').innerHTML = extra || '';
+  $('#dlg').classList.add('show');
+  $('#dYes').onclick = () => { const v = $('#dExtra input') ? $('#dExtra input').value : true; $('#dlg').classList.remove('show'); res(v === '' ? true : v); };
+  $('#dNo').onclick = () => { $('#dlg').classList.remove('show'); res(false); };
+}); }
+try{ const P = plug('App'); if (P && P.getInfo){ const i = await P.getInfo(); $('#ver').textContent = i.version + ' (' + i.build + ')'; } }catch(e){}
+
+if (!window.supabase){ $('#lmsg').textContent = 'Biblioteca do servidor não carregou.'; return; }
+const sb = window.supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true}});
+let me = null, msgs = [], bans = new Map(), online = [];
+
+async function checkAdmin(){
+  const {data: u} = await sb.auth.getUser(); me = u && u.user;
+  if (!me || me.is_anonymous) return false;
+  const {data, error} = await sb.rpc('eh_admin');
+  return !error && data === true;
+}
+async function enter(){
+  $('#enter').disabled = true; $('#lmsg').textContent = 'Entrando…';
+  const {error} = await sb.auth.signInWithPassword({email: $('#em').value.trim(), password: $('#pw').value});
+  if (error){ $('#lmsg').textContent = 'E-mail ou senha incorretos.'; $('#enter').disabled = false; return; }
+  if (!(await checkAdmin())){ await sb.auth.signOut(); $('#lmsg').textContent = 'Esta conta não é administradora.'; $('#enter').disabled = false; return; }
+  start();
+}
+$('#enter').onclick = enter; $('#pw').onkeydown = e => { if (e.key === 'Enter') enter(); };
+$('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('open', p.id === t.dataset.p));
+});
+const back = plug('App'); if (back) back.addListener('backButton', () => { if ($('#dlg').classList.contains('show')) return $('#dNo').click(); const f = document.querySelector('.tab'); if (!f.classList.contains('on')) f.click(); else back.exitApp(); });
+
+const hora = d => new Date(d).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'});
+function renderMsgs(){
+  $('#sMsg').textContent = msgs.length >= 300 ? '300+' : msgs.length;
+  $('#msgList').innerHTML = msgs.length ? msgs.slice().reverse().map(m => {
+    const banned = bans.has(m.autor);
+    return `<div class="msg" data-id="${m.id}"><div class="av ${m.admin?'adm':''}">${esc((m.apelido||'?')[0].toUpperCase())}</div><div class="grow">
+      <div class="top"><span class="nm">${esc(m.apelido)}</span>${m.admin?'<span class="tag adm">Admin</span>':''}${banned?'<span class="tag ban">Bloqueado</span>':''}<span class="tm">${hora(m.criado_em)}</span></div>
+      ${m.texto?`<div class="tx">${esc(m.texto)}</div>`:''}${m.foto?`<img src="${esc(m.foto)}" loading="lazy" alt="foto">`:''}
+      ${m.lat!=null?`<div class="d">📍 <a style="color:var(--accent)" href="https://www.google.com/maps?q=${m.lat},${m.lon}" target="_blank">ver localização</a></div>`:''}
+      <div class="acts"><button class="btn sm danger" data-a="del">Apagar</button>${m.admin?'':(banned?`<button class="btn sm" data-a="unban">Desbloquear</button>`:`<button class="btn sm" data-a="ban">Bloquear ${esc(m.apelido)}</button>`)}</div>
+    </div></div>`; }).join('') : '<div class="empty">Nenhuma mensagem.</div>';
+}
+function renderBans(){
+  $('#sBan').textContent = bans.size;
+  $('#banList').innerHTML = bans.size ? [...bans.values()].map(b => `<div class="row" data-u="${b.autor}"><div class="av">${esc((b.apelido||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(b.apelido||'Sem apelido')}</b><div class="d">${b.motivo?esc(b.motivo)+' · ':''}desde ${hora(b.criado_em)}</div></div><button class="btn sm" data-a="unban">Desbloquear</button></div>`).join('') : '<div class="empty">Ninguém bloqueado.</div>';
+}
+function renderOnline(){
+  const vivos = online.filter(o => Date.now() - (o.t||0) < 180000);
+  $('#sOn').textContent = vivos.length;
+  $('#onList').innerHTML = vivos.length ? vivos.map(o => `<div class="row"><div class="av">🏍️</div><div class="grow"><b>${esc(o.apelido)}</b>${bans.has(o.id)?' <span class="tag ban">Bloqueado</span>':''}<div class="d">atualizado ${Math.max(0, Math.round((Date.now()-o.t)/1000))} s atrás</div></div><a class="btn sm" target="_blank" href="https://www.google.com/maps?q=${o.lat},${o.lon}">Ver no mapa</a></div>`).join('') : '<div class="empty">Nenhum motoboy compartilhando agora.</div>';
+}
+async function delMsg(id){
+  const m = msgs.find(x => x.id === id); if (!m) return;
+  if (!(await ask('Apagar mensagem?', `De ${m.apelido}. Esta ação não pode ser desfeita.`))) return;
+  if (m.foto){ const i = m.foto.indexOf('/chat-fotos/'); if (i > 0) await sb.storage.from('chat-fotos').remove([decodeURIComponent(m.foto.slice(i + 12))]); }
+  const {error} = await sb.from('mensagens').delete().eq('id', id);
+  if (error) return toast('Não foi possível apagar');
+  msgs = msgs.filter(x => x.id !== id); renderMsgs(); toast('Mensagem apagada');
+}
+async function ban(autor, apelido){
+  const motivo = await ask(`Bloquear ${apelido}?`, 'Ele não poderá mais escrever no chat.', '<label class="f">Motivo (opcional)</label><input maxlength="120" placeholder="Ex.: ofensas">');
+  if (motivo === false) return;
+  const {error} = await sb.from('banidos').insert({autor, apelido, motivo: motivo === true ? null : motivo});
+  if (error) return toast('Não foi possível bloquear');
+  bans.set(autor, {autor, apelido, motivo, criado_em: new Date().toISOString()}); renderAll();
+  if (await ask('Apagar as mensagens dele também?', `Remove todas as mensagens de ${apelido}.`)){
+    for (const m of msgs.filter(x => x.autor === autor)){ if (m.foto){ const i = m.foto.indexOf('/chat-fotos/'); if (i > 0) await sb.storage.from('chat-fotos').remove([decodeURIComponent(m.foto.slice(i + 12))]); } }
+    await sb.from('mensagens').delete().eq('autor', autor); msgs = msgs.filter(x => x.autor !== autor); renderMsgs();
+  }
+  toast(`${apelido} bloqueado`);
+}
+async function unban(autor){
+  const b = bans.get(autor) || {};
+  if (!(await ask(`Desbloquear ${b.apelido || ''}?`, 'Ele poderá voltar a escrever no chat.'))) return;
+  const {error} = await sb.from('banidos').delete().eq('autor', autor);
+  if (error) return toast('Não foi possível desbloquear');
+  bans.delete(autor); renderAll(); toast('Desbloqueado');
+}
+function renderAll(){ renderMsgs(); renderBans(); renderOnline(); }
+$('#msgList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  const id = +b.closest('.msg').dataset.id, m = msgs.find(x => x.id === id); if (!m) return;
+  if (b.dataset.a === 'del') delMsg(id); else if (b.dataset.a === 'ban') ban(m.autor, m.apelido); else unban(m.autor);
+});
+$('#banList').addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (b) unban(b.closest('.row').dataset.u); });
+$('#admSend').onclick = async () => {
+  const t = $('#admIn').value.trim(); if (!t) return;
+  $('#admSend').disabled = true;
+  const {error} = await sb.from('mensagens').insert({apelido: 'Administrador', texto: t.slice(0, 500), sala: 'geral', admin: true});
+  $('#admSend').disabled = false;
+  if (error) return toast('Não foi possível enviar'); $('#admIn').value = ''; toast('Enviada');
+};
+
+async function start(){
+  $('#login').style.display = 'none'; $('#accEm').textContent = me.email || '';
+  const [m, b] = await Promise.all([
+    sb.from('mensagens').select('*').order('criado_em', {ascending: false}).limit(300),
+    sb.from('banidos').select('*'),
+  ]);
+  if (m.error){ $('#msgList').innerHTML = '<div class="empty">O chat ainda não foi ativado no servidor (rode o chat.sql e o admin.sql).</div>'; }
+  else msgs = (m.data || []).reverse();
+  (b.data || []).forEach(x => bans.set(x.autor, x));
+  renderAll();
+  sb.channel('admin-chat')
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens'}, p => { if (!msgs.some(x => x.id === p.new.id)){ msgs.push(p.new); renderMsgs(); } })
+    .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { msgs = msgs.filter(x => x.id !== (p.old && p.old.id)); renderMsgs(); })
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'banidos'}, async () => { const r = await sb.from('banidos').select('*'); bans = new Map((r.data||[]).map(x => [x.autor, x])); renderAll(); })
+    .subscribe();
+  const live = sb.channel('motoboys-umuarama', {config: {presence: {key: 'admin-' + me.id}}});
+  live.on('presence', {event: 'sync'}, () => {
+    const st = live.presenceState(), out = [];
+    for (const [k, arr] of Object.entries(st)){ const p = arr[arr.length - 1]; if (p && p.lat) out.push(Object.assign({id: k}, p)); }
+    online = out; renderOnline();
+  }).subscribe();
+  setInterval(renderOnline, 15000);
+}
+
+if (await checkAdmin()) start(); else { try{ await sb.auth.signOut(); }catch(e){} }
+})();
+</script>
+</body>
+</html>

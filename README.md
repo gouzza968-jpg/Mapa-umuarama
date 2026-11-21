@@ -57,3 +57,9 @@ O app consulta `releases/latest/download/update.json`; quando o `versionCode` é
 - `supabase/chat.sql`: rode uma vez no SQL Editor do Supabase (tabela de mensagens, fotos e regras de segurança)
 - `.github/workflows/limpeza.yml`: todo dia apaga fotos com mais de 15 dias (e as mais antigas se passar de 800 MB) e mensagens com mais de 30 dias
 - Precisa do segredo `SUPABASE_SERVICE_KEY` em Settings → Secrets and variables → Actions
+
+## App de administração (`admin/`)
+
+- APK separado (`com.mapaumuarama.admin`), gerado por `.github/workflows/build-admin.yml` em Releases `admin-v1.N` (não interfere nas atualizações do app dos motoboys)
+- Login com e-mail e senha de uma conta marcada em `public.admins` (`supabase/admin.sql`)
+- Apagar mensagens/fotos, bloquear e desbloquear motoboys, enviar mensagens como Administrador, ver quem está online

@@ -1,0 +1,7 @@
+{
+  "appId": "com.mapaumuarama.admin",
+  "appName": "Mapa Admin",
+  "webDir": "www",
+  "backgroundColor": "#0b0f14",
+  "android": { "backgroundColor": "#0b0f14" }
+}
