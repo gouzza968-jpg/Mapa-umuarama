@@ -275,7 +275,7 @@
   <div class="handle"></div>
   <h3>Camadas do mapa</h3>
   <div class="lgrid" id="lgrid"></div>
-  <h4 id="poiTtl" style="display:none">Referências</h4>
+  <h4 id="poiTtl" style="display:none">Referências · toque para mostrar no mapa</h4>
   <div class="pgrid" id="pgrid"></div>
 </div>
 
@@ -868,7 +868,8 @@ addEventListener('resize', resize);
 // ---------- camadas ----------
 function renderLayers(){
   $('#poiTtl').style.display = POIS.length ? '' : 'none';
-  $('#pgrid').innerHTML = POIS.length ? POICATS.map(([c, n]) => `<button class="popt ${poiVis[c]?'on':''}" data-p="${c}"><canvas class="e" width="48" height="48" data-ic="${c}"></canvas>${esc(n)}</button>`).join('') : '';
+  const cnt = {}; for (const pz of POIS){ const c = (POICATS[pz[2]]||[])[0]; cnt[c] = (cnt[c]||0) + 1; }
+  $('#pgrid').innerHTML = POIS.length ? POICATS.filter(([c]) => cnt[c]).map(([c, n]) => `<button class="popt ${poiVis[c]?'on':''}" data-p="${c}"><canvas class="e" width="48" height="48" data-ic="${c}"></canvas>${esc(n)}</button>`).join('') : '';
   document.querySelectorAll('#pgrid canvas[data-ic]').forEach(cn => { const g = cn.getContext('2d'); g.translate(24,24); drawPoiIcon(g, POI_STY[cn.dataset.ic], 20); });
   $('#lgrid').innerHTML = LAYERS.map(([k, n, c]) => `<button class="lopt ${vis[k]?'on':''}" data-l="${k}"><span class="sw" style="background:${c}22"><i style="background:${c}"></i></span>${n}</button>`).join('');
 }
@@ -1170,7 +1171,7 @@ async function openMap(m){
     MAP = m; prefs.mapa = m.id; savePrefs();
     $('#mapChipName').textContent = m.nome; $('#mapChipCity').textContent = m.cidade ? '· ' + m.cidade.replace(/ - [A-Z]{2}$/,'') : '';
     hideCard(); qEl.value = ''; $('#clear').style.display='none';
-    computeCore(); renderPoiChips(); resize(); fitAll();
+    computeCore(); resize(); fitAll();
     setTimeout(expandIn, 350);
   }catch(e){
     $('#lmsg').textContent = 'Erro: ' + e.message; await new Promise(r => setTimeout(r, 1800));

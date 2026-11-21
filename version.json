@@ -1,6 +1,13 @@
 {
-  "latest": "2.4.1",
+  "latest": "2.4.2",
   "versions": [
+    {
+      "version": "2.4.2",
+      "date": "21/11/2026",
+      "notes": [
+        "Referências (saúde, farmácias, mercados, postos…) agora ficam em Camadas do mapa"
+      ]
+    },
     {
       "version": "2.4.1",
       "date": "21/11/2026",
