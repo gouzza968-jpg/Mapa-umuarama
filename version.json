@@ -1,6 +1,15 @@
 {
-  "latest": "2.18.0",
+  "latest": "2.19.0",
   "versions": [
+    {
+      "version": "2.19.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Áudio no chat, igual ao WhatsApp: segure o 🎤 para gravar e solte para enviar",
+        "Deslize para a esquerda para cancelar ou para cima para travar a gravação",
+        "Ouça com velocidade 1×, 1,5× ou 2×; os áudios seguidos tocam em sequência"
+      ]
+    },
     {
       "version": "2.18.0",
       "date": "21/11/2026",

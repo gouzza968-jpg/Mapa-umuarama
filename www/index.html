@@ -346,6 +346,36 @@
   .chatbar .ib{width:42px;height:42px;border-radius:50%;background:var(--solid);border:1px solid var(--line);color:var(--ink);flex:none}
   .chatbar input[type=text]{border-radius:24px!important;padding:12px 16px!important;background:var(--solid)!important}
   .sendbtn{width:46px!important;height:46px!important;box-shadow:0 4px 14px rgba(255,106,31,.4)}
+  /* áudio */
+  .sendbtn .imic{display:none} .chatbar.vazio .sendbtn .imic{display:grid} .chatbar.vazio .sendbtn .isend{display:none}
+  .sendbtn{touch-action:none;transition:transform .15s}
+  .chatbar.gravando .sendbtn{transform:scale(1.45);background:#ef4444!important;box-shadow:0 0 0 8px rgba(239,68,68,.18)}
+  .chatbar.travado .sendbtn{transform:none;background:linear-gradient(135deg,var(--accent),var(--accent2))!important}
+  .chatbar.travado .sendbtn .imic{display:none!important} .chatbar.travado .sendbtn .isend{display:grid!important}
+  .recbar{display:none;flex:1;align-items:center;gap:10px;min-width:0;height:46px;padding:0 14px;border-radius:24px;background:var(--solid);border:1px solid var(--line)}
+  .chatbar.gravando .recbar{display:flex} .chatbar.gravando > .ib, .chatbar.gravando > input[type=text]{display:none}
+  .rdot{width:10px;height:10px;border-radius:50%;background:#ef4444;animation:rblink 1s infinite;flex:none}
+  @keyframes rblink{50%{opacity:.25}}
+  .rtime{font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
+  .rhint{flex:1;text-align:center;color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;transition:opacity .1s}
+  .rdel{display:none!important;width:36px!important;height:36px!important;border:0!important;background:transparent!important;color:#ef4444!important}
+  .chatbar.travado .rdel{display:grid!important} .chatbar.travado .rhint{opacity:0}
+  .reclock{display:none;position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom) + 76px);width:42px;padding:10px 0 8px;border-radius:21px;background:var(--solid);border:1px solid var(--line);color:var(--muted);flex-direction:column;align-items:center;gap:2px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .reclock i{font-style:normal;font-size:14px;animation:rup 1.2s infinite} @keyframes rup{50%{transform:translateY(-4px)}}
+  .chatbar{position:relative}
+  .chatbar.gravando:not(.travado) .reclock{display:flex}
+  .aud{display:flex;align-items:center;gap:10px;min-width:220px;padding:2px 0 0}
+  .aud .play{width:40px;height:40px;border-radius:50%;border:0;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.95);color:#c2410c}
+  .msg:not(.me) .aud .play{background:var(--accent);color:#fff}
+  .aud .wv{flex:1;display:flex;align-items:center;gap:2px;height:30px;cursor:pointer;min-width:0}
+  .aud .wv i{flex:1;min-width:2px;max-width:4px;border-radius:2px;background:currentColor;opacity:.35}
+  .aud .wv i.on{opacity:1}
+  .msg.me .aud .wv{color:#fff} .msg:not(.me) .aud .wv{color:var(--accent)}
+  .aud .ad{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none}
+  .aud .dur{font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.8}
+  .aud .vel{border:0;border-radius:9px;padding:2px 6px;font-size:11px;font-weight:800;background:rgba(0,0,0,.2);color:inherit}
+  .msg:not(.me) .aud .vel{background:var(--raised)}
+  .msg.audio .tm{top:2px}
   .nickbox{margin:0 auto!important;padding:10px 8px calc(env(safe-area-inset-bottom) + 10px)!important}
 
   body.adminview{--tabh:0px}
@@ -507,7 +537,10 @@
     <button type="button" class="ib" id="chatPhoto" aria-label="Enviar foto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button type="button" class="ib" id="chatLoc" aria-label="Enviar localização"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></button>
     <input type="text" id="chatIn" maxlength="500" placeholder="Escreva uma mensagem…" enterkeyhint="send">
-    <button type="submit" class="sendbtn" id="chatSend" aria-label="Enviar"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5 3 10l12 2-12 2z"/></svg></button>
+    <div class="recbar" id="recBar"><span class="rdot"></span><span class="rtime" id="recTime">0:00</span><span class="rhint" id="recHint">‹ deslize para cancelar</span>
+      <button type="button" class="ib rdel" id="recDel" aria-label="Apagar gravação"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>
+    <div class="reclock" id="recLock"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><i>⌃</i></div>
+    <button type="submit" class="sendbtn" id="chatSend" aria-label="Enviar"><span class="isend"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5 21 12 3 3.5 3 10l12 2-12 2z"/></svg></span><span class="imic"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 0 0-7 0v6A3.5 3.5 0 0 0 12 15Z"/><path d="M18.5 11.5a.9.9 0 0 0-1.8 0 4.7 4.7 0 0 1-9.4 0 .9.9 0 0 0-1.8 0 6.5 6.5 0 0 0 5.6 6.43V20.5H8.6a.9.9 0 0 0 0 1.8h6.8a.9.9 0 0 0 0-1.8h-2.5v-2.57a6.5 6.5 0 0 0 5.6-6.43Z"/></svg></span></button>
     <input type="file" id="chatFile" accept="image/*" hidden>
   </form>
 </div>
@@ -610,7 +643,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.18.0";
+const APP_VERSION = "2.19.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -2053,13 +2086,147 @@ function renderChat(scroll){
     const quem = !mine && first ? `<div class="who" style="color:${m.admin ? 'var(--accent)' : cor}">${m.admin ? '🛡️ ' : ''}${esc(m.apelido)}${m.admin ? '<span class="badge">Admin</span>' : ''}</div>` : '';
     const loc = m.lat != null ? `<div class="lcard"><div class="li">📍</div><div class="lt">Localização<span>${mine ? 'Você enviou' : 'Enviada por ' + esc(m.apelido)}</span></div><button class="locb" data-lat="${m.lat}" data-lon="${m.lon}" data-who="${esc(m.apelido)}">Ver</button></div>` : '';
     const txt = m.texto && !(m.lat != null && /^📍 Minha localização$/.test(m.texto)) ? `<span class="tx">${esc(m.texto)}</span>` : '';
+    const aud = m.audio ? audioHtml(m) : '';
     const av = mine ? '' : `<div class="mav" style="background:${cor}">${m.admin ? '🛡️' : esc(inicial(m.apelido))}</div>`;
-    return sep + `<div class="mrow ${mine ? 'me' : ''} ${first ? 'first' : ''} ${last ? 'last' : ''}">${av}<div class="msg ${mine ? 'me' : ''} ${m.admin && !mine ? 'adm' : ''} ${m.foto ? 'foto' : ''}" data-id="${m.id}">${quem}${m.foto ? `<img src="${esc(m.foto)}" loading="lazy" data-foto alt="foto">` : ''}${loc}${txt}<span class="tm">${fmtHora(d)}</span></div></div>`;
+    return sep + `<div class="mrow ${mine ? 'me' : ''} ${first ? 'first' : ''} ${last ? 'last' : ''}">${av}<div class="msg ${mine ? 'me' : ''} ${m.admin && !mine ? 'adm' : ''} ${m.foto ? 'foto' : ''} ${m.audio ? 'audio' : ''}" data-id="${m.id}">${quem}${m.foto ? `<img src="${esc(m.foto)}" loading="lazy" data-foto alt="foto">` : ''}${aud}${loc}${txt}<span class="tm">${fmtHora(d)}</span></div></div>`;
   }).join('');
   if (scroll){ box.scrollTop = box.scrollHeight; novasAbaixo = 0; }
   else if (box.scrollHeight - box.scrollTop - box.clientHeight > 160) novasAbaixo++;
   paintToBottom();
 }
+// ---------- áudio no chat (estilo WhatsApp) ----------
+const fmtSeg = n => { n = Math.max(0, Math.round(n || 0)); return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
+const BARRAS = 34;
+function ondaDe(m){ const s = (m.audio_onda || '').replace(/[^0-9]/g, ''); if (s.length) return [...s].map(Number); let h = m.id || 1; return Array.from({length: BARRAS}, () => { h = (h * 9301 + 49297) % 233280; return 2 + Math.floor(h / 233280 * 6); }); }
+function audioHtml(m){
+  const w = ondaDe(m), tocando = audAtual && audAtual.id === m.id;
+  const prog = tocando && audEl.duration ? audEl.currentTime / audEl.duration : 0;
+  const bars = w.map((v, i) => `<i style="height:${18 + v * 9}%" class="${i / w.length < prog ? 'on' : ''}"></i>`).join('');
+  return `<div class="aud" data-aud="${m.id}"><button class="play" data-play aria-label="Tocar áudio">${tocando && !audEl.paused ? ICP.pause : ICP.play}</button><div class="wv" data-wv>${bars}</div><div class="ad"><button class="vel" data-vel>${audVel}×</button><span class="dur">${fmtSeg(tocando ? (audEl.paused ? audEl.currentTime || m.audio_seg : audEl.currentTime) : m.audio_seg)}</span></div></div>`;
+}
+const ICP = {play: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z"/></svg>', pause: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1.2"/><rect x="14" y="4" width="4" height="16" rx="1.2"/></svg>'};
+const audEl = new Audio(); let audAtual = null, audVel = 1;
+function pintaAudio(){
+  if (!audAtual) return;
+  const box = document.querySelector(`.aud[data-aud="${audAtual.id}"]`); if (!box) return;
+  box.querySelector('[data-play]').innerHTML = audEl.paused ? ICP.play : ICP.pause;
+  const p = audEl.duration && isFinite(audEl.duration) ? audEl.currentTime / audEl.duration : (audAtual.audio_seg ? audEl.currentTime / audAtual.audio_seg : 0);
+  const bs = box.querySelectorAll('.wv i'); bs.forEach((b, i) => b.classList.toggle('on', i / bs.length < p));
+  box.querySelector('.dur').textContent = fmtSeg(audEl.currentTime || (audEl.paused ? audAtual.audio_seg : 0));
+}
+['timeupdate', 'play', 'pause'].forEach(ev => audEl.addEventListener(ev, pintaAudio));
+audEl.addEventListener('ended', () => {
+  const fim = audAtual; audEl.currentTime = 0; pintaAudio();
+  const box = fim && document.querySelector(`.aud[data-aud="${fim.id}"]`); if (box){ box.querySelectorAll('.wv i').forEach(b => b.classList.remove('on')); box.querySelector('.dur').textContent = fmtSeg(fim.audio_seg); }
+  // como no WhatsApp: toca o próximo áudio seguido
+  const i = chatMsgs.findIndex(x => fim && x.id === fim.id), prox = chatMsgs[i + 1];
+  if (prox && prox.audio) tocar(prox); else audAtual = null;
+});
+function tocar(m, pos){
+  if (audAtual && audAtual.id === m.id){ if (audEl.paused) audEl.play().catch(() => toast('Não foi possível tocar')); else audEl.pause(); return; }
+  const ant = audAtual; audEl.pause(); audAtual = m;
+  if (ant){ const b = document.querySelector(`.aud[data-aud="${ant.id}"]`); if (b){ b.querySelector('[data-play]').innerHTML = ICP.play; b.querySelectorAll('.wv i').forEach(x => x.classList.remove('on')); b.querySelector('.dur').textContent = fmtSeg(ant.audio_seg); } }
+  audEl.src = m.audio; audEl.playbackRate = audVel;
+  if (pos != null) audEl.addEventListener('loadedmetadata', () => { if (isFinite(audEl.duration)) audEl.currentTime = pos * audEl.duration; else if (m.audio_seg) audEl.currentTime = pos * m.audio_seg; }, {once: true});
+  audEl.play().catch(() => toast('Não foi possível tocar o áudio'));
+}
+$('#msgs').addEventListener('click', e => {
+  const box = e.target.closest('.aud'); if (!box) return;
+  e.stopPropagation();
+  const m = chatMsgs.find(x => x.id === +box.dataset.aud); if (!m) return;
+  if (e.target.closest('[data-vel]')){ audVel = audVel === 1 ? 1.5 : audVel === 1.5 ? 2 : 1; audEl.playbackRate = audVel; document.querySelectorAll('.aud [data-vel]').forEach(b => b.textContent = audVel + '×'); return; }
+  const wv = e.target.closest('[data-wv]');
+  if (wv){ const r = wv.getBoundingClientRect(), pos = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    if (audAtual && audAtual.id === m.id && audEl.duration){ audEl.currentTime = pos * (isFinite(audEl.duration) ? audEl.duration : m.audio_seg); if (audEl.paused) audEl.play(); } else tocar(m, pos); return; }
+  if (e.target.closest('[data-play]')) tocar(m);
+}, true);
+
+// gravação: segure o microfone; solte para enviar, deslize para a esquerda para cancelar, para cima para travar
+let rec = null;
+function barVazia(){ $('#chatBar').classList.toggle('vazio', !$('#chatIn').value.trim()); }
+$('#chatIn').addEventListener('input', barVazia); barVazia();
+async function recStart(){
+  if (rec) return;
+  if (!navigator.mediaDevices || !window.MediaRecorder){ toast('Gravação de áudio não disponível neste aparelho'); return; }
+  if (!sb || !sbUid || chatBanned || chatOff){ toast('Chat sem conexão'); return; }
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}); }
+  catch(e){ toast('Permita o microfone para gravar áudio'); return; }
+  if (!recSegurando){ stream.getTracks().forEach(t => t.stop()); return; }   // soltou antes de liberar o microfone
+  const tipo = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+  const mr = new MediaRecorder(stream, tipo ? {mimeType: tipo, audioBitsPerSecond: 32000} : {});
+  const partes = [], amostras = [];
+  let ctxA = null, an = null, buf = null;
+  try{ ctxA = new (window.AudioContext || window.webkitAudioContext)(); const src = ctxA.createMediaStreamSource(stream); an = ctxA.createAnalyser(); an.fftSize = 512; buf = new Uint8Array(an.fftSize); src.connect(an); }catch(e){}
+  rec = {mr, stream, partes, amostras, t0: Date.now(), ctxA, an, buf, cancel: false, lock: false, tipo: mr.mimeType || tipo || 'audio/webm'};
+  mr.ondataavailable = ev => { if (ev.data && ev.data.size) partes.push(ev.data); };
+  mr.start(250);
+  $('#chatBar').classList.add('gravando');
+  try{ navigator.vibrate && navigator.vibrate(30); }catch(e){}
+  rec.tick = setInterval(() => {
+    const seg = (Date.now() - rec.t0) / 1000; $('#recTime').textContent = fmtSeg(Math.floor(seg));
+    if (an){ an.getByteTimeDomainData(buf); let pk = 0; for (let i = 0; i < buf.length; i++) pk = Math.max(pk, Math.abs(buf[i] - 128)); amostras.push(pk); }
+    if (seg >= 60) recStop(true);
+  }, 100);
+}
+function recLimpa(){
+  if (!rec) return; clearInterval(rec.tick);
+  try{ rec.stream.getTracks().forEach(t => t.stop()); }catch(e){}
+  try{ rec.ctxA && rec.ctxA.close(); }catch(e){}
+  $('#chatBar').classList.remove('gravando', 'travado'); $('#recHint').style.opacity = ''; $('#recHint').textContent = '‹ deslize para cancelar'; $('#recTime').textContent = '0:00';
+  rec = null;
+}
+async function recStop(enviar){
+  if (!rec) return; const r = rec;
+  const seg = (Date.now() - r.t0) / 1000;
+  await new Promise(res => { r.mr.onstop = res; try{ r.mr.stop(); }catch(e){ res(); } });
+  recLimpa();
+  if (!enviar) { toast('Áudio cancelado'); return; }
+  if (seg < 1){ toast('Segure o microfone para gravar'); return; }
+  const blob = new Blob(r.partes, {type: r.tipo.split(';')[0]});
+  // forma de onda resumida em 34 barras (0 a 9)
+  let onda = '';
+  if (r.amostras.length){ const mx = Math.max(8, ...r.amostras); for (let i = 0; i < BARRAS; i++){ const a = Math.floor(i * r.amostras.length / BARRAS), b = Math.max(a + 1, Math.floor((i + 1) * r.amostras.length / BARRAS)); let v = 0; for (let j = a; j < b; j++) v = Math.max(v, r.amostras[j] || 0); onda += Math.min(9, Math.round(v / mx * 9)); } }
+  await enviarAudio(blob, Math.round(seg), onda);
+}
+async function enviarAudio(blob, seg, onda){
+  if (!sb || !sbUid){ toast('Chat sem conexão'); return; }
+  if (blob.size > 3 * 1048576){ toast('Áudio muito grande'); return; }
+  toast('Enviando áudio…');
+  try{
+    const ext = /mp4/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm';
+    const path = `${sbUid}/a${Date.now()}.${ext}`;
+    const up = await sb.storage.from('chat-fotos').upload(path, blob, {contentType: blob.type || 'audio/webm'});
+    if (up.error) throw up.error;
+    const url = sb.storage.from('chat-fotos').getPublicUrl(path).data.publicUrl;
+    if (await sendMsg({texto: '', audio: url, audio_seg: seg, audio_onda: onda || null})) $('#toast').classList.remove('show');
+  }catch(e){ toast(/mime|type|size|bucket|column|audio/i.test(String(e && (e.message || e))) ? 'Áudio ainda não ativado no servidor' : 'Não foi possível enviar o áudio'); }
+}
+let recSegurando = false, recP0 = null, recQuando = 0, recGesto = false;
+$('#chatSend').addEventListener('pointerdown', e => {
+  if (!$('#chatBar').classList.contains('vazio') || $('#chatBar').classList.contains('travado')) return;
+  e.preventDefault(); $('#chatSend').setPointerCapture(e.pointerId);
+  recSegurando = true; recGesto = true; recP0 = {x: e.clientX, y: e.clientY}; recQuando = Date.now();
+  recStart();
+});
+$('#chatSend').addEventListener('pointermove', e => {
+  if (!recSegurando || !rec || rec.lock) return;
+  const dx = e.clientX - recP0.x, dy = e.clientY - recP0.y;
+  $('#recHint').style.opacity = Math.max(0.2, 1 + dx / 160);
+  if (dx < -110){ recSegurando = false; recStop(false); }
+  else if (dy < -70){ rec.lock = true; recSegurando = false; $('#chatBar').classList.add('travado'); $('#recHint').textContent = ''; try{ navigator.vibrate && navigator.vibrate(20); }catch(e){} }
+});
+function recSolta(){
+  if (!recSegurando) return; recSegurando = false;
+  if (Date.now() - recQuando < 350 && (!rec || Date.now() - rec.t0 < 350)){ if (rec) recStop(false).then(() => {}); toast('Segure o microfone para gravar'); return; }
+  if (rec && !rec.lock) recStop(true);
+}
+$('#chatSend').addEventListener('pointerup', recSolta);
+$('#chatSend').addEventListener('pointercancel', () => { if (recSegurando){ recSegurando = false; if (rec && !rec.lock) recStop(false); } });
+$('#chatSend').addEventListener('click', e => { if (recGesto){ recGesto = false; e.preventDefault(); return; } if ($('#chatBar').classList.contains('travado')){ e.preventDefault(); recStop(true); } else if ($('#chatBar').classList.contains('vazio')) e.preventDefault(); });
+$('#recDel').onclick = () => recStop(false);
+document.addEventListener('visibilitychange', () => { if (document.hidden && rec) recStop(!!rec.lock); });
+
 function paintToBottom(){
   const box = $('#msgs'), longe = box.scrollHeight - box.scrollTop - box.clientHeight > 160;
   if (!longe) novasAbaixo = 0;
@@ -2096,9 +2263,9 @@ async function sendMsg(fields){
   return true;
 }
 $('#chatBar').addEventListener('submit', async e => {
-  e.preventDefault(); const t = $('#chatIn').value.trim(); if (!t) return;
+  e.preventDefault(); if (rec) return; const t = $('#chatIn').value.trim(); if (!t) return;
   $('#chatSend').disabled = true;
-  if (await sendMsg({texto: t.slice(0, 500)})) $('#chatIn').value = '';
+  if (await sendMsg({texto: t.slice(0, 500)})){ $('#chatIn').value = ''; barVazia(); }
   $('#chatSend').disabled = false; $('#chatIn').focus();
 });
 $('#chatLoc').onclick = async () => {
@@ -2128,6 +2295,7 @@ $('#msgs').addEventListener('click', async e => {
   if (im){ $('#viewerImg').src = im.src; $('#viewer').classList.add('show'); return; }
   const lb = e.target.closest('.locb');
   if (lb){ const p = mapOfLL(+lb.dataset.lat, +lb.dataset.lon); showTab('map'); if (p){ pin = {x: p[0], y: p[1]}; highlight = null; focusOn(p[0], p[1], 0.6); showCard('end', `Localização de ${esc(lb.dataset.who)}`, 'Enviada no chat', `${lb.dataset.lat},${lb.dataset.lon}`, `${lb.dataset.lat},${lb.dataset.lon}`, () => focusOn(p[0], p[1], 0.6)); } return; }
+  if (e.target.closest('.aud')) return;
   const mine = e.target.closest('.msg.me');
   if (mine){ const id = +mine.dataset.id; toast('Apagar esta mensagem?', async () => { const {error} = await sb.from('mensagens').delete().eq('id', id); if (error) toast('Não foi possível apagar'); else { chatMsgs = chatMsgs.filter(x => x.id !== id); renderChat(false); } }, 'Apagar'); }
 });

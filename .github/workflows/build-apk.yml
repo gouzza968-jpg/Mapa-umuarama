@@ -49,7 +49,7 @@ jobs:
       - name: Permissões
         run: |
           M=android/app/src/main/AndroidManifest.xml
-          for P in REQUEST_INSTALL_PACKAGES ACCESS_COARSE_LOCATION ACCESS_FINE_LOCATION CAMERA FOREGROUND_SERVICE FOREGROUND_SERVICE_LOCATION POST_NOTIFICATIONS WAKE_LOCK; do
+          for P in REQUEST_INSTALL_PACKAGES ACCESS_COARSE_LOCATION ACCESS_FINE_LOCATION CAMERA FOREGROUND_SERVICE FOREGROUND_SERVICE_LOCATION POST_NOTIFICATIONS WAKE_LOCK RECORD_AUDIO MODIFY_AUDIO_SETTINGS; do
             grep -q "android.permission.$P" $M || sed -i "s#<application#<uses-permission android:name=\"android.permission.$P\" />\n    <application#" $M
           done
           grep -n "uses-permission" $M

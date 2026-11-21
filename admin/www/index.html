@@ -317,7 +317,7 @@ function renderUlt(){
   const hoje = new Date().toDateString();
   $('#sHoje').textContent = msgs.filter(m => new Date(m.criado_em).toDateString() === hoje).length;
   const ult = msgs.slice(-5).reverse();
-  $('#ultMsgs').innerHTML = ult.length ? ult.map(m => `<div class="row"><div class="av ${m.admin?'adm':''}">${esc((m.apelido||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(m.apelido)}</b> <span class="d" style="display:inline">${hora(m.criado_em)}</span><div class="d" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.foto ? '📷 ' : ''}${m.lat != null ? '📍 ' : ''}${esc(m.texto || (m.foto ? 'Foto' : ''))}</div></div></div>`).join('') + '<div style="text-align:center;padding-top:8px"><button class="btn sm" id="verChat">Abrir o chat</button></div>' : '<div class="empty">Nenhuma mensagem.</div>';
+  $('#ultMsgs').innerHTML = ult.length ? ult.map(m => `<div class="row"><div class="av ${m.admin?'adm':''}">${esc((m.apelido||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(m.apelido)}</b> <span class="d" style="display:inline">${hora(m.criado_em)}</span><div class="d" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.foto ? '📷 ' : ''}${m.audio ? '🎤 ' : ''}${m.lat != null ? '📍 ' : ''}${esc(m.texto || (m.foto ? 'Foto' : m.audio ? 'Áudio (' + (m.audio_seg||0) + 's)' : ''))}</div></div></div>`).join('') + '<div style="text-align:center;padding-top:8px"><button class="btn sm" id="verChat">Abrir o chat</button></div>' : '<div class="empty">Nenhuma mensagem.</div>';
 }
 $('#ultMsgs').addEventListener('click', e => { if (e.target.closest('#verChat')) document.querySelector('.tab[data-p="pChat"]').click(); });
 function renderMsgs(){
@@ -330,7 +330,7 @@ function renderMsgs(){
     const banned = bans.has(m.autor);
     return `<div class="msg" data-id="${m.id}"><div class="av ${m.admin?'adm':''}">${esc((m.apelido||'?')[0].toUpperCase())}</div><div class="grow">
       <div class="top"><span class="nm">${esc(m.apelido)}</span>${m.admin?'<span class="tag adm">Admin</span>':''}${banned?'<span class="tag ban">Bloqueado</span>':''}<span class="tm">${hora(m.criado_em)}</span></div>
-      ${m.texto?`<div class="tx">${esc(m.texto)}</div>`:''}${m.foto?`<img src="${esc(m.foto)}" loading="lazy" alt="foto">`:''}
+      ${m.texto?`<div class="tx">${esc(m.texto)}</div>`:''}${m.foto?`<img src="${esc(m.foto)}" loading="lazy" alt="foto">`:''}${m.audio?`<div class="d">🎤 Áudio · ${m.audio_seg||0}s</div><audio controls preload="none" src="${esc(m.audio)}" style="width:100%;max-width:300px;margin-top:4px;height:40px"></audio>`:''}
       ${m.lat!=null?`<div class="d">📍 <a style="color:var(--accent)" href="https://www.google.com/maps?q=${m.lat},${m.lon}" target="_blank">ver localização</a></div>`:''}
       <div class="acts"><button class="btn sm danger" data-a="del">Apagar</button>${m.admin?'':(banned?`<button class="btn sm" data-a="unban">Desbloquear</button>`:`<button class="btn sm" data-a="ban">Bloquear ${esc(m.apelido)}</button>`)}</div>
     </div></div>`; }).join('') : `<div class="empty">${q ? 'Nada encontrado.' : 'Nenhuma mensagem.'}</div>`;
@@ -358,7 +358,7 @@ function renderOnline(){
 async function delMsg(id){
   const m = msgs.find(x => x.id === id); if (!m) return;
   if (!(await ask('Apagar mensagem?', `De ${m.apelido}. Esta ação não pode ser desfeita.`))) return;
-  if (m.foto){ const i = m.foto.indexOf('/chat-fotos/'); if (i > 0) await sb.storage.from('chat-fotos').remove([decodeURIComponent(m.foto.slice(i + 12))]); }
+  for (const u of [m.foto, m.audio]){ if (!u) continue; const i = u.indexOf('/chat-fotos/'); if (i > 0) await sb.storage.from('chat-fotos').remove([decodeURIComponent(u.slice(i + 12))]); }
   const {error} = await sb.from('mensagens').delete().eq('id', id);
   if (error) return toast('Não foi possível apagar');
   msgs = msgs.filter(x => x.id !== id); renderMsgs(); toast('Mensagem apagada');

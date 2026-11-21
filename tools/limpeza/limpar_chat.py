@@ -76,6 +76,16 @@ if apagar and not SECO:
             q = 'id=in.(' + ','.join(map(str, ids[i:i + 200])) + ')'
             req('PATCH', '/rest/v1/mensagens?' + q, body, {'Prefer': 'return=minimal'})
     print(f'mensagens atualizadas: {len(vazias) + len(comtexto)}')
+    # áudios apagados
+    try:
+        aud = req('GET', '/rest/v1/mensagens?select=id,audio,texto&audio=not.is.null&limit=10000')
+        ids = [m['id'] for m in aud if m['audio'] in urls]
+        for i in range(0, len(ids), 200):
+            q = 'id=in.(' + ','.join(map(str, ids[i:i + 200])) + ')'
+            req('PATCH', '/rest/v1/mensagens?' + q, {'audio': None, 'audio_onda': None, 'texto': '🎤 Áudio expirado'}, {'Prefer': 'return=minimal'})
+        print(f'áudios expirados: {len(ids)}')
+    except Exception as e:
+        print('áudios: coluna ainda não existe', e)
 
 # ---- mensagens antigas ----
 corte = (agora - datetime.timedelta(days=DIAS_MSG)).isoformat()
