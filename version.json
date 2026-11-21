@@ -1,0 +1,23 @@
+{
+  "latest": "1.1.0",
+  "versions": [
+    {
+      "version": "1.1.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Tema escuro (dá para trocar para o claro em Configurações)",
+        "Nova guia Configurações com as atualizações do app",
+        "Opção experimental: abrir rota no Google Maps",
+        "App instalável na tela inicial e funciona sem internet"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Mapa oficial de Umuarama com ruas, quadras, lotes e numeração predial",
+        "Busca por rua e número, bairro ou local"
+      ]
+    }
+  ]
+}
