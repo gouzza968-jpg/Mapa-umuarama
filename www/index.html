@@ -90,6 +90,13 @@
   #veil.open{opacity:1;pointer-events:auto}
   .sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;border-radius:24px 24px 0 0;padding:10px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-width:600px;margin:0 auto;background:var(--solid);border:1px solid var(--line);box-shadow:var(--shadow)}
   .sheet.open{transform:none}
+  .sheet{max-height:82vh;overflow:auto}
+  .numrow{display:none;gap:8px;margin-top:12px}
+  .numrow.show{display:flex}
+  .numrow input{flex:1;min-width:0;border:1.5px solid var(--line);background:var(--raised);color:var(--ink);border-radius:13px;padding:11px 14px;font:600 16px var(--font);outline:0}
+  .numrow input:focus{border-color:var(--accent)}
+  .numrow input::placeholder{color:var(--muted);font-weight:500}
+  .numrow .btn{padding:0 16px}
   .sheet .handle{width:38px;height:4px;border-radius:4px;background:var(--faint);opacity:.5;margin:0 auto 12px}
   .sheet h3{margin:2px 4px 12px;font-size:18px}
   .lgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -216,6 +223,10 @@
     <div class="grow"><div class="h" id="cardh"></div><div class="s" id="cards"></div></div>
     <button class="ib x" id="cardx" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
+  <form class="numrow" id="numrow" autocomplete="off">
+    <input id="numIn" type="text" inputmode="numeric" enterkeyhint="search" placeholder="Número (opcional)" maxlength="7">
+    <button class="btn primary" type="submit">Buscar</button>
+  </form>
   <div class="acts">
     <a class="act primary hide" id="route" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>Rota no Maps <small>BETA</small></a>
     <button class="act" id="center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Centralizar</button>
@@ -225,18 +236,16 @@
 <div id="scale"><div class="bar" id="scalebar"></div><span id="scalet"></span></div>
 
 <div id="veil"></div>
+<div class="sheet" id="mapSheet">
+  <div class="handle"></div>
+  <h3>Escolher mapa</h3>
+  <div id="mapList"></div>
+  <div class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div>Novos mapas aparecem aqui quando forem publicados. Depois de baixado, o mapa funciona sem internet.</div></div>
+</div>
 <div class="sheet" id="laySheet">
   <div class="handle"></div>
   <h3>Camadas do mapa</h3>
   <div class="lgrid" id="lgrid"></div>
-</div>
-
-<!-- Mapas -->
-<div class="page" id="pageMaps">
-  <h1>Mapas</h1>
-  <p class="sub">Escolha qual mapa mostrar.</p>
-  <div id="mapList"></div>
-  <div class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div id="mapsNote">Novos mapas aparecem aqui quando forem publicados. Depois de baixado, o mapa funciona sem internet.</div></div>
 </div>
 
 <!-- Configurações -->
@@ -255,7 +264,7 @@
       <button class="btn" id="updbtn">Verificar</button>
     </div>
     <div class="prog" id="prog"><i id="progi"></i></div>
-    <div class="ttl" style="border-top:1px solid var(--line)">Novidades</div>
+    <div class="ttl" style="border-top:1px solid var(--line)">Novidades da última atualização</div>
     <div class="log" id="changelog"></div>
   </div>
 
@@ -292,7 +301,6 @@
 
 <nav class="tabs">
   <button class="tab on" id="tabMap"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>Explorar</button>
-  <button class="tab" id="tabMaps"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></span>Mapas</button>
   <button class="tab" id="tabSet"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Configurações<span class="dot" id="setDot"></span></button>
 </nav>
 
@@ -304,7 +312,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -764,7 +772,7 @@ function openSheet(id){ $('#veil').classList.add('open'); $(id).classList.add('o
 function closeSheets(){ $('#veil').classList.remove('open'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
 $('#veil').onclick = closeSheets;
 $('#lay').onclick = () => { closePanels(); renderLayers(); openSheet('#laySheet'); };
-function closePanels(){ closeSheets(); $('#results').classList.remove('open'); $('#q').blur(); if (!$('#q').value.trim()) $('#chips').style.display = ''; }
+function closePanels(){ closeSheets(); $('#results').classList.remove('open'); $('#q').blur(); $('#chips').style.display = ''; }
 
 // ---------- busca ----------
 function strip(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
@@ -852,7 +860,7 @@ function renderRecent(){
 function renderResults(){
   const q = qEl.value.trim();
   $('#clear').style.display = q ? '' : 'none';
-  $('#chips').style.display = q || document.activeElement === qEl ? 'none' : '';
+  $('#chips').style.display = document.activeElement === qEl ? 'none' : '';
   if (q.length < 2){ if (document.activeElement === qEl) renderRecent(); else resEl.classList.remove('open'); return; }
   const {P, out} = search(q);
   lastResults = out;
@@ -872,7 +880,7 @@ function renderResults(){
 }
 qEl.addEventListener('input', renderResults);
 qEl.addEventListener('focus', () => { closeSheets(); $('#toast').classList.remove('show'); renderResults(); });
-qEl.addEventListener('blur', () => setTimeout(() => { if (!qEl.value.trim()) $('#chips').style.display = ''; }, 150));
+qEl.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== qEl && !resEl.classList.contains('open')) $('#chips').style.display = ''; }, 150));
 qEl.addEventListener('keydown', e => { if (e.key==='Enter' && lastResults.length) choose(0); });
 resEl.addEventListener('pointerdown', e => e.preventDefault());
 resEl.addEventListener('click', e => {
@@ -884,8 +892,43 @@ $('#clear').onclick = () => { qEl.value=''; highlight=null; pin=null; hideCard()
 $('#cardx').onclick = () => { hideCard(); pin=null; highlight=null; requestDraw(true); };
 function addRecent(q){ q = q.trim(); if (!q) return; prefs.recent = [q].concat((prefs.recent||[]).filter(x => x.toLowerCase() !== q.toLowerCase())).slice(0, 8); savePrefs(); paintRecent(); }
 
-let cardDest = null, cardText = '', cardFocus = null;
-function showCard(kind, h, s, dest, copyText, focus){
+let cardDest = null, cardText = '', cardFocus = null, curStreet = null;
+function showStreet(sc, num){
+  curStreet = sc; num = (num||'').trim().toUpperCase();
+  const {list, labs, nums, gname, name} = sc;
+  const vals = [...nums].map(i=>numVal(texts[i][7])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
+  const faixa = vals.length ? `Numeração no mapa: ${vals[0]} a ${vals[vals.length-1]}` : 'Sem numeração predial no mapa';
+  if (num){
+    const a = resolveAddress(list, num);
+    if (a && a.exact){
+      const t = texts[a.i];
+      highlight = {labels: labs, nums: new Set([a.i]), soft: nums};
+      pin = {x: t[0], y: t[1]};
+      const go = () => focusOn(t[0], t[1], 0.8); go();
+      const b = nearestBairro(t[0], t[1]);
+      showCard('end', `${esc(name)}, ${esc(t[7])}`, `${b? esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - ${cityName()}`, `${gname}, ${t[7]} - ${cityName()}`, go, {num: t[7]});
+      requestDraw(true); return;
+    }
+  }
+  highlight = {labels: labs, nums: new Set(), soft: nums}; pin = null;
+  let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
+  for (const i of [...labs, ...nums]){ const t=texts[i]; x0=Math.min(x0,t[0]); y0=Math.min(y0,t[1]); x1=Math.max(x1,t[0]); y1=Math.max(y1,t[1]); }
+  const go = () => fitBox(x0-300, y0-300, x1+300, y1+300, 50, 2.5); go();
+  const b = nearestBairro(x0/2+x1/2, y0/2+y1/2);
+  if (num) showCard('rua', `${esc(name)}, ${esc(num)}`, `O número <b>${esc(num)}</b> não está no mapa — rua inteira destacada.<br>${faixa}${b? ' · '+esc(b):''}`, `${gname}, ${num} - ${cityName()}`, `${gname}, ${num} - ${cityName()}`, go, {num});
+  else showCard('rua', esc(name), `${faixa}${b? ' · '+esc(b):''}`, `${gname} - ${cityName()}`, `${gname} - ${cityName()}`, go, {num: ''});
+  requestDraw(true);
+}
+$('#numrow').addEventListener('submit', e => {
+  e.preventDefault(); if (!curStreet) return;
+  const n = $('#numIn').value.replace(/[^0-9A-Za-z]/g, '');
+  $('#numIn').blur();
+  if (n) addRecent(`${cleanStreetName(curStreet.name)} ${n}`);
+  showStreet(curStreet, n);
+});
+function showCard(kind, h, s, dest, copyText, focus, street){
+  $('#numrow').classList.toggle('show', !!street);
+  if (street) $('#numIn').value = street.num || '';
   $('#cardic').innerHTML = IC[kind] || IC.end;
   $('#cardh').innerHTML = h; $('#cards').innerHTML = s||'';
   cardDest = dest || null; cardText = copyText || ''; cardFocus = focus || null;
@@ -894,7 +937,7 @@ function showCard(kind, h, s, dest, copyText, focus){
   requestAnimationFrame(() => document.body.style.setProperty('--cardh', ($('#card').offsetHeight + 4) + 'px'));
 }
 function updateRouteBtn(){ const b = $('#route'); if (prefs.route && cardDest){ b.href = mapsUrl(cardDest); b.classList.remove('hide'); } else b.classList.add('hide'); }
-function hideCard(){ $('#card').classList.remove('open'); document.body.classList.remove('hascard'); cardDest = null; }
+function hideCard(){ curStreet = null; $('#numIn').blur(); $('#card').classList.remove('open'); document.body.classList.remove('hascard'); cardDest = null; }
 $('#center').onclick = () => { if (cardFocus) cardFocus(); };
 $('#copy').onclick = async () => { try{ await navigator.clipboard.writeText(cardText); toast('Endereço copiado'); }catch(e){ toast('Não foi possível copiar'); } };
 
@@ -905,33 +948,7 @@ function choose(idx){
   resEl.classList.remove('open'); qEl.blur();
   if (r.st){
     const list = [r.st].concat(r.more||[]);
-    const labs = new Set(list.flatMap(s=>s.labs));
-    const gname = cleanStreetName(r.st.name);
-    const nums = new Set(list.flatMap(s=>s.nums));
-    const vals = [...nums].map(i=>numVal(texts[i][7])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
-    const faixa = vals.length ? `Numeração no mapa: ${vals[0]} a ${vals[vals.length-1]}` : 'Sem numeração predial no mapa';
-    if (P.num && !r.exactName){
-      const a = resolveAddress(list, P.num);
-      if (a && a.exact){
-        const t = texts[a.i];
-        highlight = {labels: labs, nums: new Set([a.i]), soft: nums};
-        pin = {x: t[0], y: t[1]};
-        const go = () => focusOn(t[0], t[1], 0.8); go();
-        const b = nearestBairro(t[0], t[1]);
-        showCard('end', `${esc(r.st.name)}, ${esc(t[7])}`, `${b? esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - ${cityName()}`, `${gname}, ${t[7]} - ${cityName()}`, go);
-        return;
-      }
-    }
-    highlight = {labels: labs, nums: new Set(), soft: nums}; pin = null;
-    let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
-    for (const i of [...labs, ...nums]){ const t=texts[i]; x0=Math.min(x0,t[0]); y0=Math.min(y0,t[1]); x1=Math.max(x1,t[0]); y1=Math.max(y1,t[1]); }
-    const go = () => fitBox(x0-300, y0-300, x1+300, y1+300, 50, 2.5); go();
-    const b = nearestBairro(x0/2+x1/2, y0/2+y1/2);
-    if (P.num && !r.exactName){
-      showCard('rua', `${esc(r.st.name)}, ${esc(P.num)}`, `O número <b>${esc(P.num)}</b> não está no mapa — rua inteira destacada.<br>${faixa}${b? ' · '+esc(b):''}`, `${gname}, ${P.num} - ${cityName()}`, `${gname}, ${P.num} - ${cityName()}`, go);
-    } else {
-      showCard('rua', esc(r.st.name), `${faixa}${b? ' · '+esc(b):''}`, `${gname} - ${cityName()}`, `${gname} - ${cityName()}`, go);
-    }
+    showStreet({list, name: r.st.name, labs: new Set(list.flatMap(x=>x.labs)), nums: new Set(list.flatMap(x=>x.nums)), gname: cleanStreetName(r.st.name)}, (P.num && !r.exactName) ? P.num : '');
     return;
   }
   const pl = r.pl;
@@ -950,21 +967,19 @@ function choose(idx){
 let curTab = 'map';
 function showTab(t){
   curTab = t;
-  $('#pageMaps').classList.toggle('open', t==='maps');
   $('#pageSet').classList.toggle('open', t==='set');
-  $('#tabMap').classList.toggle('on', t==='map'); $('#tabMaps').classList.toggle('on', t==='maps'); $('#tabSet').classList.toggle('on', t==='set');
+  $('#tabMap').classList.toggle('on', t==='map'); $('#tabSet').classList.toggle('on', t==='set');
   const onMap = t==='map';
   ['#topbar','#ctrls','#scale'].forEach(s => $(s).style.visibility = onMap ? '' : 'hidden');
   $('#card').style.visibility = onMap ? '' : 'hidden';
   $('#toast').classList.remove('show');
   if (!onMap) closePanels();
   if (t==='set') refreshSettings();
-  if (t==='maps') renderMaps();
 }
 $('#tabMap').onclick = () => showTab('map');
-$('#tabMaps').onclick = () => showTab('maps');
 $('#tabSet').onclick = () => showTab('set');
-$('#mapChip').onclick = () => showTab('maps');
+function openMapSheet(){ closePanels(); renderMaps(); openSheet('#mapSheet'); }
+$('#mapChip').onclick = openMapSheet;
 
 // ---------- página Mapas ----------
 function fmtSize(b){ return b ? (b/1048576).toFixed(1).replace('.',',') + ' MB' : ''; }
@@ -990,7 +1005,7 @@ function renderMaps(){
 $('#mapList').addEventListener('click', async e => {
   const b = e.target.closest('.mcard'); if (!b) return;
   const m = mapById(b.dataset.m); if (!m) return;
-  if (MAP && MAP.id === m.id){ showTab('map'); return; }
+  if (MAP && MAP.id === m.id){ closeSheets(); return; }
   if (!available(m)){
     if (dlBusy) return;
     dlBusy = m.id; renderMaps();
@@ -1002,7 +1017,7 @@ $('#mapList').addEventListener('click', async e => {
     }catch(err){ dlBusy = null; renderMaps(); toast('Não foi possível baixar. Confira a internet.'); return; }
     dlBusy = null;
   }
-  await openMap(m); showTab('map');
+  closeSheets(); await openMap(m);
 });
 
 async function openMap(m){
@@ -1044,7 +1059,7 @@ function cmpVer(a,b){ const pa=String(a).split('.').map(Number), pb=String(b).sp
 let cur = {versionName: APP_VERSION, versionCode: 0}, remote = null, local = CHANGELOG_EMBED, updBusy = false, updPct = 0;
 function renderChangelog(log){
   if (!log || !log.versions) { $('#changelog').innerHTML = '<div style="color:var(--muted);font-size:13px;padding-top:8px">Sem informações de versão.</div>'; return; }
-  $('#changelog').innerHTML = log.versions.slice(0, 6).map(v => `
+  $('#changelog').innerHTML = log.versions.slice(0, 1).map(v => `
     <div class="v"><b>v${esc(v.version)}</b><span class="dt">${esc(v.date||'')}</span>${v.version===cur.versionName?'<span class="badge ok">instalada</span>':''}${cmpVer(v.version, cur.versionName)>0?'<span class="badge new">nova</span>':''}</div>
     <ul>${(v.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`).join('');
 }
@@ -1147,7 +1162,7 @@ try{
 }catch(e){ $('#lmsg').textContent = 'Erro: ' + e.message; return; }
 if (!local && !EMBED){ try{ local = await (await fetch('version.json')).json(); }catch(e){} }
 paintUpdate(); paintRecent();
-refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => showTab('maps'), 'Ver'); } if (curTab==='maps') renderMaps(); });
+refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => { showTab('map'); openMapSheet(); }, 'Ver'); } if ($('#mapSheet').classList.contains('open')) renderMaps(); });
 if (NATIVE){
   if (await checkUpdates(false)) toast(`Nova versão ${remote.versionName} disponível`, () => showTab('set'), 'Ver');
   setInterval(() => { if (document.visibilityState === 'visible' && !updBusy) checkUpdates(false); }, 30*60*1000);

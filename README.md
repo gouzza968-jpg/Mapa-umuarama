@@ -2,7 +2,8 @@
 
 App Android com o **Mapa Oficial de Numeração Predial de Umuarama-PR**, feito para motoboys.
 
-- Guia **Mapas**: escolha o mapa exibido (o atual é o **Mapa 1**); novos mapas publicados em `mapas/catalogo.json` podem ser baixados por dentro do app
+- Escolha do mapa na guia **Explorar** (o atual é o **Mapa 1**); novos mapas publicados em `mapas/catalogo.json` podem ser baixados por dentro do app
+- Ao abrir uma rua, campo opcional para procurar o número
 - Busca por **rua + número** (ex.: `ney braga 1520`), bairro ou local; se o número não estiver no mapa, a rua inteira fica destacada
 - Ruas, quadras, lotes, numeração predial, bairros, rios e rodovias
 - Tema escuro (e claro)
@@ -42,4 +43,4 @@ O app consulta `releases/latest/download/update.json`; quando o `versionCode` é
    ```json
    {"id": "mapa2", "nome": "Mapa 2", "descricao": "…", "cidade": "Umuarama - PR", "url": "mapas/mapa2.json", "tamanho": 2945649}
    ```
-3. Commit e push — o app mostra “Novo mapa disponível” e o usuário baixa em **Mapas**, sem precisar de APK novo.
+3. Commit e push — o app mostra “Novo mapa disponível” e o usuário baixa no botão do mapa, na guia Explorar, sem precisar de APK novo.

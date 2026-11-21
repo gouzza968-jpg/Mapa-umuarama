@@ -1,6 +1,15 @@
 {
-  "latest": "2.1.0",
+  "latest": "2.2.0",
   "versions": [
+    {
+      "version": "2.2.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Escolha o mapa direto na guia Explorar, no botão do mapa no topo",
+        "Ao abrir uma rua, aparece o campo para procurar o número (opcional)",
+        "Configurações mostra só as novidades da última atualização"
+      ]
+    },
     {
       "version": "2.1.0",
       "date": "21/11/2026",
