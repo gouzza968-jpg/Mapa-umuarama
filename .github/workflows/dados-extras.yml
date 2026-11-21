@@ -1,0 +1,59 @@
+name: Baixar dados extras (IBGE e Overture)
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/dados-extras.yml']
+
+jobs:
+  baixar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: IBGE CNEFE 2022 (endereços com coordenadas) de Umuarama
+        continue-on-error: true
+        run: |
+          mkdir -p dados-extras
+          B=https://ftp.ibge.gov.br/Cadastro_Nacional_de_Enderecos_para_Fins_Estatisticos/Censo_Demografico_2022/Arquivos_CNEFE/CSV/Municipio/
+          curl -fsSL "$B" -o lista.html && grep -o 'href="[^"]*"' lista.html | head -40
+          UF=$(grep -o 'href="41[^"]*"' lista.html | head -1 | cut -d'"' -f2)
+          echo "pasta PR: $UF"
+          curl -fsSL "$B$UF" -o lista_pr.html
+          ARQ=$(grep -o 'href="[^"]*4128104[^"]*"' lista_pr.html | head -1 | cut -d'"' -f2)
+          echo "arquivo: $ARQ"
+          curl -fsSL "$B$UF$ARQ" -o cnefe.zip
+          unzip -o cnefe.zip -d cnefe && ls -la cnefe
+          python3 - <<'PY'
+          import csv, glob, gzip, io
+          f = glob.glob('cnefe/**/*.csv', recursive=True)[0]
+          raw = open(f, 'rb').read()
+          txt = raw.decode('utf-8', errors='replace') if raw[:3] == b'\xef\xbb\xbf' or b'\xc3' in raw[:20000] else raw.decode('latin-1')
+          rd = csv.DictReader(io.StringIO(txt.lstrip('﻿')), delimiter=';')
+          cols = rd.fieldnames; print('colunas:', cols)
+          keep = [c for c in cols if c in ('NOM_TIPO_SEGLOGR','NOM_TITULO_SEGLOGR','NOM_SEGLOGR','NUM_ENDERECO','DSC_MODIFICADOR','DSC_LOCALIDADE','CEP','LATITUDE','LONGITUDE','COD_ESPECIE','DSC_ESTABELECIMENTO','NV_GEO_COORD')]
+          out = io.StringIO(); w = csv.DictWriter(out, fieldnames=keep, delimiter=';'); w.writeheader(); n = 0
+          for r in rd: w.writerow({k: r.get(k, '') for k in keep}); n += 1
+          gzip.open('dados-extras/cnefe_umuarama.csv.gz', 'wt', encoding='utf-8').write(out.getvalue()); print('endereços:', n)
+          PY
+      - name: Overture Maps (lugares) na área de Umuarama
+        continue-on-error: true
+        run: |
+          pip install -q overturemaps
+          overturemaps download --bbox=-53.43,-23.86,-53.21,-23.68 -f geojson --type=place -o lugares.geojson
+          python3 -c "import json,gzip;d=json.load(open('lugares.geojson'));print('lugares:',len(d['features']));gzip.open('dados-extras/overture_lugares.geojson.gz','wt').write(json.dumps(d))"
+      - name: Salvar no repositório
+        run: |
+          date -u +%Y-%m-%d > dados-extras/data.txt
+          ls -la dados-extras
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add dados-extras
+          git commit -m "Dados extras (IBGE CNEFE e Overture) [skip ci]" || echo "sem mudanças"
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done
