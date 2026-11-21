@@ -176,7 +176,17 @@
   .tab .dot{position:absolute;top:6px;left:calc(50% + 12px);width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid var(--solid);display:none}
   .tab .dot.show{display:block}
 
-  #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 124px);transform:translate(-50%,-10px);border-radius:14px;padding:10px 10px 10px 14px;font-size:14px;font-weight:600;z-index:30;display:flex;max-width:calc(100% - 24px);align-items:center;gap:12px;opacity:0;pointer-events:none;transition:.2s}
+  #updBanner{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 118px);z-index:5;max-width:560px;margin:0 auto;border-radius:16px;padding:10px 10px 10px 12px;display:none;align-items:center;gap:11px}
+  #updBanner.show{display:flex;animation:fadeIn .2s ease-out}
+  #updBanner .ic{width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+  #updBanner .t{font-size:14px;font-weight:700}
+  #updBanner .s{font-size:12px;color:var(--muted);margin-top:1px}
+  #updBanner .bar{height:4px;border-radius:4px;background:var(--raised);overflow:hidden;margin-top:6px;display:none}
+  #updBanner .bar.show{display:block}
+  #updBanner .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+  #updBanner .btn{padding:9px 13px;font-size:13.5px}
+  #updBanner .ib{width:34px;height:34px}
+  #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 184px);transform:translate(-50%,-10px);border-radius:14px;padding:10px 10px 10px 14px;font-size:14px;font-weight:600;z-index:30;display:flex;max-width:calc(100% - 24px);align-items:center;gap:12px;opacity:0;pointer-events:none;transition:.2s}
   #toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
   #loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:40;text-align:center;padding:20px;transition:opacity .25s}
   #loading.hide{opacity:0;pointer-events:none}
@@ -306,13 +316,19 @@
 
 <div id="toast" class="glass"><span id="toastt"></span><button class="btn primary" id="toastb" style="padding:7px 12px">Ver</button></div>
 
+<div id="updBanner" class="glass">
+  <div class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></div>
+  <div class="grow"><div class="t" id="ubT">Atualização disponível</div><div class="s" id="ubS"></div><div class="bar" id="ubBar"><i id="ubBi"></i></div></div>
+  <button class="btn primary" id="ubBtn">Atualizar</button>
+  <button class="ib" id="ubX" aria-label="Fechar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div>
 <div id="loading"><div>
   <svg class="logo" viewBox="0 0 24 24"><path fill="#ff6a1f" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.8" fill="var(--bg)"/></svg>
   <div class="b" id="lttl">Mapa Umuarama</div><div class="m" id="lmsg">Carregando…</div><div class="lbar"><i></i></div>
 </div></div>
 
 <script>
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.2.1";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -772,7 +788,7 @@ function openSheet(id){ $('#veil').classList.add('open'); $(id).classList.add('o
 function closeSheets(){ $('#veil').classList.remove('open'); document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
 $('#veil').onclick = closeSheets;
 $('#lay').onclick = () => { closePanels(); renderLayers(); openSheet('#laySheet'); };
-function closePanels(){ closeSheets(); $('#results').classList.remove('open'); $('#q').blur(); $('#chips').style.display = ''; }
+function closePanels(){ closeSheets(); $('#results').classList.remove('open'); $('#q').blur(); $('#chips').style.display = ''; if (curTab === 'map') showBanner(); }
 
 // ---------- busca ----------
 function strip(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
@@ -879,8 +895,8 @@ function renderResults(){
   resEl.classList.add('open');
 }
 qEl.addEventListener('input', renderResults);
-qEl.addEventListener('focus', () => { closeSheets(); $('#toast').classList.remove('show'); renderResults(); });
-qEl.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== qEl && !resEl.classList.contains('open')) $('#chips').style.display = ''; }, 150));
+qEl.addEventListener('focus', () => { closeSheets(); hideBanner(); $('#toast').classList.remove('show'); renderResults(); });
+qEl.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== qEl && !resEl.classList.contains('open')){ $('#chips').style.display = ''; showBanner(); } }, 150));
 qEl.addEventListener('keydown', e => { if (e.key==='Enter' && lastResults.length) choose(0); });
 resEl.addEventListener('pointerdown', e => e.preventDefault());
 resEl.addEventListener('click', e => {
@@ -973,6 +989,7 @@ function showTab(t){
   ['#topbar','#ctrls','#scale'].forEach(s => $(s).style.visibility = onMap ? '' : 'hidden');
   $('#card').style.visibility = onMap ? '' : 'hidden';
   $('#toast').classList.remove('show');
+  if (onMap) showBanner(); else hideBanner();
   if (!onMap) closePanels();
   if (t==='set') refreshSettings();
 }
@@ -1080,6 +1097,7 @@ function paintUpdate(){
   }
   btn.style.display = '';
   if (updBusy){ btn.disabled = true; btn.textContent = updPct >= 100 ? 'Instalando…' : `${updPct}%`; $('#updt').textContent = 'Baixando atualização…'; return; }
+  if (instReady && has){ btn.disabled = false; btn.textContent = 'Instalar'; btn.classList.add('primary'); btn.onclick = applyUpdate; $('#updt').textContent = `Versão ${remote.versionName} pronta`; $('#updd').textContent = 'Toque em Instalar'; return; }
   btn.disabled = false;
   if (has){
     $('#updic').innerHTML = DOWN; $('#updt').textContent = `Nova versão ${remote.versionName}`;
@@ -1098,28 +1116,56 @@ async function checkUpdates(manual){
   try{
     const P = plug('AppUpdate'); if (P) cur = await P.info();
     remote = await httpGet(UPD_URL);
+    if (!hasUpdate()) hideBanner();
     if (manual && !hasUpdate()) toast('Seu app já está atualizado');
-  }catch(e){ if (manual) toast('Sem conexão para verificar'); }
+  }catch(e){
+    if (manual) toast('Sem conexão para verificar');
+  }
   paintUpdate();
+  if (hasUpdate()) showBanner();
   return hasUpdate();
 }
+// ---------- aviso de atualização (sempre baixa a versão mais recente) ----------
+let bannerClosed = false;
+function ub(t, sub, btn, bar){
+  $('#ubT').textContent = t; $('#ubS').textContent = sub || '';
+  if (btn){ $('#ubBtn').textContent = btn; $('#ubBtn').disabled = false; $('#ubBtn').style.display = ''; } else if (btn === null) $('#ubBtn').disabled = true;
+  $('#ubBar').classList.toggle('show', bar != null); if (bar != null) $('#ubBi').style.width = bar + '%';
+}
+function showBanner(){
+  if (!remote || !hasUpdate()) return;
+  if (!updBusy && !instReady) ub(`Nova versão ${remote.versionName}`, 'Toque em Atualizar para instalar', 'Atualizar');
+  if (!bannerClosed && curTab === 'map') $('#updBanner').classList.add('show');
+}
+function hideBanner(){ $('#updBanner').classList.remove('show'); }
+$('#ubX').onclick = () => { bannerClosed = true; hideBanner(); };
+let instReady = false;
 async function applyUpdate(){
-  const P = plug('AppUpdate'); if (!P || !remote || updBusy) return;
+  const P = plug('AppUpdate'); if (!P || updBusy) return;
+  if (instReady){ P.install().catch(() => toast('Não foi possível abrir o instalador')); return; }
   try{
     const r = await P.canInstall();
     if (!r.ok){ toast('Permita instalar apps desta fonte e toque em Atualizar de novo.'); P.openInstallSettings(); return; }
-    updBusy = true; updPct = 0; paintUpdate();
+    updBusy = true; updPct = 0; paintUpdate(); ub('Baixando atualização…', 'Buscando a versão mais recente', null, 0);
+    // confere de novo para baixar sempre a última versão publicada
+    try{ const u = await httpGet(UPD_URL); if (u && Number(u.versionCode) >= Number(remote.versionCode)) remote = u; }catch(e){}
     await P.download({url: remote.url});
     const poll = async () => {
-      const st = await P.status(); updPct = st.pct || 0; paintUpdate();
-      if (st.error){ updBusy = false; paintUpdate(); toast('Falha no download. Tente de novo.'); return; }
-      if (st.done){ updBusy = false; paintUpdate(); try{ await P.install(); }catch(e){ toast('Não foi possível abrir o instalador'); }
-        const btn = $('#updbtn'); btn.textContent = 'Instalar'; btn.classList.add('primary'); btn.onclick = () => P.install().catch(()=>toast('Não foi possível abrir o instalador')); return; }
+      let st; try{ st = await P.status(); }catch(e){ st = {error:'status'}; }
+      updPct = st.pct || 0; paintUpdate();
+      if (st.error){ updBusy = false; paintUpdate(); ub('Falha no download', 'Confira a internet e tente de novo', 'Tentar de novo'); toast('Falha no download. Tente de novo.'); return; }
+      if (st.done){
+        updBusy = false; instReady = true; paintUpdate(); ub(`Versão ${remote.versionName} pronta`, 'Toque em Instalar na tela do Android', 'Instalar', 100);
+        try{ await P.install(); }catch(e){ toast('Não foi possível abrir o instalador'); }
+        return;
+      }
+      ub('Baixando atualização…', `${updPct}%`, null, updPct);
       setTimeout(poll, 400);
     };
     poll();
-  }catch(e){ updBusy = false; paintUpdate(); toast('Não foi possível atualizar agora.'); }
+  }catch(e){ updBusy = false; paintUpdate(); ub('Não foi possível atualizar', 'Tente de novo', 'Tentar de novo'); }
 }
+$('#ubBtn').onclick = applyUpdate;
 function refreshSettings(){ paintUpdate(); paintRecent(); }
 
 // rota: no app abre direto o Google Maps
@@ -1164,8 +1210,12 @@ if (!local && !EMBED){ try{ local = await (await fetch('version.json')).json(); 
 paintUpdate(); paintRecent();
 refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => { showTab('map'); openMapSheet(); }, 'Ver'); } if ($('#mapSheet').classList.contains('open')) renderMaps(); });
 if (NATIVE){
-  if (await checkUpdates(false)) toast(`Nova versão ${remote.versionName} disponível`, () => showTab('set'), 'Ver');
-  setInterval(() => { if (document.visibilityState === 'visible' && !updBusy) checkUpdates(false); }, 30*60*1000);
+  await checkUpdates(false);
+  setInterval(() => { if (document.visibilityState === 'visible' && !updBusy) checkUpdates(false); }, 15*60*1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || updBusy) return;
+    checkUpdates(false);
+  });
 }
 })();
 </script>
