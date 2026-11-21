@@ -1456,9 +1456,24 @@ function saveNick(){ const v = $('#nick').value.trim().slice(0, 20); prefs.nick 
 const telDigits = t => (t||'').replace(/\D/g, '').slice(0, 13);
 function fmtTel(t){ const d = telDigits(t).replace(/^55(?=\d{10,11}$)/, ''); return d.length === 11 ? `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}` : d.length === 10 ? `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}` : t || ''; }
 $('#pNome').value = prefs.nome || ''; $('#pTel').value = prefs.tel ? fmtTel(prefs.tel) : ''; $('#pTelVis').checked = !!prefs.telVis;
+async function ensureAuth(){
+  if (!sb) return false;
+  if (sbUid) return true;
+  try{
+    let {data} = await sb.auth.getSession();
+    if (!data.session){ const r = await sb.auth.signInAnonymously(); if (r && r.error){ sbAuthErr = r.error.message; return false; } }
+    const u = await sb.auth.getUser(); sbUid = u.data && u.data.user && u.data.user.id; sbAuthErr = sbUid ? '' : 'sem usuário';
+    return !!sbUid;
+  }catch(e){ sbAuthErr = String(e.message || e); return false; }
+}
+let profErr = '';
 async function syncProfile(){
-  if (!sb || !sbUid || (prefs.nick||'').trim().length < 2) return false;
+  profErr = '';
+  if (!sb){ profErr = 'sem conexão com a internet'; return false; }
+  if (!(await ensureAuth())){ profErr = /disabled|anonymous/i.test(sbAuthErr) ? 'login anônimo desligado no servidor' : ('login: ' + sbAuthErr); return false; }
+  if ((prefs.nick||'').trim().length < 2) return false;
   const {error} = await sb.from('perfis').upsert({uid: sbUid, apelido: prefs.nick.trim().slice(0, 20), nome: (prefs.nome||'').trim().slice(0, 60) || null, telefone: prefs.tel || null, telefone_visivel: !!prefs.telVis, atualizado_em: new Date().toISOString()});
+  if (error) profErr = [error.code, error.message].filter(Boolean).join(' · ');
   return !error;
 }
 $('#nickSave').onclick = async () => {
@@ -1469,7 +1484,7 @@ $('#nickSave').onclick = async () => {
   $('#pTel').value = tel ? fmtTel(tel) : '';
   if (!EMBED && window.supabase) await liveConnect();
   const ok = await syncProfile();
-  toast(ok ? 'Perfil salvo' : 'Perfil salvo no aparelho (sem conexão com o servidor)');
+  toast(ok ? 'Perfil salvo' : `Perfil salvo só no aparelho: ${profErr || 'sem conexão com o servidor'}`);
   liveSend(true); paintLive();
 };
 $('#pTelVis').onchange = () => { prefs.telVis = $('#pTelVis').checked; savePrefs(); syncProfile(); };
@@ -1537,6 +1552,7 @@ function openChat(){
 $('#chatNickOk').onclick = () => { const v = $('#chatNickIn').value.trim().slice(0, 20); if (v.length < 2){ toast('Apelido com pelo menos 2 letras'); return; } prefs.nick = v; savePrefs(); $('#nick').value = v; openChat(); };
 async function sendMsg(fields){
   if (!sb || !chatReady){ toast('Chat sem conexão'); return false; }
+  if (!(await ensureAuth())){ toast(/disabled|anonymous/i.test(sbAuthErr) ? 'Login anônimo desligado no servidor' : 'Sem login no servidor: ' + sbAuthErr); return false; }
   if (Date.now() - chatLastSend < 1200){ toast('Espere um pouquinho'); return false; }
   chatLastSend = Date.now();
   const {error} = await sb.from('mensagens').insert(Object.assign({apelido: prefs.nick.trim().slice(0, 20), sala: 'geral', texto: ''}, fields));
