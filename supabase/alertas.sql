@@ -22,9 +22,14 @@ drop policy if exists "reportar alerta" on public.alertas;
 create policy "reportar alerta" on public.alertas for insert to authenticated
   with check (
     autor = auth.uid()
-    and not exists (select 1 from public.banidos b where b.autor = auth.uid())
-    -- no máximo 3 alertas por motoboy a cada 30 minutos
-    and (select count(*) from public.alertas a where a.autor = auth.uid() and a.criado_em > now() - interval '30 minutes') < 3
+    and (
+      public.eh_admin()   -- o painel pode reportar sem limite
+      or (
+        not exists (select 1 from public.banidos b where b.autor = auth.uid())
+        -- no máximo 3 alertas por motoboy a cada 30 minutos
+        and (select count(*) from public.alertas a where a.autor = auth.uid() and a.criado_em > now() - interval '30 minutes') < 3
+      )
+    )
   );
 drop policy if exists "apagar alerta" on public.alertas;
 create policy "apagar alerta" on public.alertas for delete to authenticated

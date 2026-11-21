@@ -1,6 +1,13 @@
 {
-  "latest": "2.20.0",
+  "latest": "2.20.1",
   "versions": [
+    {
+      "version": "2.20.1",
+      "date": "21/11/2026",
+      "notes": [
+        "Blitz também podem ser reportadas pelo administrador"
+      ]
+    },
     {
       "version": "2.20.0",
       "date": "21/11/2026",

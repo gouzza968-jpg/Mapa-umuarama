@@ -24,6 +24,8 @@
   body.mapfull .homeBody{display:none}
   .hstats{position:absolute;left:10px;right:56px;top:calc(env(safe-area-inset-top) + 10px);display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
   .hstats span{background:rgba(20,26,34,.88);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:600;backdrop-filter:blur(8px)}
+  #addBlitz{position:absolute;left:10px;bottom:44px;background:#dc2626;border-color:#dc2626;color:#fff;box-shadow:var(--shadow)}
+  body.marcando #addBlitz{display:none}
   #mapFull{position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 10px);width:38px;height:34px;padding:0;font-size:17px;background:rgba(20,26,34,.88)}
   .homeBody{padding:14px 14px 24px;max-width:640px;margin:0 auto}
   h2{font-size:16px;margin:16px 4px 8px}
@@ -113,6 +115,7 @@
   <div id="homeMap"><iframe id="mapFrame" title="Mapa Principal com as atividades"></iframe>
     <div class="hstats"><span>🏍️ <b id="sOn">–</b> online</span><span>🚨 <b id="sBlz">–</b> blitz</span><span>💬 <b id="sHoje">–</b> hoje</span></div>
     <button class="btn sm" id="mapFull" aria-label="Tela cheia">⤢</button>
+    <button class="btn sm" id="addBlitz">🚨 Adicionar blitz</button>
   </div>
   <div class="homeBody">
     <h2>🏍️ Motoboys online</h2>
@@ -422,6 +425,7 @@ document.querySelectorAll('.rec').forEach(x => x.onchange = () => { REC[x.datase
 $('#recMapa').onchange = () => { REC.mapa = $('#recMapa').value; saveRec(REC.mapa ? 'Mapa inicial alterado para todos' : 'Mapa inicial: cada um escolhe'); };
 $('#avisoPub').onclick = () => { const t = $('#recAviso').value.trim().slice(0, 300); if (!t) return toast('Escreva o aviso'); REC.aviso = t; saveRec('Aviso publicado'); };
 $('#avisoRm').onclick = () => { REC.aviso = ''; $('#recAviso').value = ''; saveRec('Aviso removido'); };
+$('#addBlitz').onclick = () => { document.body.classList.add('mapfull'); $('#mapFull').textContent = '⤡'; try{ $('#mapFrame').contentWindow.postMessage({blitz: true}, '*'); }catch(e){} toast('Arraste o mapa até o 🚨 ficar no local e toque em Reportar aqui'); };
 $('#mapFull').onclick = () => { document.body.classList.toggle('mapfull'); $('#mapFull').textContent = document.body.classList.contains('mapfull') ? '⤡' : '⤢'; };
 async function loadChatCfg(){
   const {data, error} = await sb.from('config').select('valor').eq('chave', 'chat').maybeSingle();
