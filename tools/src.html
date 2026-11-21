@@ -660,7 +660,7 @@ async function buildMap(DATA){
   gridT = Array.from({length:GX*GY}, ()=>[]);
   texts.forEach((t,i) => { const cx=Math.min(GX-1,Math.max(0,Math.floor(t[0]/CELL))), cy=Math.min(GY-1,Math.max(0,Math.floor(t[1]/CELL))); gridT[cy*GX+cx].push(i); });
   // índice de busca
-  sIdx = streets.map(([name, labs, nums], si) => ({si, name, labs, nums, key: strip(name), words: strip(name).split(' ')}));
+  sIdx = streets.map(([name, labs, nums, alias], si) => ({si, name, labs, nums, alias: !!alias, key: strip(name), words: strip(name).split(' ')}));
   places = [];
   const seen = new Map();
   texts.forEach((t,i) => {
@@ -680,13 +680,13 @@ async function buildMap(DATA){
 const THEMES = {
   dark: {
     bg:'#0b0f14', halo:'rgba(11,15,20,.92)', hl:'rgba(255,190,0,.95)', soft:'rgba(255,190,0,.26)', hlInk:'#111', hlNum:'#7a0019',
-    line:{outro:'#26303b', verde:'#1d6b44', rio:'#3478d6', lote:'#28313c', circ:'#323c48', num:'#5e2840', quadra:'#7b8796', bairro:'#a78bfa', via:'#f5a524'},
-    text:{lote:'#748091', quadra:'#60a5fa', num:'#ff6b9a', outro:'#677384', local:'#34d399', rio:'#60a5fa', rua:'#f1f5f9', bairro:'#c4b5fd'},
+    line:{outro:'#26303b', verde:'#1d6b44', rio:'#3478d6', lote:'#28313c', circ:'#323c48', num:'#5e2840', quadra:'#7b8796', bairro:'#a78bfa', via:'#f5a524', avenida:'#fbbf24', rodovia:'#fb7c2e'},
+    text:{lote:'#748091', quadra:'#60a5fa', num:'#ff6b9a', outro:'#677384', local:'#34d399', rio:'#60a5fa', rua:'#f1f5f9', bairro:'#c4b5fd', av:'#fcd34d'},
   },
   light: {
     bg:'#eef1f4', halo:'rgba(238,241,244,.92)', hl:'rgba(255,212,59,.98)', soft:'rgba(255,200,0,.30)', hlInk:'#111', hlNum:'#b00020',
-    line:{outro:'#d0d5dc', verde:'#86c99a', rio:'#4f8fe8', lote:'#cfd4db', circ:'#bfc6cf', num:'#efb1c4', quadra:'#5d6878', bairro:'#8b5cf6', via:'#f59e0b'},
-    text:{lote:'#8a94a3', quadra:'#2563eb', num:'#d6336c', outro:'#98a2b3', local:'#047857', rio:'#1d4ed8', rua:'#111827', bairro:'#7c3aed'},
+    line:{outro:'#d0d5dc', verde:'#86c99a', rio:'#4f8fe8', lote:'#cfd4db', circ:'#bfc6cf', num:'#efb1c4', quadra:'#5d6878', bairro:'#8b5cf6', via:'#f59e0b', avenida:'#f59e0b', rodovia:'#ea580c'},
+    text:{lote:'#8a94a3', quadra:'#2563eb', num:'#d6336c', outro:'#98a2b3', local:'#047857', rio:'#1d4ed8', rua:'#111827', bairro:'#7c3aed', av:'#b45309'},
   }
 };
 let TH = THEMES[prefs.theme] || THEMES.dark;
@@ -694,8 +694,9 @@ const STY = {
   outro:{w:.7, minK:0.25, layer:'outro'}, verde:{w:.9, minK:0, layer:'rio'}, rio:{w:1.4, minK:0, layer:'rio'},
   lote:{w:.7, minK:0.22, layer:'lote'}, circ:{w:.7, minK:0.6, layer:'quadra'}, num:{w:.7, minK:0.6, layer:'num'},
   quadra:{w:1.15, minK:0, layer:'quadra'}, bairro:{w:1.6, minK:0, layer:'bairro', dash:[6,4]}, via:{w:2.4, minK:0, layer:'via'},
+  avenida:{w:2.8, minK:0, layer:'via', alpha:.8}, rodovia:{w:4.4, minK:0, layer:'via', alpha:.9},
 };
-const DRAW_ORDER = ['outro','verde','rio','lote','circ','num','quadra','via','bairro'];
+const DRAW_ORDER = ['outro','verde','rio','lote','circ','num','quadra','via','avenida','rodovia','bairro'];
 const TSTY = {
   lote:{min:7, layer:'lote'}, quadra:{min:7, layer:'quadra', bold:true}, num:{min:6.5, layer:'num', bold:true},
   outro:{min:8, layer:'outro'}, local:{min:6, layer:'outro', bold:true, minPx:10}, rio:{min:5, layer:'rio', italic:true, minPx:10},
@@ -704,7 +705,7 @@ const TSTY = {
 const T_ORDER = ['lote','outro','quadra','num','local','rio','rua','bairro'];
 const LAYERS = [
   ['rua','Nomes de ruas','#e2e8f0'], ['num','Numeração','#ff6b9a'], ['lote','Lotes','#5b6573'], ['quadra','Quadras','#94a3b8'],
-  ['via','Rodovias','#f5a524'], ['rio','Rios e verde','#3b82f6'], ['bairro','Bairros','#a78bfa'], ['outro','Outros','#475569'],
+  ['via','Avenidas e rodovias','#fbbf24'], ['rio','Rios e verde','#3b82f6'], ['bairro','Bairros','#a78bfa'], ['outro','Outros','#475569'],
 ];
 const POI_STY = {
   saude:{e:'🏥', c:'#ef4444'}, farmacia:{e:'💊', c:'#10b981'}, mercado:{e:'🛒', c:'#3b82f6'}, posto:{e:'⛽', c:'#f59e0b'},
@@ -760,7 +761,7 @@ function buildOverview(){
   for (const name of DRAW_ORDER){
     const ci = LC.indexOf(name); if (ci<0) continue;
     const st = STY[name]; if (name==='outro'||name==='circ'||name==='num') continue;
-    g.strokeStyle = TH.line[name]; g.lineWidth = Math.max(.5, st.w*(name==='lote'?.5:.8)); g.setLineDash(st.dash? st.dash.map(v=>v*.6):[]);
+    g.strokeStyle = TH.line[name]; g.lineWidth = Math.max(.5, st.w*(name==='lote'?.5:name==='rodovia'?1:name==='avenida'?.75:.8)); g.setLineDash(st.dash? st.dash.map(v=>v*.6):[]);
     g.beginPath();
     for (let p=0;p<NP;p++){ if (pCat[p]!==ci) continue;
       const o=pOff[p], n=pN[p];
@@ -811,15 +812,15 @@ function drawVectors(){
     const ci = LC.indexOf(name); if (ci<0) continue;
     const st = STY[name]; if (!vis[st.layer] || k*10 < st.minK) continue;
     const b = buckets[ci]; if (!b.length) continue;
-    ctx.strokeStyle = TH.line[name];
-    ctx.lineWidth = st.w * Math.min(1.6, Math.max(.8, k*10/3));
+    ctx.strokeStyle = TH.line[name]; ctx.globalAlpha = st.alpha || 1;
+    ctx.lineWidth = st.w * Math.min(1.8, Math.max(.8, k*10/3));
     ctx.setLineDash(st.dash||[]);
     ctx.beginPath();
     for (const p of b){ const o=pOff[p], n=pN[p];
       ctx.moveTo(all[o]*k+ox, oy-all[o+1]*k);
       for (let j=1;j<n;j++) ctx.lineTo(all[o+2*j]*k+ox, oy-all[o+2*j+1]*k);
     }
-    ctx.stroke();
+    ctx.stroke(); ctx.globalAlpha = 1;
   }
   ctx.setLineDash([]);
   ctx.restore();
@@ -853,10 +854,11 @@ function drawTexts(){
     const st = TSTY[name]; const ci = TI[name]; if (ci==null) continue;
     let list = byCat[ci]; if (!list.length) continue;
     if (!vis[st.layer] || (ONLY && !ONLY.has(name))) { list = list.filter(isHL); if(!list.length) continue; }
-    if (name==='rua' && highlight) list.sort((a,b)=> (isHL(b)?1:0)-(isHL(a)?1:0));
+    if (name==='rua'){ const av = i => /^\s*(AV|RODOVIA|PR|BR)/i.test(texts[i][7]) ? 1 : 0; list.sort((a,b)=> (highlight ? (isHL(b)?2:0)-(isHL(a)?2:0) : 0) + av(b) - av(a)); }
     for (const i of list){
       const t = texts[i]; let px = t[2]*k; const hl = isHL(i); const soft = !hl && isSoft(i);
-      if (name==='rua'){ if (k*10 < 0.9 && !hl) continue; px = Math.max(Math.min(px, 22), 11); }
+      const isAv = name==='rua' && /^\s*(AV\b|AV\.|AVENIDA|RODOVIA|PR[- ]?\d|BR[- ]?\d|ESTRADA)/i.test(t[7]);
+      if (name==='rua'){ if (k*10 < (isAv ? 0.5 : 0.9) && !hl) continue; px = Math.max(Math.min(px * (isAv ? 1.25 : 1), 24), isAv ? 12.5 : 11); }
       else if (name==='bairro'){ px = Math.max(10, Math.min(px, 22)); if (k*10 > 6) continue; }
       else { if (px < st.min && !hl) continue; if (st.minPx) px = Math.max(px, st.minPx); px = Math.min(px, 60); }
       const [sx, sy] = toScreen(t[0], t[1]);
@@ -891,7 +893,7 @@ function drawTexts(){
         ctx.lineWidth = Math.max(2.5, px*0.22); ctx.strokeStyle = TH.halo; ctx.lineJoin='round';
         ctx.strokeText(s, ax, ay);
       }
-      ctx.fillStyle = hl ? (name==='num' ? TH.hlNum : TH.hlInk) : TH.text[name];
+      ctx.fillStyle = hl ? (name==='num' ? TH.hlNum : TH.hlInk) : (isAv ? TH.text.av : TH.text[name]);
       ctx.fillText(s, ax, ay);
     }
   }
@@ -1282,7 +1284,7 @@ function renderResults(){
       const {cx, cy} = streetCenter(r.st); const b = nearestBairro(cx, cy);
       const isAddr = P.num && !r.exactName;
       const title = isAddr ? `${esc(r.st.name)}, <span style="color:var(--accent)">${esc(P.num)}</span>` : esc(r.st.name);
-      return `<div class="res" data-i="${idx}"><div class="ri ${isAddr?'end':'rua'}">${isAddr?IC.end:IC.rua}</div><div><div class="t">${title}</div><div class="s">${b? esc(b)+' · ':''}${nn ? nn+' números' : 'sem numeração'}</div></div></div>`;
+      return `<div class="res" data-i="${idx}"><div class="ri ${isAddr?'end':'rua'}">${isAddr?IC.end:IC.rua}</div><div><div class="t">${title}</div><div class="s">${r.st.alias ? 'nome usado em outros mapas · ' : ''}${b? esc(b)+' · ':''}${nn ? nn+' números' : 'sem numeração'}</div></div></div>`;
     }
     if (r.kind === 'poi'){ const pz = POIS[r.pl.poi], [cat, lab] = POICATS[pz[2]], st = POI_STY[cat];
       return `<div class="res" data-i="${idx}"><div class="ri" style="background:${st.c}22;font-size:18px">${st.e==='tire'?'🛞':st.e}</div><div><div class="t">${esc(pz[3])}</div><div class="s">${esc(lab)}${pz[4]? ' · '+esc(pz[4]):''}</div></div></div>`; }

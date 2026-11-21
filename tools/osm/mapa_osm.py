@@ -13,7 +13,7 @@ S = 10  # decímetros
 VIA = {'motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link', 'secondary', 'secondary_link'}
 RUA = {'tertiary', 'tertiary_link', 'residential', 'unclassified', 'living_street', 'pedestrian', 'road'}
 OUTRO = {'service', 'track'}
-LCATS = ['rio', 'verde', 'lote', 'quadra', 'via', 'bairro', 'num', 'circ', 'outro']
+LCATS = ['rio', 'verde', 'lote', 'quadra', 'via', 'bairro', 'num', 'circ', 'outro', 'rodovia', 'avenida']
 TCATS = ['rua', 'num', 'quadra', 'lote', 'bairro', 'rio', 'local', 'outro']
 TI = {c: i for i, c in enumerate(TCATS)}
 
@@ -24,7 +24,10 @@ for f in feats:
     t = f.get('properties') or {}; g = f['geometry']
     hw = t.get('highway')
     if hw in VIA or hw in RUA or hw in OUTRO:
-        c = 'via' if hw in VIA else 'quadra' if hw in RUA else 'outro'
+        ref = (t.get('ref') or '').upper(); nm = (t.get('name') or '').lower()
+        c = ('rodovia' if hw in ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link') or ref.startswith(('PR', 'BR'))
+             else 'avenida' if hw in ('secondary', 'secondary_link') or nm.startswith(('avenida', 'av.', 'av '))
+             else 'via' if hw in VIA else 'quadra' if hw in RUA else 'outro')
         for l in lines_of(g):
             pts = [proj(p[1], p[0]) for p in l]
             if len(pts) > 1:

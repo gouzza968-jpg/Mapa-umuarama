@@ -1,6 +1,15 @@
 {
-  "latest": "2.12.1",
+  "latest": "2.13.0",
   "versions": [
+    {
+      "version": "2.13.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Avenidas e rodovias em destaque nos mapas",
+        "Mapa 1 com nomes de ruas atualizados (ruas que eram “Projetada” ganharam o nome definitivo)",
+        "A busca encontra a rua também pelo nome usado em outros mapas"
+      ]
+    },
     {
       "version": "2.12.1",
       "date": "21/11/2026",
