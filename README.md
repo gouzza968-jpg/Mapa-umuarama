@@ -50,3 +50,4 @@ O app consulta `releases/latest/download/update.json`; quando o `versionCode` é
 - `.github/workflows/osm.yml` baixa o extrato do OpenStreetMap do Paraná e recorta Umuarama em `dados-osm/`
 - `tools/osm/referencias.py` encaixa o Mapa 1 nas coordenadas reais (erro mediano ~3 m) e grava as referências nele
 - `tools/osm/mapa_osm.py` gera o Mapa 2 (`www/data/mapa2.json`) direto do OpenStreetMap
+- `tools/osm/rotas.py` gera a malha de ruas para as rotas no app (`www/data/rotas.json`), com mãos únicas e velocidade por tipo de via

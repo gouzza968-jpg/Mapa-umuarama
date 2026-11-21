@@ -1,6 +1,16 @@
 {
-  "latest": "2.5.0",
+  "latest": "2.6.0",
   "versions": [
+    {
+      "version": "2.6.0",
+      "date": "21/11/2026",
+      "notes": [
+        "Rotas dentro do app, sem internet: toque em “Traçar rota” no endereço",
+        "Rota com várias paradas: toque em “Parada” para ir adicionando entregas",
+        "“Melhor ordem” organiza as paradas pelo caminho mais rápido",
+        "Marque cada parada como entregue; a rota segue para a próxima"
+      ]
+    },
     {
       "version": "2.5.0",
       "date": "21/11/2026",

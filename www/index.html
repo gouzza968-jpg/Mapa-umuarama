@@ -94,6 +94,33 @@
   .act small{font-size:10px;font-weight:700;background:rgba(0,0,0,.2);padding:2px 5px;border-radius:5px}
   .act.hide{display:none}
 
+  .acts .go{display:flex;gap:8px;width:100%}
+  .acts .go.hide{display:none}
+  #routeBar{position:fixed;left:12px;right:12px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 12px);z-index:5;max-width:560px;margin:0 auto;border-radius:18px;padding:10px 10px 10px 14px;display:none;align-items:center;gap:10px}
+  #routeBar.show{display:flex}
+  body.hascard #routeBar{display:none}
+  body.hasroute .ctrls{transform:translateY(-74px)}
+  body.hascard.hasroute .ctrls{transform:translateY(calc(-1 * var(--cardh, 150px)))}
+  #routeBar .rb-ic{width:38px;height:38px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+  #routeBar .t{font-weight:800;font-size:15px}
+  #routeBar .s{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .stops{list-style:none;margin:0;padding:0}
+  .stop{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+  .stop .n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:13px;display:grid;place-items:center;flex:none}
+  .stop.done .n{background:var(--raised);color:var(--muted)}
+  .stop.done .lbl{text-decoration:line-through;color:var(--muted)}
+  .stop .lbl{font-size:14.5px;font-weight:600;line-height:1.25}
+  .stop .leg{font-size:12px;color:var(--muted);margin-top:2px}
+  .stop .ib{width:34px;height:34px}
+  .stop .ib.ok{color:var(--ok)}
+  .rhead{display:flex;align-items:center;gap:8px;margin:2px 4px 10px}
+  .rhead h3{margin:0;flex:1}
+  .rsum{display:flex;gap:14px;margin:0 4px 12px;font-weight:800;font-size:15px}
+  .rsum span{display:flex;align-items:center;gap:6px}
+  .rnote{font-size:12.5px;color:var(--muted);margin:10px 4px 0;line-height:1.4}
+  .rfoot{display:flex;gap:8px;margin-top:12px}
+  .rfoot .act{flex:1}
+
   /* ---------- folhas (camadas) ---------- */
   #veil{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
   #veil.open{opacity:1;pointer-events:auto}
@@ -259,8 +286,12 @@
     <button class="btn primary" type="submit">Buscar</button>
   </form>
   <div class="acts">
+    <div class="go hide" id="goRow">
+      <button class="act primary" id="goRoute"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h7"/></svg>Traçar rota</button>
+      <button class="act" id="addStop"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Parada</button>
+    </div>
     <div class="routes hide" id="routes">
-      <a class="act primary" id="route" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>Google Maps</a>
+      <a class="act" id="route" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2Z"/></svg>Google Maps</a>
       <a class="act waze" id="routeWaze" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15c-1-1-1.5-2.6-1.5-4.5C2.5 6 6.5 3 12 3s9.5 3 9.5 7.5c0 4-3 7-8 7.5h-4"/><circle cx="8" cy="19" r="2"/><circle cx="16" cy="19" r="2"/><path d="M9 9h.01M15 9h.01M9.5 12.5c1.5 1 3.5 1 5 0"/></svg>Waze</a>
     </div>
     <button class="act" id="center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Centralizar</button>
@@ -268,6 +299,12 @@
   </div>
 </div>
 <div id="scale"><div class="bar" id="scalebar"></div><span id="scalet"></span></div>
+<div id="routeBar" class="glass">
+  <div class="rb-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h7"/></svg></div>
+  <div class="grow"><div class="t" id="rbT"></div><div class="s" id="rbS"></div></div>
+  <button class="btn primary" id="rbOpen">Paradas</button>
+  <button class="ib" id="rbX" aria-label="Encerrar rota"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div>
 
 <div id="veil"></div>
 <div class="sheet" id="mapSheet">
@@ -275,6 +312,14 @@
   <h3>Escolher mapa</h3>
   <div id="mapList"></div>
   <div class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div>Novos mapas aparecem aqui quando forem publicados. Depois de baixado, o mapa funciona sem internet.</div></div>
+</div>
+<div class="sheet" id="routeSheet">
+  <div class="handle"></div>
+  <div class="rhead"><h3>Rota</h3><button class="btn" id="rOpt">Melhor ordem</button><button class="btn" id="rClear">Limpar</button></div>
+  <div class="rsum" id="rSum"></div>
+  <ul class="stops" id="stopList"></ul>
+  <div class="rfoot" id="rFoot"></div>
+  <div class="rnote" id="rNote"></div>
 </div>
 <div class="sheet" id="laySheet">
   <div class="handle"></div>
@@ -354,7 +399,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.5.0";
+const APP_VERSION = "2.6.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -745,6 +790,7 @@ function showPoi(i){
   highlight = null; pin = {x: pz[0], y: pz[1]};
   const go = () => focusOn(pz[0], pz[1], Math.max(view.k, 1.2)); go();
   const b = nearestBairro(pz[0], pz[1]);
+  nextTarget = {label: pz[3], lat: pz[5], lon: pz[6]};
   showCard('poi:' + cat, esc(pz[3]), `${esc(label)}${pz[4] ? ' · ' + esc(pz[4]) : ''}${b ? ' · ' + esc(b) : ''}`, `${pz[5]},${pz[6]}`, `${pz[3]}${pz[4] ? ', ' + pz[4] : ''} - ${cityName()}`, go);
   requestDraw(true);
 }
@@ -780,6 +826,7 @@ function onPos(pos){
   if (p && (p[0] < -20000 || p[0] > W + 20000 || p[1] < -20000 || p[1] > H + 20000)){ if (!onPos.warned){ toast('Você está fora da área deste mapa'); onPos.warned = true; } }
   else if (p && follow) animateTo(p[0], p[1] - 60/Math.max(view.k, 0.25), Math.max(view.k, 0.25), 400);
   $('#loc').classList.add('on');
+  if (routeNeedsOrigin && stops.some(s => !s.done)){ routeNeedsOrigin = false; computeRoute(false); }
   requestDraw(true);
 }
 function onPosErr(e){
@@ -832,7 +879,7 @@ function drawScale(){
 }
 function draw(){
   if (!VW || !MAP) return;
-  if (!vectorMode()){ drawOverview(); drawTexts(); drawPois(); snap=null; }
+  if (!vectorMode()){ drawOverview(); drawRoute(); drawTexts(); drawPois(); snap=null; }
   else if (interacting && !needFull && snap){
     drawOverview();
     const r = view.k / snap.k; const [sx, sy] = toScreen(snap.x, snap.y);
@@ -841,7 +888,7 @@ function draw(){
     ctx.restore();
     scheduleFull();
   } else {
-    drawVectors(); drawTexts(); drawPois();
+    drawVectors(); drawRoute(); drawTexts(); drawPois();
     if (!snap) snap = {c: document.createElement('canvas')};
     snap.c.width = cv.width; snap.c.height = cv.height;
     snap.c.getContext('2d').drawImage(cv,0,0);
@@ -1068,7 +1115,7 @@ $('#clear').onclick = () => { qEl.value=''; highlight=null; pin=null; hideCard()
 $('#cardx').onclick = () => { hideCard(); pin=null; highlight=null; requestDraw(true); };
 function addRecent(q){ q = q.trim(); if (!q) return; prefs.recent = [q].concat((prefs.recent||[]).filter(x => x.toLowerCase() !== q.toLowerCase())).slice(0, 8); savePrefs(); paintRecent(); }
 
-let cardDest = null, cardText = '', cardFocus = null, curStreet = null;
+let cardDest = null, cardText = '', cardFocus = null, curStreet = null, cardTarget = null, nextTarget = null;
 function showStreet(sc, num){
   curStreet = sc; num = (num||'').trim().toUpperCase();
   const {list, labs, nums, gname, name} = sc;
@@ -1082,6 +1129,7 @@ function showStreet(sc, num){
       pin = {x: t[0], y: t[1]};
       const go = () => focusOn(t[0], t[1], 0.8); go();
       const b = nearestBairro(t[0], t[1]);
+      nextTarget = {label: `${gname}, ${t[7]}`, x: t[0], y: t[1]};
       showCard('end', `${esc(name)}, ${esc(t[7])}`, `${b? esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - ${cityName()}`, `${gname}, ${t[7]} - ${cityName()}`, go, {num: t[7]});
       requestDraw(true); return;
     }
@@ -1091,6 +1139,8 @@ function showStreet(sc, num){
   for (const i of [...labs, ...nums]){ const t=texts[i]; x0=Math.min(x0,t[0]); y0=Math.min(y0,t[1]); x1=Math.max(x1,t[0]); y1=Math.max(y1,t[1]); }
   const go = () => fitBox(x0-300, y0-300, x1+300, y1+300, 50, 2.5); go();
   const b = nearestBairro(x0/2+x1/2, y0/2+y1/2);
+  { let bi = null, bd = 1e18; for (const i of labs){ const t = texts[i], d = (t[0]-(x0+x1)/2)**2 + (t[1]-(y0+y1)/2)**2; if (d < bd){ bd = d; bi = t; } }
+    if (bi) nextTarget = {label: num ? `${gname}, ${num}` : gname, x: bi[0], y: bi[1]}; }
   if (num) showCard('rua', `${esc(name)}, ${esc(num)}`, `O número <b>${esc(num)}</b> não está no mapa — rua inteira destacada.<br>${faixa}${b? ' · '+esc(b):''}`, `${gname}, ${num} - ${cityName()}`, `${gname}, ${num} - ${cityName()}`, go, {num});
   else showCard('rua', esc(name), `${faixa}${b? ' · '+esc(b):''}`, `${gname} - ${cityName()}`, `${gname} - ${cityName()}`, go, {num: ''});
   requestDraw(true);
@@ -1103,6 +1153,7 @@ $('#numrow').addEventListener('submit', e => {
   showStreet(curStreet, n);
 });
 function showCard(kind, h, s, dest, copyText, focus, street){
+  cardTarget = nextTarget; nextTarget = null;
   $('#numrow').classList.toggle('show', !!street);
   if (street) $('#numIn').value = street.num || '';
   if (kind.startsWith('poi:')){ const st = POI_STY[kind.slice(4)]; $('#cardic').innerHTML = `<canvas width="88" height="88" style="width:30px;height:30px"></canvas>`; const g = $('#cardic canvas').getContext('2d'); g.scale(2,2); g.translate(22,22); drawPoiIcon(g, st, 19); }
@@ -1116,6 +1167,7 @@ function showCard(kind, h, s, dest, copyText, focus, street){
 const isLL = d => /^-?\d+\.\d+,-?\d+\.\d+$/.test(d);
 const wazeUrl = d => isLL(d) ? 'https://waze.com/ul?ll=' + encodeURIComponent(d) + '&navigate=yes' : 'https://waze.com/ul?q=' + encodeURIComponent(d) + '&navigate=yes';
 function updateRouteBtn(){
+  $('#goRow').classList.toggle('hide', !(cardTarget && GEO && !EMBED));
   if (prefs.route && cardDest){ $('#route').href = mapsUrl(cardDest); $('#routeWaze').href = wazeUrl(cardDest); $('#routes').classList.remove('hide'); }
   else $('#routes').classList.add('hide');
 }
@@ -1142,9 +1194,201 @@ function choose(idx){
   if (pl.ids.length===1){ pin = {x:x0, y:y0}; go = () => focusOn(x0, y0, r.kind==='bairro'? 0.35 : 2); }
   else { pin=null; go = () => fitBox(x0-400,y0-400,x1+400,y1+400, 50, 1.5); }
   go();
+  if (r.kind !== 'rio') nextTarget = {label: pl.name, x: (x0+x1)/2, y: (y0+y1)/2};
   showCard(r.kind, esc(pl.name), {bairro:'Bairro', local:'Local / empresa', rio:'Rio / córrego'}[r.kind] + (pl.ids.length>1? ` · aparece ${pl.ids.length}× no mapa`:''),
     r.kind==='rio' ? null : `${cleanStreetName(pl.name)} - ${cityName()}`, `${pl.name} - ${cityName()}`, go);
 }
+
+// ---------- rotas no app ----------
+const LAT0 = -23.766, LON0 = -53.325, KXm = 111320 * Math.cos(LAT0 * Math.PI / 180), KYm = 110540;
+const gproj = (lat, lon) => [(lon - LON0) * KXm * 10, (lat - LAT0) * KYm * 10];          // decímetros
+const gunproj = (x, y) => [LAT0 + y / 10 / KYm, LON0 + x / 10 / KXm];
+let RG = null, RGload = null, RGmapId = null, RGx = null, RGy = null;
+async function loadGraph(){
+  if (RG) return RG;
+  if (!RGload) RGload = (async () => {
+    const D = await (await fetch('data/rotas.json')).json();
+    const arr = async b => { const u = await gunzip(b); return new Int32Array(u.buffer, u.byteOffset, u.byteLength / 4); };
+    const g = {n: D.n, xy: await arr(D.xy), off: await arr(D.off), to: await arr(D.to), t: await arr(D.t), d: await arr(D.d)};
+    g.cell = 1500; g.grid = new Map();
+    for (let i = 0; i < g.n; i++){ const k = Math.floor(g.xy[2*i]/g.cell) + ',' + Math.floor(g.xy[2*i+1]/g.cell); let a = g.grid.get(k); if (!a) g.grid.set(k, a = []); a.push(i); }
+    RG = g; return g;
+  })();
+  return RGload;
+}
+function graphOnMap(){
+  if (!RG || !GEO) return false;
+  if (RGmapId === MAP.id) return true;
+  RGx = new Float64Array(RG.n); RGy = new Float64Array(RG.n);
+  for (let i = 0; i < RG.n; i++){ const [la, lo] = gunproj(RG.xy[2*i], RG.xy[2*i+1]); const p = mapOfLL(la, lo); RGx[i] = p[0]; RGy[i] = p[1]; }
+  RGmapId = MAP.id; return true;
+}
+function snapNode(lat, lon){
+  const [x, y] = gproj(lat, lon), c = RG.cell, cx = Math.floor(x/c), cy = Math.floor(y/c);
+  let best = -1, bd = Infinity;
+  for (let r = 0; r <= 4 && best < 0; r++)
+    for (let i = -r; i <= r; i++) for (let j = -r; j <= r; j++){
+      const a = RG.grid.get((cx+i) + ',' + (cy+j)); if (!a) continue;
+      for (const n of a){ const d = (RG.xy[2*n]-x)**2 + (RG.xy[2*n+1]-y)**2; if (d < bd){ bd = d; best = n; } }
+    }
+  return best < 0 ? null : {n: best, d: Math.sqrt(bd) / 10};
+}
+class Heap { constructor(){ this.k = []; this.v = []; } push(k, v){ const K = this.k, V = this.v; let i = K.length; K.push(k); V.push(v); while (i > 0){ const p = (i-1) >> 1; if (K[p] <= k) break; K[i] = K[p]; V[i] = V[p]; i = p; } K[i] = k; V[i] = v; }
+  pop(){ const K = this.k, V = this.v, top = V[0], lk = K.pop(), lv = V.pop(), n = K.length; if (n){ let i = 0; while (true){ let c = 2*i+1; if (c >= n) break; if (c+1 < n && K[c+1] < K[c]) c++; if (K[c] >= lk) break; K[i] = K[c]; V[i] = V[c]; i = c; } K[i] = lk; V[i] = lv; } return top; }
+  get size(){ return this.k.length; } }
+function astar(s, t){
+  const n = RG.n, g = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), done = new Uint8Array(n);
+  const tx = RG.xy[2*t], ty = RG.xy[2*t+1], h = u => Math.hypot(RG.xy[2*u]-tx, RG.xy[2*u+1]-ty) / 22.2; // 80 km/h em dm/ds
+  const H = new Heap(); g[s] = 0; H.push(h(s), s);
+  while (H.size){
+    const u = H.pop(); if (done[u]) continue; done[u] = 1; if (u === t) break;
+    for (let e = RG.off[u]; e < RG.off[u+1]; e++){ const v = RG.to[e], nd = g[u] + RG.t[e]; if (nd < g[v]){ g[v] = nd; prev[v] = u; H.push(nd + h(v), v); } }
+  }
+  if (!isFinite(g[t])) return null;
+  const path = []; let dd = 0; for (let u = t; u !== -1; u = prev[u]){ path.push(u); const p = prev[u]; if (p !== -1){ for (let e = RG.off[p]; e < RG.off[p+1]; e++) if (RG.to[e] === u){ dd += RG.d[e]; break; } } }
+  path.reverse();
+  return {path, t: g[t] / 10, d: dd / 10};   // segundos, metros
+}
+function dijkstraTo(s, targets){
+  const n = RG.n, g = new Float64Array(n).fill(Infinity), done = new Uint8Array(n), want = new Set(targets);
+  const H = new Heap(); g[s] = 0; H.push(0, s);
+  while (H.size && want.size){ const u = H.pop(); if (done[u]) continue; done[u] = 1; want.delete(u);
+    for (let e = RG.off[u]; e < RG.off[u+1]; e++){ const v = RG.to[e], nd = g[u] + RG.t[e]; if (nd < g[v]){ g[v] = nd; H.push(nd, v); } } }
+  return targets.map(x => g[x]);
+}
+
+const stops = Array.isArray(prefs.stops) ? prefs.stops : [];
+let route = null, routeNeedsOrigin = false, routeBusy = false;
+const saveStops = () => { prefs.stops = stops; savePrefs(); };
+const fmtKm = m => m >= 1000 ? (m/1000).toFixed(1).replace('.', ',') + ' km' : Math.round(m) + ' m';
+const fmtMin = s => s < 60 ? '1 min' : s < 3600 ? Math.round(s/60) + ' min' : Math.floor(s/3600) + ' h ' + Math.round((s%3600)/60) + ' min';
+function targetLL(t){ if (t.lat != null) return [t.lat, t.lon]; return llOf(t.x, t.y); }
+
+async function addStop(t, replace){
+  if (!t || !GEO) return;
+  const [lat, lon] = targetLL(t);
+  if (replace) stops.length = 0;
+  if (stops.some(s => Math.abs(s.lat - lat) < 1e-6 && Math.abs(s.lon - lon) < 1e-6 && !s.done)){ toast('Este endereço já está na rota'); return; }
+  stops.push({label: t.label, lat, lon, done: false}); saveStops();
+  if (!locWatch){ routeNeedsOrigin = true; startLoc(); }
+  hideCard(); pin = null; highlight = null;
+  await computeRoute(true);
+  toast(replace ? 'Rota traçada' : `Parada ${stops.filter(s=>!s.done).length} adicionada`);
+}
+async function computeRoute(fit){
+  if (routeBusy) return; routeBusy = true;
+  try{
+    const pend = stops.filter(s => !s.done);
+    if (!pend.length || !GEO){ route = null; paintRoute(); return; }
+    await loadGraph(); graphOnMap();
+    const pts = (me ? [{lat: me.lat, lon: me.lon, origin: true}] : []).concat(pend);
+    const sn = pts.map(p => snapNode(p.lat, p.lon));
+    const legs = []; let T = 0, Dm = 0;
+    for (let i = 1; i < pts.length; i++){
+      const r = (sn[i-1] && sn[i]) ? astar(sn[i-1].n, sn[i].n) : null;
+      legs.push(r ? Object.assign(r, {from: pts[i-1], to: pts[i]}) : {path: [], t: 0, d: 0, fail: true, from: pts[i-1], to: pts[i]});
+      if (r){ T += r.t; Dm += r.d; }
+    }
+    route = {legs, t: T, d: Dm, origin: !!me, pend, far: sn.some(x => x && x.d > 250)};
+    paintRoute();
+    if (fit){
+      let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;
+      for (const p of pts){ const m = mapOfLL(p.lat, p.lon); x0=Math.min(x0,m[0]); y0=Math.min(y0,m[1]); x1=Math.max(x1,m[0]); y1=Math.max(y1,m[1]); }
+      const pad = 600; fitBox(x0-pad, y0-pad, x1+pad, y1+pad, 50, 1.2);
+    }
+  } finally { routeBusy = false; requestDraw(true); }
+}
+function drawRoute(){
+  if (!stops.length || !GEO) return;
+  ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  if (route && RGx && RGmapId === MAP.id){
+    for (const [w, col] of [[9, 'rgba(0,0,0,.35)'], [6, '#3b82f6']]){
+      ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath();
+      for (const L of route.legs){
+        if (!L.path.length) continue;
+        const a = mapOfLL(L.from.lat, L.from.lon); let [sx, sy] = toScreen(a[0], a[1]); ctx.moveTo(sx, sy);
+        for (const n of L.path){ [sx, sy] = toScreen(RGx[n], RGy[n]); ctx.lineTo(sx, sy); }
+        const b = mapOfLL(L.to.lat, L.to.lon); [sx, sy] = toScreen(b[0], b[1]); ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+    }
+  }
+  // paradas numeradas
+  let n = 0;
+  stops.forEach(st => {
+    const m = mapOfLL(st.lat, st.lon); if (!m) return;
+    const [sx, sy] = toScreen(m[0], m[1]); if (!st.done) n++;
+    ctx.setTransform(dpr,0,0,dpr,sx*dpr,sy*dpr);
+    ctx.fillStyle = st.done ? '#64748b' : '#ff6a1f'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '800 12px system-ui,Roboto,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(st.done ? '✓' : String(n), 0, 0.5); ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  });
+  ctx.restore();
+}
+function paintRoute(){
+  const pend = stops.filter(s => !s.done), has = stops.length > 0;
+  $('#routeBar').classList.toggle('show', has && curTab === 'map');
+  document.body.classList.toggle('hasroute', has && curTab === 'map');
+  if (has){
+    $('#rbT').textContent = route && route.legs.length ? `${fmtMin(route.t)} · ${fmtKm(route.d)}` : (pend.length ? `${pend.length} parada${pend.length>1?'s':''}` : 'Rota concluída');
+    $('#rbS').textContent = pend.length ? `${pend.length} parada${pend.length>1?'s':''} · próxima: ${pend[0].label}` : 'Todas as paradas entregues';
+  }
+  if ($('#routeSheet').classList.contains('open')) renderStops();
+}
+function renderStops(){
+  const pend = stops.filter(s => !s.done);
+  $('#rSum').innerHTML = route && route.legs.length ? `<span>⏱ ${fmtMin(route.t)}</span><span>📍 ${fmtKm(route.d)}</span><span>${pend.length} parada${pend.length!==1?'s':''}</span>` : `<span>${pend.length} parada${pend.length!==1?'s':''}</span>`;
+  let k = 0;
+  $('#stopList').innerHTML = stops.map((st, i) => {
+    let leg = '';
+    if (!st.done && route){ const L = route.legs.find(l => l.to === st); if (L) leg = L.fail ? 'sem caminho pelas ruas' : `${fmtMin(L.t)} · ${fmtKm(L.d)}`; }
+    if (!st.done) k++;
+    return `<li class="stop ${st.done?'done':''}" data-i="${i}"><div class="n">${st.done?'✓':k}</div><div class="grow"><div class="lbl">${esc(st.label)}</div><div class="leg">${leg}</div></div>
+      <button class="ib ok" data-a="done" aria-label="Entregue">${st.done?'↺':'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>'}</button>
+      <button class="ib" data-a="up" aria-label="Subir">↑</button><button class="ib" data-a="del" aria-label="Remover"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></li>`;
+  }).join('') || '<li class="rnote">Nenhuma parada. Busque um endereço e toque em “Parada”.</li>';
+  const nx = pend[0];
+  $('#rFoot').innerHTML = nx && prefs.route ? `<a class="act" target="_blank" rel="noopener" data-ext href="${mapsUrl(nx.lat+','+nx.lon)}">Próxima no Google Maps</a><a class="act waze" target="_blank" rel="noopener" data-ext href="${wazeUrl(nx.lat+','+nx.lon)}">Próxima no Waze</a>` : '';
+  $('#rNote').textContent = !me ? 'Ligue a localização (botão de mira) para a rota começar de onde você está.' : (route && route.far ? 'Algum endereço fica longe das ruas cadastradas; o trecho final pode ser aproximado.' : 'Rota calculada pelas ruas do OpenStreetMap, respeitando as mãos únicas cadastradas.');
+}
+$('#stopList').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const i = +b.closest('.stop').dataset.i, a = b.dataset.a;
+  if (a === 'done'){ stops[i].done = !stops[i].done; if (stops[i].done) toast('Entrega concluída'); }
+  else if (a === 'up' && i > 0){ [stops[i-1], stops[i]] = [stops[i], stops[i-1]]; }
+  else if (a === 'del'){ stops.splice(i, 1); }
+  saveStops(); renderStops(); await computeRoute(false); renderStops();
+});
+$('#rFoot').addEventListener('click', e => { const a = e.target.closest('a[data-ext]'); if (!a || !NATIVE) return; e.preventDefault(); const L = plug('AppLauncher'); if (L) L.openUrl({url: a.href}); else location.href = a.href; });
+$('#rOpt').onclick = async () => {
+  const pend = stops.filter(s => !s.done); if (pend.length < 2){ toast('Adicione pelo menos 2 paradas'); return; }
+  await loadGraph(); $('#rOpt').disabled = true; $('#rOpt').textContent = 'Calculando…';
+  await new Promise(r => setTimeout(r, 30));
+  const pts = (me ? [{lat: me.lat, lon: me.lon}] : []).concat(pend), sn = pts.map(p => (snapNode(p.lat, p.lon) || {n: 0}).n);
+  const M = sn.map(s => dijkstraTo(s, sn));
+  const start = 0, rest = pts.map((_, i) => i).filter(i => i !== start);
+  // vizinho mais próximo + 2-opt (caminho aberto)
+  let order = [start], left = new Set(rest);
+  while (left.size){ const u = order[order.length-1]; let b = -1, bd = Infinity; for (const v of left) if (M[u][v] < bd){ bd = M[u][v]; b = v; } order.push(b); left.delete(b); }
+  const cost = o => { let c = 0; for (let i = 1; i < o.length; i++) c += M[o[i-1]][o[i]]; return c; };
+  let improved = true;
+  while (improved){ improved = false;
+    for (let i = 1; i < order.length - 1; i++) for (let j = i + 1; j < order.length; j++){
+      const o2 = order.slice(0, i).concat(order.slice(i, j + 1).reverse(), order.slice(j + 1));
+      if (cost(o2) + 1e-6 < cost(order)){ order = o2; improved = true; } } }
+  const off = me ? 1 : 0, newPend = order.filter(i => i >= off).map(i => pts[i]);
+  if (!me){ /* primeira parada fica fixa */ }
+  const done = stops.filter(s => s.done); stops.length = 0; stops.push(...done, ...newPend.map(p => pend.find(s => s === p) || p));
+  saveStops(); $('#rOpt').disabled = false; $('#rOpt').textContent = 'Melhor ordem';
+  await computeRoute(false); renderStops(); toast('Paradas reorganizadas na melhor ordem');
+};
+function clearRoute(){ stops.length = 0; saveStops(); route = null; paintRoute(); closeSheets(); requestDraw(true); }
+$('#rClear').onclick = clearRoute;
+$('#rbX').onclick = () => { const bak = stops.slice(); clearRoute(); toast('Rota encerrada', async () => { stops.push(...bak); saveStops(); await computeRoute(false); }, 'Desfazer'); };
+$('#rbOpen').onclick = () => { closePanels(); renderStops(); openSheet('#routeSheet'); };
+$('#goRoute').onclick = () => addStop(cardTarget, true);
+$('#addStop').onclick = () => addStop(cardTarget, false);
 
 // ---------- guias ----------
 let curTab = 'map';
@@ -1157,6 +1401,7 @@ function showTab(t){
   $('#card').style.visibility = onMap ? '' : 'hidden';
   $('#toast').classList.remove('show');
   if (onMap) showBanner(); else hideBanner();
+  paintRoute();
   if (!onMap) closePanels();
   if (t==='set') refreshSettings();
 }
@@ -1238,7 +1483,7 @@ async function openMap(m){
     MAP = m; prefs.mapa = m.id; savePrefs();
     $('#mapChipName').textContent = m.nome; $('#mapChipCity').textContent = m.cidade ? '· ' + m.cidade.replace(/ - [A-Z]{2}$/,'') : '';
     hideCard(); qEl.value = ''; $('#clear').style.display='none';
-    computeCore(); $('#locGroup').style.display = GEO ? '' : 'none'; if (!GEO && locWatch) stopLoc(); resize(); fitAll();
+    computeCore(); RGmapId = null; if (stops.length && GEO) setTimeout(() => computeRoute(false), 600); paintRoute(); $('#locGroup').style.display = GEO ? '' : 'none'; if (!GEO && locWatch) stopLoc(); resize(); fitAll();
     setTimeout(expandIn, 350);
   }catch(e){
     $('#lmsg').textContent = 'Erro: ' + e.message; await new Promise(r => setTimeout(r, 1800));
