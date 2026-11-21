@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     branches: [main]
-    paths: ['admin/**', '.github/workflows/build-admin.yml']
+    paths: ['admin/**', '.github/workflows/build-admin.yml', 'tools/src.html', 'www/**']
   workflow_dispatch:
 
 jobs:
@@ -28,6 +28,14 @@ jobs:
         run: npm install
       - name: Biblioteca do Supabase
         run: mkdir -p www/vendor && cp node_modules/@supabase/supabase-js/dist/umd/supabase.js www/vendor/supabase.js
+      - name: Copiar o Mapa 1 (mesmo código do app dos motoboys)
+        run: |
+          mkdir -p www/mapa/data www/mapa/vendor
+          python3 ../tools/build.py
+          cp ../www/index.html www/mapa/index.html
+          cp ../www/data/mapa.json ../www/data/mapas.json ../www/data/mapa2.json www/mapa/data/
+          cp www/vendor/supabase.js www/mapa/vendor/supabase.js
+          ls -la www/mapa www/mapa/data
       - name: Criar projeto Android
         run: |
           npx cap add android

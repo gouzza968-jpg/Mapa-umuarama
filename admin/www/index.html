@@ -16,6 +16,9 @@
   button{font:inherit;color:inherit;cursor:pointer}
   .page{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom));overflow:auto;padding:calc(env(safe-area-inset-top) + 18px) 14px 24px;display:none}
   .page.open{display:block}
+  .page.mapa{padding:0;overflow:hidden}
+  .page.mapa > *{max-width:none}
+  #mapFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
   .page > *{max-width:640px;margin-left:auto;margin-right:auto}
   h1{font-size:26px;margin:6px 4px 2px;letter-spacing:-.02em}
   .sub{color:var(--muted);font-size:13.5px;margin:0 4px 14px}
@@ -93,6 +96,8 @@
   <div class="card" id="banList"><div class="empty">Carregando…</div></div>
 </div>
 
+<div class="page mapa" id="pMap"><iframe id="mapFrame" title="Mapa 1 com motoboys online"></iframe></div>
+
 <div class="page" id="pOn">
   <h1>Online</h1><p class="sub">Motoboys compartilhando a localização agora</p>
   <div class="card" id="onList"><div class="empty">Conectando…</div></div>
@@ -110,6 +115,7 @@
 <nav class="tabs">
   <button class="tab on" data-p="pChat"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>Chat</button>
   <button class="tab" data-p="pBan"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span>Bloqueados</button>
+  <button class="tab" data-p="pMap"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></span>Mapa</button>
   <button class="tab" data-p="pOn"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>Online</button>
   <button class="tab" data-p="pAcc"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>Conta</button>
 </nav>
@@ -156,6 +162,7 @@ $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload();
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
   document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('open', p.id === t.dataset.p));
+  if (t.dataset.p === 'pMap' && !$('#mapFrame').src) $('#mapFrame').src = 'mapa/index.html#admin';
 });
 const back = plug('App'); if (back) back.addListener('backButton', () => { if ($('#dlg').classList.contains('show')) return $('#dNo').click(); const f = document.querySelector('.tab'); if (!f.classList.contains('on')) f.click(); else back.exitApp(); });
 
@@ -178,7 +185,7 @@ function renderBans(){
 function renderOnline(){
   const vivos = online.filter(o => Date.now() - (o.t||0) < 180000);
   $('#sOn').textContent = vivos.length;
-  $('#onList').innerHTML = vivos.length ? vivos.map(o => `<div class="row"><div class="av">🏍️</div><div class="grow"><b>${esc(o.apelido)}</b>${bans.has(o.id)?' <span class="tag ban">Bloqueado</span>':''}<div class="d">atualizado ${Math.max(0, Math.round((Date.now()-o.t)/1000))} s atrás</div></div><a class="btn sm" target="_blank" href="https://www.google.com/maps?q=${o.lat},${o.lon}">Ver no mapa</a></div>`).join('') : '<div class="empty">Nenhum motoboy compartilhando agora.</div>';
+  $('#onList').innerHTML = vivos.length ? vivos.map(o => `<div class="row"><div class="av">🏍️</div><div class="grow"><b>${esc(o.apelido)}</b>${bans.has(o.id)?' <span class="tag ban">Bloqueado</span>':''}<div class="d">atualizado ${Math.max(0, Math.round((Date.now()-o.t)/1000))} s atrás</div></div><button class="btn sm" data-map>Ver no mapa</button></div>`).join('') : '<div class="empty">Nenhum motoboy compartilhando agora.</div>';
 }
 async function delMsg(id){
   const m = msgs.find(x => x.id === id); if (!m) return;
@@ -213,6 +220,7 @@ $('#msgList').addEventListener('click', e => {
   const id = +b.closest('.msg').dataset.id, m = msgs.find(x => x.id === id); if (!m) return;
   if (b.dataset.a === 'del') delMsg(id); else if (b.dataset.a === 'ban') ban(m.autor, m.apelido); else unban(m.autor);
 });
+$('#onList').addEventListener('click', e => { if (e.target.closest('[data-map]')) document.querySelector('.tab[data-p="pMap"]').click(); });
 $('#banList').addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (b) unban(b.closest('.row').dataset.u); });
 $('#admSend').onclick = async () => {
   const t = $('#admIn').value.trim(); if (!t) return;

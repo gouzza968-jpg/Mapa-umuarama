@@ -265,6 +265,11 @@
   .tab .cnt{position:absolute;top:4px;left:calc(50% + 10px);min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:800;display:none;place-items:center;padding:0 5px;border:2px solid var(--solid)}
   .tab .cnt.show{display:grid}
 
+  body.adminview{--tabh:0px}
+  body.adminview .tabs, body.adminview #chips, body.adminview #locGroup, body.adminview #routeBar, body.adminview #updBanner, body.adminview .acts .go, body.adminview .acts .routes{display:none!important}
+  #fitMoto{display:none}
+  body.adminview #fitMoto{display:grid}
+
   /* ---------- abas ---------- */
   .tabs{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom));padding:6px 10px env(safe-area-inset-bottom);background:var(--solid);border-top:1px solid var(--line);display:flex;z-index:10;gap:6px}
   .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:700;position:relative;border-radius:14px}
@@ -314,6 +319,7 @@
 </div>
 
 <div class="ctrls" id="ctrls">
+  <div class="group glass"><button class="fab" id="fitMoto" aria-label="Ver todos os motoboys" style="font-size:20px">🏍️</button></div>
   <div class="group glass" id="locGroup" style="display:none">
     <button class="fab" id="loc" aria-label="Minha localização"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
   </div>
@@ -434,6 +440,8 @@
       <label class="switch"><input type="checkbox" id="optShare"><span></span></label>
     </div>
     <div class="field"><input id="nick" maxlength="20" placeholder="Seu apelido (ex.: Zé da Moto)" autocomplete="off"><button class="btn" id="nickSave">Salvar</button></div>
+    <div class="row"><div class="grow"><div class="l">Testar conexão do chat</div><div class="d">Mostra o que está funcionando e o que falta.</div></div><button class="btn" id="diagBtn">Testar</button></div>
+    <div class="log" id="diagOut" style="display:none;font-size:13px;line-height:1.6;padding-bottom:12px"></div>
     <div class="warnbox show" style="color:var(--muted);background:var(--raised)">🔒 Só aparece quem ligar esta opção. Sua posição não fica gravada: ela some do mapa quando você desliga, fecha o app ou fica sem sinal.</div>
   </div>
 
@@ -488,7 +496,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.9.1";
+const APP_VERSION = "2.9.2";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -505,6 +513,8 @@ const PREF_KEY = 'mapaUmuarama.prefs';
 const prefs = Object.assign({theme:'dark', route:false, mapa:'mapa1', recent:[]}, (()=>{ try{ return JSON.parse(localStorage.getItem(PREF_KEY))||{}; }catch(e){ return {}; } })());
 const savePrefs = () => { try{ localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); }catch(e){} };
 document.body.classList.toggle('light', prefs.theme==='light');
+const ADMIN_VIEW = /admin/.test(location.hash);   // mapa dentro do app de administração
+if (ADMIN_VIEW){ prefs.mapa = 'mapa1'; prefs.showLive = true; document.body.classList.add('adminview'); }
 
 // ---------- rede & armazenamento ----------
 async function httpGet(u, asJson=true){
@@ -1303,14 +1313,14 @@ function choose(idx){
 
 // ---------- motoboys ao vivo (Supabase Realtime Presence) ----------
 const SB_URL = 'https://mktrdlffzwhiurafbvuo.supabase.co', SB_KEY = 'sb_publishable_I1XNmE3dwoqDfXNunzD1qQ_jFc2tn9-';
-let sbUid = null, sb = null, liveCh = null, liveId = null, liveOthers = [], liveSubscribed = false, lastSent = null;
+let sbAuthErr = '', chatSubStatus = '', adminFitted = false, sbUid = null, sb = null, liveCh = null, liveId = null, liveOthers = [], liveSubscribed = false, lastSent = null;
 if (prefs.showLive == null) prefs.showLive = true;
 function devId(){ try{ let d = localStorage.getItem('mapaUmuarama.dev'); if (!d){ d = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('mapaUmuarama.dev', d); } return d; }catch(e){ return 'd' + Math.random().toString(36).slice(2); } }
 async function liveConnect(){
   if (liveCh || EMBED || !window.supabase || !window.supabase.createClient) return;
   try{
     sb = sb || window.supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true}});
-    try{ const {data} = await sb.auth.getSession(); if (!data.session) await sb.auth.signInAnonymously(); }catch(e){}
+    try{ const {data} = await sb.auth.getSession(); if (!data.session){ const r = await sb.auth.signInAnonymously(); if (r && r.error) sbAuthErr = r.error.message; } }catch(e){ sbAuthErr = String(e.message || e); }
     let uid = null; try{ const {data} = await sb.auth.getUser(); uid = data && data.user && data.user.id; }catch(e){}
     liveId = uid || devId(); sbUid = uid;
     liveCh = sb.channel('motoboys-umuarama', {config: {presence: {key: liveId}}});
@@ -1318,6 +1328,7 @@ async function liveConnect(){
       const st = liveCh.presenceState(), out = [];
       for (const [k, arr] of Object.entries(st)){ if (k === liveId) continue; const p = arr[arr.length - 1]; if (p && p.lat) out.push(Object.assign({id: k}, p)); }
       liveOthers = out; paintLive(); requestDraw(true);
+      if (ADMIN_VIEW && !adminFitted && out.length){ adminFitted = true; setTimeout(fitMotos, 400); }
     });
     liveCh.subscribe(status => { liveSubscribed = status === 'SUBSCRIBED'; if (liveSubscribed) liveSend(true); paintLive(); });
   }catch(e){ liveCh = null; }
@@ -1347,6 +1358,13 @@ function drawLive(){
   }
   ctx.restore();
 }
+function fitMotos(){
+  const pts = liveOthers.filter(o => Date.now() - (o.t||0) < 180000).map(o => mapOfLL(o.lat, o.lon)).filter(Boolean);
+  if (!pts.length){ toast('Nenhum motoboy online agora'); return; }
+  let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12; for (const [x,y] of pts){ x0=Math.min(x0,x); y0=Math.min(y0,y); x1=Math.max(x1,x); y1=Math.max(y1,y); }
+  const pad = pts.length === 1 ? 1500 : 800; fitBox(x0-pad, y0-pad, x1+pad, y1+pad, 50, 0.6);
+}
+$('#fitMoto').onclick = fitMotos;
 $('#liveOpt').onclick = () => { prefs.showLive = !prefs.showLive; savePrefs(); paintLive(); requestDraw(true); };
 $('#nick').value = prefs.nick || '';
 $('#optShare').checked = !!prefs.share;
@@ -1387,7 +1405,7 @@ async function chatInit(){
         if (curTab !== 'chat' && m.autor !== sbUid){ chatUnread++; paintUnread(); }
       })
       .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { chatMsgs = chatMsgs.filter(x => x.id !== (p.old && p.old.id)); renderChat(false); })
-      .subscribe();
+      .subscribe(st => { chatSubStatus = st; });
     chatReady = true;
   }catch(e){ chatNote('Não foi possível carregar o chat.'); }
   finally{ chatLoading = false; }
@@ -1459,6 +1477,27 @@ $('#msgs').addEventListener('click', async e => {
   if (mine){ const id = +mine.dataset.id; toast('Apagar esta mensagem?', async () => { const {error} = await sb.from('mensagens').delete().eq('id', id); if (error) toast('Não foi possível apagar'); else { chatMsgs = chatMsgs.filter(x => x.id !== id); renderChat(false); } }, 'Apagar'); }
 });
 $('#viewer').onclick = () => $('#viewer').classList.remove('show');
+$('#diagBtn').onclick = async () => {
+  const out = $('#diagOut'), L = []; out.style.display = ''; out.innerHTML = 'Testando…';
+  const ok = (b, t, d) => L.push(`${b ? '✅' : '❌'} <b>${t}</b>${d ? ' — ' + esc(d) : ''}`);
+  ok(!!window.supabase, 'Biblioteca do servidor', window.supabase ? '' : 'não carregou (atualize o app)');
+  if (window.supabase){
+    await liveConnect();
+    ok(!!sb, 'Conexão com o Supabase', sb ? '' : 'sem internet?');
+    if (sb){
+      ok(!!sbUid, 'Login anônimo', sbUid ? '' : (sbAuthErr || 'falhou') + ' → ligue “Allow anonymous sign-ins” em Authentication');
+      try{ const r = await sb.from('mensagens').select('id').limit(1); ok(!r.error, 'Tabela de mensagens', r.error ? r.error.message + ' → rode o SQL do chat' : ''); }catch(e){ ok(false, 'Tabela de mensagens', String(e)); }
+      try{ const r = await sb.from('banidos').select('autor').limit(1); ok(!r.error, 'Tabela de bloqueios (admin)', r.error ? r.error.message + ' → rode o SQL do admin' : ''); }catch(e){ ok(false, 'Tabela de bloqueios', String(e)); }
+      if (!chatReady) await chatInit();
+      await new Promise(r => setTimeout(r, 1500));
+      ok(chatSubStatus === 'SUBSCRIBED', 'Mensagens em tempo real', chatSubStatus || 'não conectou');
+      ok(liveSubscribed, 'Localização ao vivo', liveSubscribed ? '' : 'não conectou');
+    }
+  }
+  ok((prefs.nick||'').trim().length >= 2, 'Apelido', (prefs.nick||'').trim() || 'defina um apelido');
+  ok(!chatBanned, 'Permissão para escrever', chatBanned ? 'você está bloqueado pelo administrador' : '');
+  out.innerHTML = L.join('<br>');
+};
 
 // ---------- rotas no app ----------
 const LAT0 = -23.766, LON0 = -53.325, KXm = 111320 * Math.cos(LAT0 * Math.PI / 180), KYm = 110540;
