@@ -509,7 +509,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.11.1";
+const APP_VERSION = "2.12.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -1501,7 +1501,7 @@ $('#optShare').onchange = async () => {
 setInterval(() => { if (prefs.share) liveSend(true); paintLive(); requestDraw(); }, 30000);
 
 // ---------- chat ----------
-let chatBanned = false, chatCh = null, chatReady = false, chatMsgs = [], chatUnread = 0, chatLastSend = 0, chatLoading = false;
+let chatOff = false, chatBanned = false, chatCh = null, chatReady = false, chatMsgs = [], chatUnread = 0, chatLastSend = 0, chatLoading = false;
 const fmtHora = d => d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
 const fmtDia = d => { const h = new Date(); const y = new Date(Date.now() - 864e5); return d.toDateString() === h.toDateString() ? 'Hoje' : d.toDateString() === y.toDateString() ? 'Ontem' : d.toLocaleDateString('pt-BR'); };
 function chatNote(t){ $('#msgs').innerHTML = `<div class="chatnote">${t}</div>`; }
@@ -1515,18 +1515,34 @@ async function chatInit(){
     const {data, error} = await sb.from('mensagens').select('*').eq('sala', 'geral').order('criado_em', {ascending: false}).limit(80);
     if (error){ chatNote(/does not exist|schema cache|PGRST20|42P01/i.test(error.message + error.code) ? 'O chat ainda não foi ativado no servidor.' : 'Não foi possível carregar o chat. Confira a internet.'); return; }
     chatMsgs = (data || []).reverse(); renderChat(true);
+    try{ const c = await sb.from('config').select('valor').eq('chave', 'chat').maybeSingle(); chatOff = !!(c.data && c.data.valor && c.data.valor.ativo === false); paintChatOff(); }catch(e){}
     if (sbUid){ try{ const bn = await sb.from('banidos').select('autor').eq('autor', sbUid).maybeSingle(); if (bn.data){ chatBanned = true; paintBanned(); } }catch(e){} }
     chatCh = sb.channel('chat-geral')
       .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens', filter: 'sala=eq.geral'}, p => {
         const m = p.new; if (chatMsgs.some(x => x.id === m.id)) return;
         chatMsgs.push(m); if (chatMsgs.length > 300) chatMsgs.shift(); renderChat(true);
-        if (curTab !== 'chat' && m.autor !== sbUid){ chatUnread++; paintUnread(); }
+        if (curTab !== 'chat' && m.autor !== sbUid && !chatOff){ chatUnread++; paintUnread(); }
+      })
+      .on('postgres_changes', {event: '*', schema: 'public', table: 'config'}, p => {
+        const r = p.new && p.new.chave === 'chat' ? p.new : null; if (!r) return;
+        chatOff = !!(r.valor && r.valor.ativo === false); paintChatOff();
       })
       .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { chatMsgs = chatMsgs.filter(x => x.id !== (p.old && p.old.id)); renderChat(false); })
       .subscribe(st => { chatSubStatus = st; });
     chatReady = true;
   }catch(e){ chatNote('Não foi possível carregar o chat.'); }
   finally{ chatLoading = false; }
+}
+function paintChatOff(){
+  const n = $('#offNote');
+  if (chatOff){
+    $('#msgs').style.display = 'none'; $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none';
+    if (!n) $('#pageChat').insertAdjacentHTML('beforeend', '<div class="chatnote" id="offNote">💬 O chat está desativado pelo administrador.<br>Volte mais tarde.</div>');
+    chatUnread = 0; paintUnread();
+  } else {
+    if (n) n.remove(); $('#msgs').style.display = '';
+    if (curTab === 'chat') openChat();
+  }
 }
 function paintBanned(){ if (!chatBanned) return; $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none'; if (!$('#banNote')) $('#pageChat').insertAdjacentHTML('beforeend', '<div class="chatnote" id="banNote" style="margin:0;padding:12px">🚫 Você foi bloqueado no chat pelo administrador. Ainda pode ler as mensagens.</div>'); }
 function paintUnread(){ const c = $('#chatCnt'); c.textContent = chatUnread > 99 ? '99+' : chatUnread; c.classList.toggle('show', chatUnread > 0); }
@@ -1547,7 +1563,7 @@ function openChat(){
   $('#chatNick').style.display = hasNick ? 'none' : ''; $('#chatBar').style.display = hasNick ? '' : 'none';
   $('#chatSub').textContent = hasNick ? `Você: ${prefs.nick}` : 'Motoboys de Umuarama';
   if (!chatReady) chatInit(); else setTimeout(() => { $('#msgs').scrollTop = $('#msgs').scrollHeight; }, 30);
-  paintBanned();
+  paintBanned(); if (chatOff){ $('#chatBar').style.display = 'none'; $('#chatNick').style.display = 'none'; $('#msgs').style.display = 'none'; }
 }
 $('#chatNickOk').onclick = () => { const v = $('#chatNickIn').value.trim().slice(0, 20); if (v.length < 2){ toast('Apelido com pelo menos 2 letras'); return; } prefs.nick = v; savePrefs(); $('#nick').value = v; openChat(); };
 async function sendMsg(fields){

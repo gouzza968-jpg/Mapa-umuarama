@@ -55,6 +55,12 @@
   .empty{color:var(--muted);font-size:14px;text-align:center;padding:20px}
   .sendbar{display:flex;gap:8px}
   .sendbar input{flex:1}
+  .sw{position:relative;width:50px;height:30px;flex:none}
+  .sw input{opacity:0;width:0;height:0;position:absolute}
+  .sw span{position:absolute;inset:0;background:var(--raised);border:1px solid var(--line);border-radius:30px;transition:.2s}
+  .sw span::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+  .sw input:checked + span{background:var(--ok);border-color:var(--ok)}
+  .sw input:checked + span::after{transform:translateX(20px)}
   .tabs{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom));padding:6px 10px env(safe-area-inset-bottom);background:var(--solid);border-top:1px solid var(--line);display:flex;gap:6px}
   .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:700;position:relative}
   .tab .pill{width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
@@ -94,6 +100,7 @@
 <div class="page open" id="pChat">
   <h1>Chat</h1><p class="sub">Todas as mensagens, em tempo real</p>
   <div class="stats"><div class="stat"><b id="sMsg">–</b><span>mensagens</span></div><div class="stat"><b id="sOn">–</b><span>online agora</span></div><div class="stat"><b id="sBan">–</b><span>bloqueados</span></div></div>
+  <div class="card" style="display:flex;align-items:center;gap:12px"><div class="grow"><b>Chat dos motoboys</b><div class="d" id="chatStD">Carregando…</div></div><label class="sw"><input type="checkbox" id="chatOn"><span></span></label></div>
   <div class="card"><div class="sendbar"><input id="admIn" maxlength="500" placeholder="Mensagem como Administrador"><button class="btn primary" id="admSend">Enviar</button></div></div>
   <div class="card" id="msgList"><div class="empty">Carregando…</div></div>
 </div>
@@ -221,7 +228,7 @@ $('#diagBtn').onclick = async () => {
   ok(!!window.supabase, 'Biblioteca do servidor');
   const u = (await sb.auth.getUser()).data.user; ok(!!u, 'Login do administrador', u ? u.email : 'não logado');
   const a = await sb.rpc('eh_admin'); ok(a.data === true, 'Permissão de administrador', a.error ? a.error.message : (a.data ? '' : 'conta não está em public.admins'));
-  for (const [t, nome, dica] of [['mensagens', 'Tabela de mensagens', 'rode o SQL do chat'], ['banidos', 'Tabela de bloqueios', 'rode o SQL do admin'], ['perfis', 'Tabela de perfis', 'rode o SQL de perfis']]){
+  for (const [t, nome, dica] of [['mensagens', 'Tabela de mensagens', 'rode o SQL do chat'], ['banidos', 'Tabela de bloqueios', 'rode o SQL do admin'], ['perfis', 'Tabela de perfis', 'rode o SQL de perfis'], ['config', 'Configurações (ligar/desligar chat)', 'rode o config.sql']]){
     const r = await sb.from(t).select('*', {count: 'exact'}).limit(1);
     const em = r.error ? [r.error.code, r.error.message || (r.status ? 'HTTP ' + r.status : ''), r.error.hint].filter(Boolean).join(' · ') : '';
     ok(!r.error, nome, r.error ? em + (/42501|permission|denied|401|403/i.test(em) ? ' → rode o corrigir-permissoes.sql' : ' → ' + dica) : (r.count ?? 0) + ' registro(s)');
@@ -343,6 +350,22 @@ $('#admSend').onclick = async () => {
   if (error) return toast('Não foi possível enviar'); $('#admIn').value = ''; toast('Enviada');
 };
 
+async function loadChatCfg(){
+  const {data, error} = await sb.from('config').select('valor').eq('chave', 'chat').maybeSingle();
+  if (error){ $('#chatStD').textContent = 'Rode o SQL de configuração (config.sql) para usar esta chave.'; $('#chatOn').disabled = true; return; }
+  const on = !(data && data.valor && data.valor.ativo === false);
+  $('#chatOn').checked = on; $('#chatOn').disabled = false;
+  $('#chatStD').textContent = on ? 'Ativo: os motoboys podem conversar.' : 'Desativado: os motoboys não veem nem enviam mensagens.';
+}
+$('#chatOn').onchange = async () => {
+  const on = $('#chatOn').checked;
+  if (!on && !(await ask('Desativar o chat?', 'Os motoboys deixam de ver e enviar mensagens até você reativar.'))){ $('#chatOn').checked = true; return; }
+  $('#chatOn').disabled = true;
+  const {error} = await sb.from('config').upsert({chave: 'chat', valor: {ativo: on}, atualizado_em: new Date().toISOString()});
+  if (error){ toast('Não foi possível alterar'); $('#chatOn').checked = !on; }
+  else toast(on ? 'Chat ativado' : 'Chat desativado');
+  loadChatCfg();
+};
 async function start(){
   $('#login').style.display = 'none'; $('#accEm').textContent = me.email || '';
   const [m, b] = await Promise.all([
@@ -353,6 +376,7 @@ async function start(){
   else msgs = (m.data || []).reverse();
   (b.data || []).forEach(x => bans.set(x.autor, x));
   renderAll();
+  loadChatCfg();
   sb.channel('admin-chat')
     .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'mensagens'}, p => { if (!msgs.some(x => x.id === p.new.id)){ msgs.push(p.new); renderMsgs(); } })
     .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'mensagens'}, p => { msgs = msgs.filter(x => x.id !== (p.old && p.old.id)); renderMsgs(); })
