@@ -679,7 +679,7 @@
 </div></div>
 <div id="aviso" class="glass"><div class="tx"><b>Aviso do administrador</b><span id="avisoT"></span></div><button id="avisoX" aria-label="Fechar aviso">×</button></div>
 <div id="pickCross" aria-hidden="true"><div class="pin">🚨</div></div>
-<div id="pickBar" class="glass"><div class="t"><b>Onde está a blitz?</b><span>Arraste o mapa ou toque no local até o 🚨 ficar em cima</span></div><div class="b"><button class="btn" id="pickNo">Cancelar</button><button class="btn primary" id="pickOk">Reportar aqui</button></div></div>
+<div id="pickBar" class="glass"><div class="t"><b id="pickT">Onde está a blitz?</b><span id="pickS">Arraste o mapa ou toque no local até o 🚨 ficar em cima</span></div><div class="b"><button class="btn" id="pickNo">Cancelar</button><button class="btn primary" id="pickOk">Reportar aqui</button></div></div>
 <button id="tabChat" class="chatfab" aria-label="Chat dos motoboys"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5" stroke-linecap="round"/></svg><span class="cnt" id="chatCnt"></span></button>
 
 <div id="toast" class="glass"><span id="toastt"></span><button class="btn primary" id="toastb" style="padding:7px 12px">Ver</button></div>
@@ -911,7 +911,7 @@ const POI_STY = {
   semaforo:{e:'🚦', c:'#1f2937'}, radar:{e:'📷', c:'#dc2626'}, comercio:{e:'🏪', c:'#0d9488'},
 };
 const POI_SHORT = {saude:'Saúde', farmacia:'Farmácias', mercado:'Mercados', posto:'Postos', borracharia:'Borracharias', oficina:'Oficinas', seguranca:'Polícia', escola:'Escolas', servico:'Serviços', comida:'Comida', igreja:'Igrejas', semaforo:'Semáforos', radar:'Radares', comercio:'Comércios'};
-const poiVis = Object.assign({semaforo: true, posto: true}, prefs.poiVis||{});   // semáforos e postos ligados por padrão; o resto o usuário escolhe
+const poiVis = Object.assign({semaforo: true, posto: true, radar: true}, prefs.poiVis||{});   // semáforos e postos ligados por padrão; o resto o usuário escolhe
 const vis = Object.assign({rua:true,num:true,lote:true,quadra:true,via:true,rio:true,bairro:true,outro:false}, prefs.vis||{});
 
 // ---------- canvas & vista ----------
@@ -1167,6 +1167,7 @@ function hitPoi(x, y){ let best = null, bd = 26*26; for (const [sx, sy, i] of po
 const llOf = (x, y) => GEO ? [GEO.lat[0] + GEO.lat[1]*x + GEO.lat[2]*y, GEO.lon[0] + GEO.lon[1]*x + GEO.lon[2]*y] : null;
 function showPoi(i){
   const pz = POIS[i], [cat, label] = POICATS[pz[2]];
+  if (ADMIN_VIEW && pz[7] && pz[7].radar){ try{ parent.postMessage({radarAbrir: pz[7].radar}, '*'); }catch(e){} }
   highlight = null; pin = {x: pz[0], y: pz[1]};
   const go = () => focusOn(pz[0], pz[1], Math.max(view.k, 1.2)); go();
   const b = nearestBairro(pz[0], pz[1]);
@@ -2029,6 +2030,33 @@ $('#optShare').onchange = async () => {
 };
 setInterval(() => { if (prefs.share) liveSend(true); paintLive(); requestDraw(); }, 30000);
 
+// ---------- radares (cadastrados pelo painel) ----------
+let radares = [], radCh = null;
+const RAD_TIPO = {fixo: 'Radar fixo', semaforo: 'Radar de semáforo', lombada: 'Lombada eletrônica', portatil: 'Radar portátil (trecho)'};
+function radaresNoMapa(){
+  if (!GEO || !POICATS) return;
+  let ci = POICATS.findIndex(c => c[0] === 'radar');
+  if (ci < 0){ POICATS.push(['radar', 'Radares']); ci = POICATS.length - 1; }
+  for (let i = POIS.length - 1; i >= 0; i--) if (POIS[i][7] && POIS[i][7].radar) POIS.splice(i, 1);
+  for (const r of radares){
+    const m = mapOfLL(r.lat, r.lon); if (!m) continue;
+    const nome = `${RAD_TIPO[r.tipo] || 'Radar'}${r.velocidade ? ' · ' + r.velocidade + ' km/h' : ''}`;
+    POIS.push([Math.round(m[0]), Math.round(m[1]), ci, nome, r.descricao || '', r.lat, r.lon, {radar: r.id}]);
+  }
+  requestDraw(true);
+}
+async function radaresLoad(){
+  if (!sb) return;
+  const {data, error} = await sb.from('radares').select('*').limit(1000);
+  if (!error && data){ radares = data; radaresNoMapa(); }
+}
+async function radaresInit(){
+  if (!sb || radCh || EMBED) return;
+  await radaresLoad();
+  radCh = sb.channel('radares').on('postgres_changes', {event: '*', schema: 'public', table: 'radares'}, () => radaresLoad())
+    .subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT'){ try{ sb.removeChannel(radCh); }catch(e){} radCh = null; setTimeout(radaresInit, 8000); } });
+}
+
 // ---------- alertas de blitz ----------
 let alertas = [], blitzHits = [], picking = false, alertasCh = null, meusVotos = {};
 if (prefs.showBlitz == null) prefs.showBlitz = true;
@@ -2108,20 +2136,30 @@ async function votarBlitz(ainda){
 $('#bSim').onclick = () => votarBlitz(true);
 $('#bNao').onclick = () => votarBlitz(false);
 $('#blitzOpt').onclick = () => { prefs.showBlitz = !prefs.showBlitz; savePrefs(); paintBlitzOpt(); requestDraw(true); };
-function startPick(){
+let pickInfo = {tipo: 'blitz'};
+function startPick(info){
   if (EMBED || !window.supabase){ toast('Disponível no app Android'); return; }
   if (!GEO){ toast('Este mapa não tem localização. Escolha o Mapa Principal'); return; }
+  pickInfo = info && info.tipo ? info : {tipo: 'blitz'};
+  const radar = pickInfo.tipo === 'radar';
+  $('#pickT').textContent = radar ? (pickInfo.id ? 'Novo local do radar' : 'Onde fica o radar?') : 'Onde está a blitz?';
+  $('#pickS').textContent = `Arraste o mapa ou toque no local até o ${radar ? '📷' : '🚨'} ficar em cima`;
+  $('#pickOk').textContent = radar ? (pickInfo.id ? 'Mover para cá' : 'Marcar aqui') : 'Reportar aqui';
+  $('#pickCross .pin').textContent = radar ? '📷' : '🚨';
   showTab('map'); closePanels(); hideCard();
   picking = true; document.body.classList.add('picking');
-  if (me){ const m = mapOfLL(me.lat, me.lon); if (m) animateTo(m[0], m[1], Math.max(view.k, 0.8), 500); }
+  const ini = pickInfo.lat != null ? mapOfLL(pickInfo.lat, pickInfo.lon) : null;
+  if (ini) animateTo(ini[0], ini[1], Math.max(view.k, 0.5), 500);
+  else if (me){ const m = mapOfLL(me.lat, me.lon); if (m) animateTo(m[0], m[1], Math.max(view.k, 0.8), 500); }
   else if (view.k < 0.3) animateTo(view.x, view.y, 0.5, 400);
 }
 function endPick(){ picking = false; document.body.classList.remove('picking'); }
-$('#blitzBtn').onclick = startPick;
-if (ADMIN_VIEW) addEventListener('message', e => { if (e.data && e.data.blitz) startPick(); });
+$('#blitzBtn').onclick = () => startPick({tipo: 'blitz'});
+if (ADMIN_VIEW) addEventListener('message', e => { const d = e.data || {}; if (d.blitz) startPick({tipo: 'blitz'}); if (d.pick === 'radar') startPick({tipo: 'radar', id: d.id, lat: d.lat, lon: d.lon}); if (d.verRadar){ const m = mapOfLL(d.verRadar.lat, d.verRadar.lon); if (m) focusOn(m[0], m[1], Math.max(view.k, 0.5)); } });
 $('#pickNo').onclick = endPick;
 $('#pickOk').onclick = async () => {
   const ll = llOf(view.x, view.y); if (!ll) return;
+  if (pickInfo.tipo === 'radar'){ try{ parent.postMessage({radarLocal: {lat: +ll[0].toFixed(6), lon: +ll[1].toFixed(6), id: pickInfo.id || null}}, '*'); }catch(e){} endPick(); return; }
   $('#pickOk').disabled = true;
   try{
     await liveConnect();
@@ -2917,7 +2955,7 @@ async function openMap(m){
     const D = await readMapData(base);
     $('#lmsg').textContent = 'Montando o mapa…'; await new Promise(r => setTimeout(r, 20));
     await buildMap(D);
-    MAP = m; prefs.mapa = m.id; savePrefs();
+    MAP = m; prefs.mapa = m.id; savePrefs(); if (radares.length) setTimeout(radaresNoMapa, 0);
     document.body.classList.toggle('online', !!m.online);
     if (m.online){
       try{ await ensureGL(); }catch(e){ toast('Não foi possível carregar o mapa online'); }
@@ -2968,7 +3006,7 @@ async function aplicarMapaNovo(D){
     const v = {x: view.x, y: view.y, k: view.k, r: view.r};
     if (!D) D = await readMapData(mapById('principal'));
     await buildMap(D);
-    Object.assign(view, v); computeCore(); RGmapId = null; nucleosAtuais = null; snap = null;
+    Object.assign(view, v); computeCore(); RGmapId = null; nucleosAtuais = null; snap = null; radaresNoMapa();
     requestDraw(true); toast('🔄 Mapa atualizado');
   }catch(e){}
 }
@@ -3156,7 +3194,7 @@ if (chatOff) $('#tabChat').style.display = 'none';
 paintBlitzOpt(); applyRec();
 // primeira abertura: pede o apelido (opcional) antes de ligar a localização
 function iniciarAoVivo(){
-  liveConnect().then(() => { alertasInit(); posInit(); syncProfile(); if (prefs.share){ startBg(); posSend(true); } chatCfgInit(); if (prefs.share && !locWatch) startLoc(); if (!chatOff) chatInit(); });
+  liveConnect().then(() => { alertasInit(); radaresInit(); posInit(); syncProfile(); if (prefs.share){ startBg(); posSend(true); } chatCfgInit(); if (prefs.share && !locWatch) startLoc(); if (!chatOff) chatInit(); });
 }
 function fimBoasVindas(nick){
   prefs.nick = nick; prefs.nickAsked = 1; savePrefs(); $('#nick').value = nick;
@@ -3170,7 +3208,7 @@ $('#bvNick').addEventListener('keydown', e => { if (e.key === 'Enter') $('#bvOk'
 if (!EMBED && !ADMIN_VIEW){
   if (!prefs.nickAsked && !(prefs.nick || '').trim()){ $('#boasVindas').classList.add('show'); setTimeout(() => $('#bvNick').focus(), 350); }
   else { if (!prefs.nickAsked){ prefs.nickAsked = 1; savePrefs(); } iniciarAoVivo(); }
-} else if (!EMBED){ liveConnect().then(() => { alertasInit(); posInit(); chatCfgInit(); }); }
+} else if (!EMBED){ liveConnect().then(() => { alertasInit(); radaresInit(); posInit(); chatCfgInit(); }); }
 paintLive();
 refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => { showTab('map'); openMapSheet(); }, 'Ver'); } if ($('#mapSheet').classList.contains('open')) renderMaps(); });
 if (NATIVE){

@@ -1,6 +1,14 @@
 {
-  "latest": "2.25.0",
+  "latest": "2.26.0",
   "versions": [
+    {
+      "version": "2.26.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Radares no mapa: radares fixos, de semáforo, lombadas eletrônicas e trechos com radar portátil",
+        "A camada Radares já vem ligada"
+      ]
+    },
     {
       "version": "2.25.0",
       "date": "22/11/2026",
