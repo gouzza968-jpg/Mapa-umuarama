@@ -1,6 +1,13 @@
 {
-  "latest": "2.28.0",
+  "latest": "2.28.1",
   "versions": [
+    {
+      "version": "2.28.1",
+      "date": "22/11/2026",
+      "notes": [
+        "Botão para enviar o app aos colegas direto da tela do mapa"
+      ]
+    },
     {
       "version": "2.28.0",
       "date": "22/11/2026",

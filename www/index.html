@@ -462,6 +462,7 @@
 </div>
 
 <div class="ctrls" id="ctrls">
+  <div class="group glass"><button class="fab" id="shareBtn" aria-label="Compartilhar o app"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button></div>
   <div class="group glass" style="display:none"><button class="fab" id="setBtn" aria-label="Configurações"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span class="sdot" id="setDot2"></span></button></div>
   <div class="group glass" id="blitzGroup"><button class="fab" id="blitzBtn" aria-label="Reportar blitz" style="font-size:22px">🚨</button></div>
   <div class="group glass"><button class="fab" id="fitMoto" aria-label="Ver todos os motoboys" style="font-size:20px">🏍️</button></div>
@@ -719,7 +720,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.28.0";
+const APP_VERSION = "2.28.1";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -3092,6 +3093,15 @@ $('#shLink').onclick = async () => {
     else if (navigator.share) await navigator.share({title: 'Mapa Umuarama', text: TXT_APP});
     else { await navigator.clipboard.writeText(TXT_APP); toast('Link copiado'); }
   }catch(e){ try{ await navigator.clipboard.writeText(TXT_APP); toast('Link copiado'); }catch(_){ toast('Não foi possível compartilhar'); } }
+};
+// botão da tela principal: envia sempre o arquivo do app (APK), nunca o link
+$('#shareBtn').onclick = async () => {
+  const U = NATIVE && plug('AppUpdate');
+  if (!U || !U.shareApk){ toast('Disponível no app Android'); return; }
+  $('#shareBtn').disabled = true; toast('Preparando o app para enviar…');
+  try{ await U.shareApk({text: '🏍️ Mapa Umuarama: app para motoboys. Toque no arquivo para instalar.'}); $('#toast').classList.remove('show'); }
+  catch(e){ toast('Não foi possível enviar o app'); }
+  finally{ $('#shareBtn').disabled = false; }
 };
 $('#shApk').onclick = async () => {
   const U = NATIVE && plug('AppUpdate');
