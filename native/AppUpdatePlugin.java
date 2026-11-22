@@ -182,4 +182,31 @@ public class AppUpdatePlugin extends Plugin {
             }
         }).start();
     }
+
+    /** Compartilha uma imagem (endereço no mapa) gerada pelo app. */
+    @PluginMethod
+    public void shareImage(PluginCall call) {
+        try {
+            byte[] bytes = android.util.Base64.decode(call.getString("base64", ""), android.util.Base64.DEFAULT);
+            File dir = new File(getContext().getCacheDir(), "compartilhar");
+            dir.mkdirs();
+            File out = new File(dir, "endereco.jpg");
+            FileOutputStream os = new FileOutputStream(out);
+            os.write(bytes);
+            os.close();
+            Uri u = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", out);
+            Intent i = new Intent(Intent.ACTION_SEND);
+            i.setType("image/jpeg");
+            i.putExtra(Intent.EXTRA_STREAM, u);
+            i.putExtra(Intent.EXTRA_TEXT, call.getString("text", ""));
+            i.setClipData(android.content.ClipData.newRawUri("endereco.jpg", u));
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent ch = Intent.createChooser(i, "Enviar imagem do endereço");
+            ch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            getContext().startActivity(ch);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("imagem: " + e.getMessage());
+        }
+    }
 }

@@ -1,6 +1,16 @@
 {
-  "latest": "2.29.0",
+  "latest": "2.30.0",
   "versions": [
+    {
+      "version": "2.30.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Mapa mais bonito: ruas em faixas, avenidas com brilho e menos ícones de longe",
+        "Barra de pesquisa nova",
+        "Botão Imagem no endereço: gera uma foto só do mapa com o endereço, sem os botões do app",
+        "Toque na sua moto para ligar ou desligar sua localização para os outros"
+      ]
+    },
     {
       "version": "2.29.0",
       "date": "22/11/2026",
