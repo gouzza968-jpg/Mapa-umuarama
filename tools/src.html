@@ -462,7 +462,7 @@
 </div>
 
 <div class="ctrls" id="ctrls">
-  <div class="group glass"><button class="fab" id="setBtn" aria-label="Configurações"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span class="sdot" id="setDot2"></span></button></div>
+  <div class="group glass" style="display:none"><button class="fab" id="setBtn" aria-label="Configurações"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span class="sdot" id="setDot2"></span></button></div>
   <div class="group glass" id="blitzGroup"><button class="fab" id="blitzBtn" aria-label="Reportar blitz" style="font-size:22px">🚨</button></div>
   <div class="group glass"><button class="fab" id="fitMoto" aria-label="Ver todos os motoboys" style="font-size:20px">🏍️</button></div>
   <div class="group glass" id="locGroup" style="display:none">
@@ -688,7 +688,7 @@
   <button class="btn primary" id="bvOk">Continuar</button>
   <button class="btn" id="bvAnon">Prefiro ficar anônimo</button>
   <div class="bvn infoMapa" style="color:var(--ink);opacity:.85">🔄 Mapa atualizado a cada hora conforme disponibilidade de mapas da região</div>
-  <div class="bvn">🔒 Sem login, sem nome e sem telefone. Sua localização é compartilhada de forma anônima com os motoboys; dá para desligar no ⚙️.</div>
+  <div class="bvn">🔒 Sem login, sem nome e sem telefone. Sua localização é compartilhada de forma anônima com os motoboys. Para trocar o apelido, toque na sua moto no mapa.</div>
 </div></div>
 <div id="aviso" class="glass"><div class="tx"><b>Aviso do administrador</b><span id="avisoT"></span></div><button id="avisoX" aria-label="Fechar aviso">×</button></div>
 <div id="addMenu" class="glass"><button id="amBlitz"><span>🚨</span><div><b>Reportar blitz</b><small>Some do mapa em até 2 horas</small></div></button><button id="amRadar"><span>📷</span><div><b>Adicionar radar</b><small>Radar fixo, de semáforo ou lombada</small></div></button></div>
@@ -711,7 +711,7 @@
   <div class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></div>
   <div class="grow"><div class="t" id="ubT">Atualização disponível</div><div class="s" id="ubS"></div><div class="bar" id="ubBar"><i id="ubBi"></i></div></div>
   <button class="btn primary" id="ubBtn">Atualizar</button>
-  <button class="ib" id="ubX" aria-label="Fechar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <button class="ib" id="ubX" aria-label="Fechar" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
 </div>
 <div id="loading"><div>
   <svg class="logo" viewBox="0 0 24 24"><path fill="#ff6a1f" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.8" fill="var(--bg)"/></svg>
@@ -1492,7 +1492,10 @@ function endPtr(e){
       const now = performance.now();
       const r = cv.getBoundingClientRect(), tx = e.clientX - r.left, ty = e.clientY - r.top;
       const hb = picking ? null : hitBlitz(tx, ty), hm = hb || picking ? null : hitLive(tx, ty), hp = hm || hb || picking ? null : hitPoi(tx, ty);
-      if (picking){ const [wx, wy] = toWorld(tx, ty); animateTo(wx, wy, Math.max(view.k, 0.6), 300); lastTap = 0; }
+      let meHit = false;
+      if (!picking && !hb && !hm && meShow && !ADMIN_VIEW){ const p = mapOfLL(meShow.lat, meShow.lon); if (p){ const [mx, my] = toScreen(p[0], p[1]); meHit = (mx - tx) ** 2 + (my - ty) ** 2 < 28 * 28; } }
+      if (meHit){ trocarApelido(); lastTap = 0; }
+      else if (picking){ const [wx, wy] = toWorld(tx, ty); animateTo(wx, wy, Math.max(view.k, 0.6), 300); lastTap = 0; }
       else if (hb){ showBlitz(hb); lastTap = 0; }
       else if (hm){ showMoto(hm); lastTap = 0; }
       else if (hp != null){ showPoi(hp); lastTap = 0; }
@@ -2942,7 +2945,7 @@ function showTab(t){
 }
 $('#tabMap').onclick = () => showTab('map');
 $('#tabSet').onclick = () => showTab('set');
-$('#setBtn').onclick = () => showTab('set');
+$('#setBtn').onclick = () => {};   // configurações desativadas no app dos motoboys
 $('#setBack').onclick = () => showTab('map');
 $('#tabChat').onclick = () => showTab('chat');
 $('#chatBack').onclick = () => showTab('map');
@@ -3179,10 +3182,10 @@ function ub(t, sub, btn, bar){
 function showBanner(){
   if (!remote || !hasUpdate()) return;
   if (!updBusy && !instReady) ub(`Nova versão ${remote.versionName}`, 'Toque em Atualizar para instalar', 'Atualizar');
-  if (!bannerClosed && curTab === 'map') $('#updBanner').classList.add('show');
+  if (curTab === 'map') $('#updBanner').classList.add('show');   // fica na tela até atualizar
 }
 function hideBanner(){ $('#updBanner').classList.remove('show'); }
-$('#ubX').onclick = () => { bannerClosed = true; hideBanner(); };
+$('#ubX').onclick = () => {};
 let instReady = false;
 async function applyUpdate(){
   const P = plug('AppUpdate'); if (!P || updBusy) return;
@@ -3261,10 +3264,18 @@ paintBlitzOpt(); applyRec();
 function iniciarAoVivo(){
   liveConnect().then(() => { alertasInit(); radaresInit(); posInit(); syncProfile(); if (prefs.share){ startBg(); posSend(true); } chatCfgInit(); if (prefs.share && !locWatch) startLoc(); if (!chatOff) chatInit(); });
 }
+function trocarApelido(){
+  $('#boasVindas h2').textContent = 'Seu apelido';
+  $('#boasVindas p').textContent = 'É assim que os outros motoboys te veem no mapa e no chat. Deixe vazio para ficar anônimo.';
+  $('#bvNick').value = (prefs.nick || '').trim(); $('#bvOk').textContent = 'Salvar'; $('#bvAnon').textContent = 'Ficar anônimo';
+  $('#boasVindas').classList.add('show'); setTimeout(() => $('#bvNick').focus(), 300);
+}
 function fimBoasVindas(nick){
   prefs.nick = nick; prefs.nickAsked = 1; savePrefs(); $('#nick').value = nick;
   $('#boasVindas').classList.remove('show');
   toast(nick ? `Olá, ${nick}! 👋` : 'Você aparece como Motoboy (anônimo)');
+  if (fimBoasVindas.feito){ liveSend(true); posSend(true); syncProfile(); paintChatSub && paintChatSub(); return; }
+  fimBoasVindas.feito = true;
   iniciarAoVivo();
 }
 $('#bvOk').onclick = () => { const v = $('#bvNick').value.trim().slice(0, 20); if (v.length === 1){ toast('Apelido com pelo menos 2 letras'); return; } fimBoasVindas(v); };
@@ -3272,7 +3283,7 @@ $('#bvAnon').onclick = () => fimBoasVindas('');
 $('#bvNick').addEventListener('keydown', e => { if (e.key === 'Enter') $('#bvOk').click(); });
 if (!EMBED && !ADMIN_VIEW){
   if (!prefs.nickAsked && !(prefs.nick || '').trim()){ $('#boasVindas').classList.add('show'); setTimeout(() => $('#bvNick').focus(), 350); }
-  else { if (!prefs.nickAsked){ prefs.nickAsked = 1; savePrefs(); } iniciarAoVivo(); }
+  else { if (!prefs.nickAsked){ prefs.nickAsked = 1; savePrefs(); } fimBoasVindas.feito = true; iniciarAoVivo(); }
 } else if (!EMBED){ liveConnect().then(() => { alertasInit(); radaresInit(); posInit(); chatCfgInit(); }); }
 paintLive();
 refreshRemoteCatalog().then(novo => { if (novo){ toast('Novo mapa disponível', () => { showTab('map'); openMapSheet(); }, 'Ver'); } if ($('#mapSheet').classList.contains('open')) renderMaps(); });

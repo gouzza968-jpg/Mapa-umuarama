@@ -1,6 +1,14 @@
 {
-  "latest": "2.27.0",
+  "latest": "2.28.0",
   "versions": [
+    {
+      "version": "2.28.0",
+      "date": "22/11/2026",
+      "notes": [
+        "App mais simples: só o mapa. Para trocar o apelido, toque na sua moto",
+        "O aviso de nova versão fica na tela até atualizar"
+      ]
+    },
     {
       "version": "2.27.0",
       "date": "22/11/2026",
