@@ -1,11 +1,14 @@
 {
-  "latest": "2.21.1",
+  "latest": "2.22.0",
   "versions": [
     {
-      "version": "2.21.1",
+      "version": "2.22.0",
       "date": "22/11/2026",
       "notes": [
-        "Novo ponto de localização: moto maior, com facho mostrando a direção, pulso suave e nome em etiqueta"
+        "Localização compartilhada automaticamente com os motoboys, 100% anônima",
+        "Sem nome e sem telefone: só um apelido, se você quiser (sem apelido você aparece como “Motoboy”)",
+        "Ao abrir o app pela primeira vez, ele pergunta o seu apelido",
+        "Novo ponto de localização: moto maior, com facho mostrando a direção e pulso suave"
       ]
     },
     {
