@@ -1,0 +1,75 @@
+name: Atualizar o Mapa Principal (a cada hora)
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: mapa-hora
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Ver se há mapa novo da região
+        id: fonte
+        run: |
+          novo=""
+          for u in https://download.openstreetmap.fr/extracts/south-america/brazil/south/parana-latest.osm.pbf \
+                   https://download.geofabrik.de/south-america/brazil/sul-latest.osm.pbf; do
+            lm=$(curl -fsSIL --connect-timeout 20 "$u" | grep -i '^last-modified:' | tail -1 | cut -d' ' -f2- | tr -d '\r')
+            if [ -n "$lm" ]; then echo "url=$u" >> $GITHUB_OUTPUT; novo="$u $lm"; break; fi
+          done
+          echo "fonte: $novo"
+          antigo=$(cat mapas/fonte.txt 2>/dev/null || true)
+          if [ -z "$novo" ]; then echo "mudou=nao" >> $GITHUB_OUTPUT; echo "fonte indisponível agora"; 
+          elif [ "$novo" = "$antigo" ]; then echo "mudou=nao" >> $GITHUB_OUTPUT; echo "sem mapa novo"; 
+          else echo "mudou=sim" >> $GITHUB_OUTPUT; echo "$novo" > fonte.novo; fi
+
+      - name: Baixar e recortar Umuarama
+        if: steps.fonte.outputs.mudou == 'sim'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
+          curl -fSL --connect-timeout 30 --retry 3 -o regiao.osm.pbf "${{ steps.fonte.outputs.url }}"
+          osmium extract -b -53.43,-23.86,-53.21,-23.68 regiao.osm.pbf -o umu.osm.pbf --overwrite
+          osmium tags-filter umu.osm.pbf nwr/highway nwr/waterway n/place nwr/addr:housenumber nwr/amenity nwr/shop nwr/healthcare nwr/craft w/leisure=park w/landuse=residential -o umu-f.osm.pbf --overwrite
+          osmium export umu-f.osm.pbf -f geojsonseq -o umu.geojsonseq --overwrite
+          gzip -9 -c umu.geojsonseq > dados-osm/umuarama.geojsonseq.gz
+          date -u +%Y-%m-%d > dados-osm/data.txt
+
+      - name: Montar o Mapa Principal
+        if: steps.fonte.outputs.mudou == 'sim'
+        run: |
+          python3 tools/osm/mapa_principal.py www/data/mapa.json dados-osm/umuarama.geojsonseq.gz dados-extras mapas/principal.json
+          V=$(date -u +%Y%m%d%H)
+          python3 - "$V" <<'PY'
+          import json, sys, gzip, base64, datetime
+          v = int(sys.argv[1])
+          d = json.load(open('mapas/principal.json'))
+          st = json.loads(gzip.decompress(base64.b64decode(d['streets'])))
+          ruas = len({s[0].upper() for s in st if not (len(s) > 3 and s[3])})
+          agora = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=3)
+          json.dump({'versao': v, 'data': agora.strftime('%d/%m/%Y %H:%M'), 'ruas': ruas}, open('mapas/principal-versao.json', 'w'))
+          print('versão', v, 'ruas', ruas)
+          PY
+          mv fonte.novo mapas/fonte.txt
+
+      - name: Publicar
+        if: steps.fonte.outputs.mudou == 'sim'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add mapas/principal.json mapas/principal-versao.json mapas/fonte.txt dados-osm
+          git commit -m "Mapa Principal atualizado [skip ci]" || echo "sem mudanças"
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done

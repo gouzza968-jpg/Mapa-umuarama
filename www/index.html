@@ -519,6 +519,7 @@
   <div class="handle"></div>
   <h3>Escolher mapa</h3>
   <div id="mapList"></div>
+  <div class="note"><span style="font-size:17px;flex:none">🔄</span><div class="infoMapaT">Mapa atualizado a cada hora conforme disponibilidade de mapas da região</div></div>
   <div class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div>Novos mapas aparecem aqui quando forem publicados. Depois de baixado, o mapa funciona sem internet.</div></div>
 </div>
 <div class="sheet" id="routeSheet">
@@ -660,6 +661,7 @@
   <input id="bvNick" maxlength="20" placeholder="Seu apelido (opcional)" autocomplete="off" enterkeyhint="done">
   <button class="btn primary" id="bvOk">Continuar</button>
   <button class="btn" id="bvAnon">Prefiro ficar anônimo</button>
+  <div class="bvn infoMapa" style="color:var(--ink);opacity:.85">🔄 Mapa atualizado a cada hora conforme disponibilidade de mapas da região</div>
   <div class="bvn">🔒 Sem login, sem nome e sem telefone. Sua localização é compartilhada de forma anônima com os motoboys; dá para desligar no ⚙️.</div>
 </div></div>
 <div id="aviso" class="glass"><div class="tx"><b>Aviso do administrador</b><span id="avisoT"></span></div><button id="avisoX" aria-label="Fechar aviso">×</button></div>
@@ -681,7 +683,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.23.0";
+const APP_VERSION = "2.24.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -804,6 +806,9 @@ const CELL = 2500;
 
 async function readMapData(m){
   if (EMBED) return EMBED;
+  if (m.id === 'principal' && prefs.mapVer && prefs.mapVer > (m.versao || 0)){
+    try{ const s = await DB.get('principal@remoto'); if (s) return typeof s === 'string' ? JSON.parse(s) : s; }catch(e){}
+  }
   if (m.embutido){ const r = await fetch(m.arquivo + '?v=' + APP_VERSION); if (!r.ok) throw new Error('não foi possível abrir o mapa'); return r.json(); }
   const s = await DB.get(m.id); if (!s) throw new Error('mapa não baixado');
   return typeof s === 'string' ? JSON.parse(s) : s;
@@ -2916,6 +2921,47 @@ async function openMap(m){
   }
   L.classList.add('hide'); setTimeout(() => { L.style.display = 'none'; }, 260);
 }
+
+// ---------- Mapa Principal atualizado a cada hora (quando a região tem mapa novo) ----------
+let mapaChecado = 0, mapaPendente = false;
+function infoAtualizacao(){
+  const m = mapById('principal'), v = prefs.mapVer && prefs.mapVer > ((m && m.versao) || 0) ? prefs.mapData : (m && m.data);
+  return 'Mapa atualizado a cada hora conforme disponibilidade de mapas da região' + (v ? ` · última atualização: ${v}` : '');
+}
+function paintInfoMapa(){ document.querySelectorAll('.infoMapa').forEach(e => e.textContent = '🔄 ' + infoAtualizacao()); document.querySelectorAll('.infoMapaT').forEach(e => e.textContent = infoAtualizacao()); }
+setTimeout(paintInfoMapa, 2000);
+async function verificarMapa(forcar){
+  if (EMBED || ADMIN_VIEW || (!forcar && Date.now() - mapaChecado < 55 * 60000)) return;
+  mapaChecado = Date.now();
+  const m = mapById('principal'); if (!m) return;
+  try{
+    const v = await httpGet(REPO_RAW + 'mapas/principal-versao.json?t=' + Math.floor(Date.now() / 600000));
+    if (!v || !v.versao || v.versao <= Math.max(m.versao || 0, prefs.mapVer || 0)) return;
+    let D = await httpGet(REPO_RAW + 'mapas/principal.json?v=' + v.versao);
+    if (typeof D === 'string') D = JSON.parse(D);
+    if (!D || !D.meta || !D.geo || !D.txt || !D.streets) return;
+    await DB.put('principal@remoto', JSON.stringify(D));
+    prefs.mapVer = v.versao; prefs.mapData = v.data; if (v.ruas) prefs.mapRuas = v.ruas; savePrefs(); paintInfoMapa();
+    if (v.ruas) m.ruas = v.ruas;
+    aplicarMapaNovo(D);
+  }catch(e){}
+}
+async function aplicarMapaNovo(D){
+  const base = MAP && (MAP.online ? MAP.base : MAP.id);
+  if (base !== 'principal') return;
+  if (nav || $('#card').classList.contains('open') || picking || interacting){ mapaPendente = true; return; }
+  mapaPendente = false;
+  try{
+    const v = {x: view.x, y: view.y, k: view.k, r: view.r};
+    if (!D) D = await readMapData(mapById('principal'));
+    await buildMap(D);
+    Object.assign(view, v); computeCore(); RGmapId = null; nucleosAtuais = null; snap = null;
+    requestDraw(true); toast('🔄 Mapa atualizado');
+  }catch(e){}
+}
+setTimeout(() => verificarMapa(true), 15000);
+setInterval(() => { if (!document.hidden) verificarMapa(); if (mapaPendente) aplicarMapaNovo(); }, 5 * 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) verificarMapa(); });
 
 // ---------- configurações ----------
 const optRoute = $('#optRoute');

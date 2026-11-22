@@ -1,6 +1,13 @@
 {
-  "latest": "2.23.0",
+  "latest": "2.24.0",
   "versions": [
+    {
+      "version": "2.24.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Mapa atualizado a cada hora conforme disponibilidade de mapas da região, sem precisar atualizar o app"
+      ]
+    },
     {
       "version": "2.23.0",
       "date": "22/11/2026",
