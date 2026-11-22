@@ -519,7 +519,7 @@ async function loadRadares(){
   radares = r.data; renderRadares();
 }
 function renderRadares(){
-  $('#radarList').innerHTML = radares.length ? radares.map(a => `<div class="row" data-r="${a.id}"><div class="av" style="background:#dc2626;color:#fff">📷</div><div class="grow"><b>${RAD_TIPO[a.tipo] || 'Radar'}${a.velocidade ? ' · ' + a.velocidade + ' km/h' : ''}</b><div class="d">${esc(a.descricao || '')}${a.descricao ? ' · ' : ''}<a style="color:var(--accent)" data-vr href="#">ver no mapa</a></div></div><button class="btn sm" data-a="edr">Editar</button></div>`).join('') : '<div class="empty">Nenhum radar cadastrado.</div>';
+  $('#radarList').innerHTML = radares.length ? radares.map(a => `<div class="row" data-r="${a.id}"><div class="av" style="background:#dc2626;color:#fff">📷</div><div class="grow"><b>${RAD_TIPO[a.tipo] || 'Radar'}${a.velocidade ? ' · ' + a.velocidade + ' km/h' : ''}</b><div class="d">${a.apelido ? 'por ' + esc(a.apelido) + ' · ' : ''}${esc(a.descricao || '')}${a.descricao ? ' · ' : ''}<a style="color:var(--accent)" data-vr href="#">ver no mapa</a></div></div><button class="btn sm" data-a="edr">Editar</button></div>`).join('') : '<div class="empty">Nenhum radar cadastrado.</div>';
 }
 function abrirRadar(a, novo){
   rAtual = Object.assign({}, a); rAtual.novo = !!novo;

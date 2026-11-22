@@ -385,6 +385,18 @@
   body.adminview .chatfab, body.adminview #aviso{display:none!important}
   #aviso{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 124px);z-index:5;max-width:560px;margin:0 auto;border-radius:16px;padding:11px 12px;display:none;gap:10px;align-items:flex-start;border:1px solid rgba(255,106,31,.35)}
   #aviso.show{display:flex}
+  #addMenu{position:fixed;right:76px;top:calc(env(safe-area-inset-top) + 150px);z-index:9;border-radius:18px;padding:6px;display:none;flex-direction:column;min-width:240px;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+  #addMenu.show{display:flex}
+  #addMenu button{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--ink);padding:11px 12px;border-radius:13px;text-align:left;font:inherit}
+  #addMenu button:active{background:var(--raised)} #addMenu span{font-size:24px} #addMenu b{display:block;font-size:15px} #addMenu small{color:var(--muted);font-size:12px}
+  #radarForm{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;padding:14px 12px calc(env(safe-area-inset-bottom) + 14px)}
+  #radarForm.show{display:flex}
+  #radarForm .rf{width:100%;max-width:440px;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:10px;animation:bvIn .25s ease-out}
+  #radarForm h3{margin:0 0 2px;font-size:18px} .rfl{font-size:12.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .chipsel{display:flex;flex-wrap:wrap;gap:7px} .chipsel button{border:1px solid var(--line);background:var(--solid);color:var(--ink);border-radius:999px;padding:9px 13px;font:inherit;font-size:14px}
+  .chipsel button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+  #radarForm input{font:inherit;font-size:15px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--solid);color:var(--ink)}
+  .rfb{display:flex;gap:10px;margin-top:4px} .rfb .btn{flex:1;padding:13px}
   #boasVindas{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:16px 14px calc(env(safe-area-inset-bottom) + 18px)}
   #boasVindas.show{display:flex}
   #boasVindas .bv{width:100%;max-width:440px;border-radius:26px;padding:24px 20px 18px;display:flex;flex-direction:column;gap:12px;text-align:center;animation:bvIn .3s cubic-bezier(.2,.8,.2,1)}
@@ -479,6 +491,7 @@
     <button class="btn primary" type="submit">Buscar</button>
   </form>
   <div class="acts">
+    <div class="go hide" id="radarRow"><button class="act" id="rRemover">🗑️ Remover este radar</button></div>
     <div class="go hide" id="blitzRow">
       <button class="act primary" id="bSim">👍 Ainda está lá</button>
       <button class="act" id="bNao">👋 Não está mais</button>
@@ -678,6 +691,16 @@
   <div class="bvn">🔒 Sem login, sem nome e sem telefone. Sua localização é compartilhada de forma anônima com os motoboys; dá para desligar no ⚙️.</div>
 </div></div>
 <div id="aviso" class="glass"><div class="tx"><b>Aviso do administrador</b><span id="avisoT"></span></div><button id="avisoX" aria-label="Fechar aviso">×</button></div>
+<div id="addMenu" class="glass"><button id="amBlitz"><span>🚨</span><div><b>Reportar blitz</b><small>Some do mapa em até 2 horas</small></div></button><button id="amRadar"><span>📷</span><div><b>Adicionar radar</b><small>Radar fixo, de semáforo ou lombada</small></div></button></div>
+<div id="radarForm" role="dialog"><div class="rf glass">
+  <h3>📷 Novo radar</h3>
+  <div class="rfl">Tipo</div>
+  <div class="chipsel" id="rfTipo"><button data-v="fixo" class="on">Radar fixo</button><button data-v="semaforo">Semáforo</button><button data-v="lombada">Lombada eletrônica</button></div>
+  <div class="rfl">Velocidade</div>
+  <div class="chipsel" id="rfVel"><button data-v="">Não sei</button><button data-v="30">30</button><button data-v="40">40</button><button data-v="50">50</button><button data-v="60" class="on">60</button><button data-v="80">80</button></div>
+  <input id="rfDesc" maxlength="160" placeholder="Referência (opcional), ex.: perto do mercado">
+  <div class="rfb"><button class="btn" id="rfNo">Cancelar</button><button class="btn primary" id="rfOk">Adicionar</button></div>
+</div></div>
 <div id="pickCross" aria-hidden="true"><div class="pin">🚨</div></div>
 <div id="pickBar" class="glass"><div class="t"><b id="pickT">Onde está a blitz?</b><span id="pickS">Arraste o mapa ou toque no local até o 🚨 ficar em cima</span></div><div class="b"><button class="btn" id="pickNo">Cancelar</button><button class="btn primary" id="pickOk">Reportar aqui</button></div></div>
 <button id="tabChat" class="chatfab" aria-label="Chat dos motoboys"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5" stroke-linecap="round"/></svg><span class="cnt" id="chatCnt"></span></button>
@@ -911,7 +934,8 @@ const POI_STY = {
   semaforo:{e:'🚦', c:'#1f2937'}, radar:{e:'📷', c:'#dc2626'}, comercio:{e:'🏪', c:'#0d9488'},
 };
 const POI_SHORT = {saude:'Saúde', farmacia:'Farmácias', mercado:'Mercados', posto:'Postos', borracharia:'Borracharias', oficina:'Oficinas', seguranca:'Polícia', escola:'Escolas', servico:'Serviços', comida:'Comida', igreja:'Igrejas', semaforo:'Semáforos', radar:'Radares', comercio:'Comércios'};
-const poiVis = Object.assign({semaforo: true, posto: true, radar: true}, prefs.poiVis||{});   // semáforos e postos ligados por padrão; o resto o usuário escolhe
+const poiVis = Object.assign({semaforo: true, posto: true, radar: true}, prefs.poiVis||{});
+if (!prefs.camadasV2){ prefs.camadasV2 = 1; poiVis.semaforo = true; poiVis.radar = true; prefs.poiVis = poiVis; prefs.showBlitz = true; prefs.showLive = true; }   // semáforos e postos ligados por padrão; o resto o usuário escolhe
 const vis = Object.assign({rua:true,num:true,lote:true,quadra:true,via:true,rio:true,bairro:true,outro:false}, prefs.vis||{});
 
 // ---------- canvas & vista ----------
@@ -1172,7 +1196,9 @@ function showPoi(i){
   const go = () => focusOn(pz[0], pz[1], Math.max(view.k, 1.2)); go();
   const b = nearestBairro(pz[0], pz[1]);
   nextTarget = {label: pz[3], lat: pz[5], lon: pz[6]};
-  showCard('poi:' + cat, esc(pz[3]), `${esc(label)}${pz[4] ? ' · ' + esc(pz[4]) : ''}${b ? ' · ' + esc(b) : ''}`, `${pz[5]},${pz[6]}`, `${pz[3]}${pz[4] ? ', ' + pz[4] : ''} - ${cityName()}`, go);
+  const rad = pz[7] && pz[7].radar ? radares.find(r => r.id === pz[7].radar) : null;
+  showCard('poi:' + cat, esc(pz[3]), `${esc(label)}${pz[4] ? ' · ' + esc(pz[4]) : ''}${rad && rad.apelido ? ' · por ' + esc(rad.apelido) : ''}${b ? ' · ' + esc(b) : ''}`, `${pz[5]},${pz[6]}`, `${pz[3]}${pz[4] ? ', ' + pz[4] : ''} - ${cityName()}`, go);
+  if (rad && !ADMIN_VIEW && sbUid && rad.autor === sbUid){ $('#radarRow').classList.remove('hide'); $('#radarRow').dataset.id = rad.id; requestAnimationFrame(() => document.body.style.setProperty('--cardh', ($('#card').offsetHeight + 4) + 'px')); }
   requestDraw(true);
 }
 // ---------- minha localização ----------
@@ -1778,7 +1804,7 @@ $('#numrow').addEventListener('submit', e => {
   showStreet(curStreet, n);
 });
 function showCard(kind, h, s, dest, copyText, focus, street){
-  $('#contactRow').classList.add('hide'); $('#blitzRow').classList.add('hide');
+  $('#contactRow').classList.add('hide'); $('#blitzRow').classList.add('hide'); $('#radarRow').classList.add('hide');
   cardTarget = nextTarget; nextTarget = null;
   $('#numrow').classList.toggle('show', !!street);
   if (street) $('#numIn').value = street.num || '';
@@ -2154,12 +2180,51 @@ function startPick(info){
   else if (view.k < 0.3) animateTo(view.x, view.y, 0.5, 400);
 }
 function endPick(){ picking = false; document.body.classList.remove('picking'); }
-$('#blitzBtn').onclick = () => startPick({tipo: 'blitz'});
+$('#blitzBtn').onclick = e => {
+  e.stopPropagation();
+  if (ADMIN_VIEW){ startPick({tipo: 'blitz'}); return; }
+  const m = $('#addMenu'), r = $('#blitzBtn').getBoundingClientRect();
+  m.style.top = Math.max(10, r.top - 6) + 'px'; m.classList.toggle('show');
+};
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#addMenu, #blitzBtn')) $('#addMenu').classList.remove('show'); }, true);
+$('#amBlitz').onclick = () => { $('#addMenu').classList.remove('show'); startPick({tipo: 'blitz'}); };
+$('#amRadar').onclick = () => { $('#addMenu').classList.remove('show'); startPick({tipo: 'radar'}); };
+// formulário rápido do radar (motoboys)
+let rfLocal = null;
+document.querySelectorAll('.chipsel').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }));
+$('#rfNo').onclick = () => $('#radarForm').classList.remove('show');
+$('#rfOk').onclick = async () => {
+  if (!rfLocal) return;
+  const tipo = ($('#rfTipo .on') || {}).dataset ? $('#rfTipo .on').dataset.v : 'fixo';
+  const v = $('#rfVel .on') ? $('#rfVel .on').dataset.v : '';
+  $('#rfOk').disabled = true;
+  try{
+    await liveConnect();
+    if (!sb || !(await ensureAuth())){ toast('Sem conexão com o servidor'); return; }
+    const {data, error} = await sb.from('radares').insert({lat: rfLocal.lat, lon: rfLocal.lon, tipo, velocidade: v ? +v : null, descricao: $('#rfDesc').value.trim().slice(0, 160), apelido: apelidoPub(), fonte: 'motoboy'}).select().single();
+    if (error){ toast(/row-level|policy/i.test(error.message) ? 'Limite de radares: espere um pouco' : /does not exist|schema cache|42P01/i.test(error.message + error.code) ? 'Radares ainda não ativados no servidor' : 'Não foi possível adicionar'); return; }
+    if (data && !radares.some(r => r.id === data.id)){ radares.push(data); radaresNoMapa(); }
+    $('#radarForm').classList.remove('show'); $('#rfDesc').value = '';
+    toast('📷 Radar adicionado! Todos os motoboys vão ver');
+  } finally { $('#rfOk').disabled = false; }
+};
+$('#rRemover').onclick = async () => {
+  const id = +$('#radarRow').dataset.id; if (!id || !sb) return;
+  const {error} = await sb.from('radares').delete().eq('id', id);
+  if (error){ toast('Não foi possível remover'); return; }
+  radares = radares.filter(r => r.id !== id); radaresNoMapa(); hideCard(); toast('Radar removido');
+};
 if (ADMIN_VIEW) addEventListener('message', e => { const d = e.data || {}; if (d.blitz) startPick({tipo: 'blitz'}); if (d.pick === 'radar') startPick({tipo: 'radar', id: d.id, lat: d.lat, lon: d.lon}); if (d.verRadar){ const m = mapOfLL(d.verRadar.lat, d.verRadar.lon); if (m) focusOn(m[0], m[1], Math.max(view.k, 0.5)); } });
 $('#pickNo').onclick = endPick;
 $('#pickOk').onclick = async () => {
   const ll = llOf(view.x, view.y); if (!ll) return;
-  if (pickInfo.tipo === 'radar'){ try{ parent.postMessage({radarLocal: {lat: +ll[0].toFixed(6), lon: +ll[1].toFixed(6), id: pickInfo.id || null}}, '*'); }catch(e){} endPick(); return; }
+  if (pickInfo.tipo === 'radar'){
+    const L = {lat: +ll[0].toFixed(6), lon: +ll[1].toFixed(6), id: pickInfo.id || null};
+    endPick();
+    if (ADMIN_VIEW){ try{ parent.postMessage({radarLocal: L}, '*'); }catch(e){} }
+    else { rfLocal = L; $('#radarForm').classList.add('show'); }
+    return;
+  }
   $('#pickOk').disabled = true;
   try{
     await liveConnect();

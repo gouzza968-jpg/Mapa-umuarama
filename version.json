@@ -1,6 +1,14 @@
 {
-  "latest": "2.26.0",
+  "latest": "2.27.0",
   "versions": [
+    {
+      "version": "2.27.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Qualquer motoboy pode adicionar radares no mapa: toque no 🚨 e escolha “Adicionar radar”",
+        "Blitz, motoboys online, semáforos e radares ficam ligados no mapa"
+      ]
+    },
     {
       "version": "2.26.0",
       "date": "22/11/2026",
