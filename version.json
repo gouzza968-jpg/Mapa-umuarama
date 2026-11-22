@@ -1,6 +1,15 @@
 {
-  "latest": "2.22.0",
+  "latest": "2.23.0",
   "versions": [
+    {
+      "version": "2.23.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Ao iniciar a rota, o mapa segue você por trás, igual ao Google Maps: gira para a direção em que você anda e deixa você na parte de baixo da tela",
+        "Arrastou ou girou o mapa? Toque no botão de localização para voltar a seguir",
+        "Ao encerrar a rota, o mapa volta com o norte para cima"
+      ]
+    },
     {
       "version": "2.22.0",
       "date": "22/11/2026",

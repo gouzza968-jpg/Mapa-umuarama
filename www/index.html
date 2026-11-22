@@ -681,7 +681,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.22.0";
+const APP_VERSION = "2.23.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -1270,10 +1270,19 @@ function naRua(lat, lon, head, acc){
   const [la, lo] = gunproj(best.x, best.y); return {lat: la, lon: lo};
 }
 const angInterp = (a, b, t) => { if (a == null || isNaN(a)) return b; if (b == null || isNaN(b)) return a; const d = ((b - a + 540) % 360) - 180; return (a + d * t + 360) % 360; };
+// na navegação o mapa fica atrás de você (igual Google Maps): gira para a frente ficar para cima e você fica na parte de baixo da tela
+const offSeguir = () => nav ? -Math.round(VH * 0.27) : 60;
+function giroNav(){
+  if (!nav || !follow || !meShow || meShow.head == null || isNaN(meShow.head)) return;
+  const alvo = -meShow.head * Math.PI / 180, d = Math.atan2(Math.sin(alvo - view.r), Math.cos(alvo - view.r));
+  if (Math.abs(d) < 0.003) return;
+  view.r = normR(view.r + d * 0.18); paintCompass();
+}
 function seguirMe(){
   if (!follow || !meShow) return;
   const p = mapOfLL(meShow.lat, meShow.lon); if (!p) return;
-  const k = view.k, [dx, dy] = scrToWorldD(0, nav ? -80 : 60, k);
+  giroNav();
+  const k = view.k, [dx, dy] = scrToWorldD(0, offSeguir(), k);
   view.x = p[0] + dx; view.y = p[1] + dy;
 }
 function moverMe(alvo, ms){
@@ -1295,7 +1304,7 @@ function onBussola(e){
   if (h == null) return;
   h = (h + ((screen.orientation && screen.orientation.angle) || 0) + 360) % 360;
   bussola = bussola == null ? h : angInterp(bussola, h, 0.15);
-  if (meShow && velGPS < 1.5 && !meAnim){ const d = Math.abs(((meShow.head || 0) - bussola + 540) % 360 - 180); if (meShow.head == null || d > 4){ meShow.head = bussola; requestDraw(); } }
+  if (meShow && velGPS < 1.5 && !meAnim){ const d = Math.abs(((meShow.head || 0) - bussola + 540) % 360 - 180); if (meShow.head == null || d > 4){ meShow.head = bussola; if (nav && follow) seguirMe(); requestDraw(); } }
 }
 function onPos(pos){
   const c = pos.coords || pos, t = pos.timestamp || Date.now();
@@ -1312,7 +1321,7 @@ function onPos(pos){
   moverMe(me, Math.max(250, Math.min(1100, intervalo * 0.95)));
   const p = mapOfLL(me.lat, me.lon);
   if (p && (p[0] < -20000 || p[0] > W + 20000 || p[1] < -20000 || p[1] > H + 20000)){ if (!onPos.warned){ toast('Você está fora da área deste mapa'); onPos.warned = true; } }
-  else if (p && follow && (primeiro || view.k < 0.25 || (nav && view.k < 0.3))){ const k = nav ? Math.max(view.k, 0.3) : Math.max(view.k, 0.25); const [dx, dy] = scrToWorldD(0, nav ? -80 : 60, k); animateTo(p[0] + dx, p[1] + dy, k, 450); }
+  else if (p && follow && (primeiro || view.k < 0.25 || (nav && view.k < 0.3))){ const k = nav ? Math.max(view.k, 0.3) : Math.max(view.k, 0.25); const [dx, dy] = scrToWorldD(0, offSeguir(), k); animateTo(p[0] + dx, p[1] + dy, k, 450); }
   $('#loc').classList.add('on');
   if (prefs.share){ liveSend(false); posSend(false); }
   if (nav) navTick();
@@ -1346,7 +1355,7 @@ function stopLoc(){
 $('#loc').onclick = () => {
   if (locWatch && prefs.share && follow){ follow = false; $('#loc').classList.remove('follow'); toast('Localização continua ligada para o compartilhamento'); return; }
   if (!locWatch){ follow = true; $('#loc').classList.add('follow'); startLoc(); return; }
-  if (!follow && me){ follow = true; $('#loc').classList.add('follow'); const p = mapOfLL(me.lat, me.lon); if (p){ const k = Math.max(view.k, 0.25), [dx, dy] = scrToWorldD(0, 60, k); animateTo(p[0] + dx, p[1] + dy, k, 450); } return; }
+  if (!follow && me){ follow = true; $('#loc').classList.add('follow'); const p = mapOfLL(me.lat, me.lon); if (p){ const k = Math.max(view.k, nav ? 0.35 : 0.25), [dx, dy] = scrToWorldD(0, offSeguir(), k); animateTo(p[0] + dx, p[1] + dy, k, 450); } return; }
   stopLoc();
 };
 
@@ -1421,7 +1430,7 @@ cv.addEventListener('pointermove', e => {
     // girar com dois dedos: só começa depois de ~12° para não girar sem querer ao dar zoom
     let da = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x) - gesture.a;
     da = Math.atan2(Math.sin(da), Math.cos(da));
-    if (!gesture.rot && Math.abs(da) > 0.21){ gesture.rot = true; gesture.a += da; da = 0; }
+    if (!gesture.rot && Math.abs(da) > 0.21){ gesture.rot = true; gesture.a += da; da = 0; if (follow && nav){ follow = false; $('#loc').classList.remove('follow'); } }
     if (gesture.rot) view.r = normR(gesture.r + da);
     view.k = k; const [ux, uy] = scrToWorldD(c.x - VW/2, c.y - VH/2, k); view.x = gesture.wc[0] - ux; view.y = gesture.wc[1] - uy;
     paintCompass();
@@ -2724,12 +2733,12 @@ async function startNav(){
   follow = true; $('#loc').classList.add('follow');
   if (!locWatch){ routeNeedsOrigin = true; await startLoc(); }
   $('#navBar').classList.add('show'); paintNav();
-  if (me){ const p = mapOfLL(me.lat, me.lon); if (p) animateTo(p[0], p[1], 0.35, 600); await computeRoute(false); paintNav(); }
+  if (me){ const p = mapOfLL(me.lat, me.lon); if (p){ if (me.head != null && !isNaN(me.head)) girarPara(-me.head * Math.PI / 180); const k = Math.max(view.k, 0.35), [dx, dy] = scrToWorldD(0, offSeguir(), k); animateTo(p[0] + dx, p[1] + dy, k, 600); } await computeRoute(false); paintNav(); }
   try{ const KA = plug('KeepAwake'); if (KA) KA.keepAwake(); }catch(e){}
 }
 function stopNav(){
   nav = false; document.body.classList.remove('nav'); $('#navBar').classList.remove('show', 'arrived');
-  follow = false; $('#loc').classList.remove('follow'); paintRoute(); requestDraw(true);
+  follow = false; $('#loc').classList.remove('follow'); girarPara(0); paintRoute(); requestDraw(true);
 }
 function paintNav(){
   if (!nav) return;
