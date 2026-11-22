@@ -1,6 +1,13 @@
 {
-  "latest": "2.28.1",
+  "latest": "2.29.0",
   "versions": [
+    {
+      "version": "2.29.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Botão 🏍️ com quantos motoboys estão online; toque para ver a lista e todos no mapa"
+      ]
+    },
     {
       "version": "2.28.1",
       "date": "22/11/2026",
