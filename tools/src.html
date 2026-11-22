@@ -12,7 +12,7 @@
     --bg:#0b0f14; --surface:rgba(20,26,34,.86); --solid:#141a22; --raised:#1b232d; --ink:#eef2f6; --muted:#8e9aab; --faint:#5b6778; --line:rgba(255,255,255,.07);
     --accent:#ff6a1f; --accent2:#ff8a3d; --accent-soft:rgba(255,106,31,.14); --ok:#34d399; --warn:#fbbf24; --bad:#fb7185;
     --shadow:0 12px 32px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.35);
-    --r:18px; --tabh:66px;
+    --r:18px; --tabh:0px;
     --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   body.light{
@@ -395,6 +395,9 @@
   .tab.on .pill{background:var(--accent-soft);color:var(--accent)}
   .tab .dot{position:absolute;top:6px;left:calc(50% + 12px);width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid var(--solid);display:none}
   .tab .dot.show{display:block}
+  #setBtn{position:relative} .sdot{position:absolute;top:7px;right:7px;width:10px;height:10px;border-radius:50%;background:var(--bad);border:2px solid var(--solid);display:none} .sdot.show{display:block}
+  .sethead{display:flex;align-items:center;gap:12px;margin-bottom:4px} .sethead h1{margin:0}
+  .sethead .voltar{width:40px;height:40px;border-radius:50%;border:0;background:var(--raised);color:var(--ink);display:grid;place-items:center;flex:none}
 
   #updBanner{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 118px);z-index:5;max-width:560px;margin:0 auto;border-radius:16px;padding:10px 10px 10px 12px;display:none;align-items:center;gap:11px}
   #updBanner.show{display:flex;animation:fadeIn .2s ease-out}
@@ -437,6 +440,7 @@
 </div>
 
 <div class="ctrls" id="ctrls">
+  <div class="group glass"><button class="fab" id="setBtn" aria-label="Configurações"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span class="sdot" id="setDot2"></span></button></div>
   <div class="group glass" id="blitzGroup"><button class="fab" id="blitzBtn" aria-label="Reportar blitz" style="font-size:22px">🚨</button></div>
   <div class="group glass"><button class="fab" id="fitMoto" aria-label="Ver todos os motoboys" style="font-size:20px">🏍️</button></div>
   <div class="group glass" id="locGroup" style="display:none">
@@ -548,7 +552,7 @@
 
 <!-- Configurações -->
 <div class="page" id="pageSet">
-  <h1>Configurações</h1>
+  <div class="sethead"><button class="voltar" id="setBack" aria-label="Voltar ao mapa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h1>Configurações</h1></div>
   <p class="sub">Atualizações, rotas e aparência.</p>
 
   <div class="sec">
@@ -639,7 +643,7 @@
   <div class="foot">Mapas oficiais de numeração predial da prefeitura.<br>Podem existir diferenças em relação ao local.</div>
 </div>
 
-<nav class="tabs">
+<nav class="tabs" style="display:none">
   <button class="tab on" id="tabMap"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>Explorar</button>
   <button class="tab" id="tabSet"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Configurações<span class="dot" id="setDot"></span></button>
 </nav>
@@ -1158,7 +1162,7 @@ function drawMoto(sx, sy, label, mine, head){
   ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
 }
 function drawMe(){
-  if (!me) return;
+  const me = meShow; if (!me) return;
   const p = mapOfLL(me.lat, me.lon); if (!p) return;
   const [sx, sy] = toScreen(p[0], p[1]);
   ctx.save(); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.translate(sx, sy);
@@ -1168,12 +1172,95 @@ function drawMe(){
   drawMoto(sx, sy, prefs.share && prefs.nick ? prefs.nick : 'Você', true, me.head);
   ctx.restore();
 }
+// ---- posição mais precisa (filtro + encaixe na rua) e movimento suave ----
+let meShow = null, meAnim = null, kf = null, ultFix = 0, bussola = null, velGPS = 0;
+const distLL = (a, b) => Math.hypot((a.lat - b.lat) * 111320, (a.lon - b.lon) * 111320 * Math.cos(a.lat * Math.PI / 180));
+function filtra(lat, lon, acc, t, vel){
+  acc = Math.max(3, acc || 25);
+  if (!kf || t - kf.t > 30000){ kf = {lat, lon, v: acc * acc, t}; return true; }
+  const dt = Math.max(0.05, (t - kf.t) / 1000), d = distLL(kf, {lat, lon});
+  // descarta saltos impossíveis (sinal ruim refletido em prédios)
+  if (acc > 35 && d > 2.5 * acc && dt < 15) return false;
+  if (d / dt > 45 && acc > 12) return false;
+  const q = Math.max(1.5, vel || 0, d / dt);          // m/s: quanto pode ter andado
+  kf.v += dt * q * q;
+  const g = kf.v / (kf.v + acc * acc);
+  kf.lat += g * (lat - kf.lat); kf.lon += g * (lon - kf.lon); kf.v = (1 - g) * kf.v; kf.t = t;
+  return true;
+}
+// encaixa a posição na rua mais próxima quando está andando (mapa de ruas das rotas)
+function naRua(lat, lon, head, acc){
+  if (!RG) return null;
+  const [x, y] = gproj(lat, lon), c = RG.cell, cx = Math.floor(x / c), cy = Math.floor(y / c);
+  const lim = Math.min(20, Math.max(8, acc || 15)) * 10;   // decímetros
+  let best = null;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++){
+    const a = RG.grid.get((cx + i) + ',' + (cy + j)); if (!a) continue;
+    for (const u of a){
+      const ux = RG.xy[2*u], uy = RG.xy[2*u+1];
+      for (let e = RG.off[u]; e < RG.off[u+1]; e++){
+        const v = RG.to[e]; if (v < u && RG.off[v] !== RG.off[v+1]) { /* mão dupla: mede só uma vez */ }
+        const vx = RG.xy[2*v], vy = RG.xy[2*v+1], dx = vx - ux, dy = vy - uy, L = dx*dx + dy*dy; if (!L) continue;
+        const tt = Math.max(0, Math.min(1, ((x - ux) * dx + (y - uy) * dy) / L));
+        const px = ux + tt * dx, py = uy + tt * dy, d = Math.hypot(x - px, y - py);
+        if (d > lim) continue;
+        let custo = d;
+        if (head != null && !isNaN(head)){
+          const br = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 180, h = head % 180;
+          const dif = Math.min(Math.abs(br - h), 180 - Math.abs(br - h));
+          custo += dif > 45 ? lim : dif * 0.6;
+        }
+        if (!best || custo < best.c) best = {c: custo, x: px, y: py};
+      }
+    }
+  }
+  if (!best) return null;
+  const [la, lo] = gunproj(best.x, best.y); return {lat: la, lon: lo};
+}
+const angInterp = (a, b, t) => { if (a == null || isNaN(a)) return b; if (b == null || isNaN(b)) return a; const d = ((b - a + 540) % 360) - 180; return (a + d * t + 360) % 360; };
+function seguirMe(){
+  if (!follow || !meShow) return;
+  const p = mapOfLL(meShow.lat, meShow.lon); if (!p) return;
+  const k = view.k, [dx, dy] = scrToWorldD(0, nav ? -80 : 60, k);
+  view.x = p[0] + dx; view.y = p[1] + dy;
+}
+function moverMe(alvo, ms){
+  cancelAnimationFrame(meAnim);
+  if (!meShow){ meShow = Object.assign({}, alvo); requestDraw(true); return; }
+  const de = Object.assign({}, meShow), t0 = performance.now();
+  interacting = true;
+  const step = now => {
+    const t = Math.min(1, (now - t0) / ms);
+    meShow = {lat: de.lat + (alvo.lat - de.lat) * t, lon: de.lon + (alvo.lon - de.lon) * t, acc: de.acc + (alvo.acc - de.acc) * t, head: angInterp(de.head, alvo.head, Math.min(1, t * 1.6))};
+    seguirMe(); requestDraw();
+    if (t < 1) meAnim = requestAnimationFrame(step); else { meAnim = null; if (!gesture && !anim) interacting = false; requestDraw(true); }
+  };
+  meAnim = requestAnimationFrame(step);
+}
+// bússola do celular para a direção quando está parado
+function onBussola(e){
+  let h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute || e.type === 'deviceorientationabsolute') && e.alpha != null ? 360 - e.alpha : null;
+  if (h == null) return;
+  h = (h + ((screen.orientation && screen.orientation.angle) || 0) + 360) % 360;
+  bussola = bussola == null ? h : angInterp(bussola, h, 0.15);
+  if (meShow && velGPS < 1.5 && !meAnim){ const d = Math.abs(((meShow.head || 0) - bussola + 540) % 360 - 180); if (meShow.head == null || d > 4){ meShow.head = bussola; requestDraw(); } }
+}
 function onPos(pos){
-  const c = pos.coords || pos;
-  const prevMe = me; me = {lat: c.latitude, lon: c.longitude, acc: c.accuracy, head: (c.speed && c.speed > 0.8 && c.heading != null) ? c.heading : (prevMe ? prevMe.head : null)};
+  const c = pos.coords || pos, t = pos.timestamp || Date.now();
+  velGPS = c.speed || 0;
+  if (!filtra(c.latitude, c.longitude, c.accuracy, t, c.speed)) return;
+  const prevMe = me, andando = c.speed != null && c.speed > 1.5;
+  const headGPS = andando && c.heading != null && !isNaN(c.heading) ? c.heading : null;
+  let lat = kf.lat, lon = kf.lon;
+  if (andando && RG){ const r = naRua(lat, lon, headGPS, c.accuracy); if (r){ lat = r.lat; lon = r.lon; } }
+  me = {lat, lon, acc: Math.max(3, Math.min(c.accuracy || 25, Math.sqrt(kf.v) * 1.2)), head: headGPS != null ? headGPS : (bussola != null ? bussola : (prevMe ? prevMe.head : null)), vel: c.speed || 0};
+  if (!RG && !onPos.grafo){ onPos.grafo = true; loadGraph().catch(() => {}); }
+  const agora = performance.now(), intervalo = ultFix ? agora - ultFix : 1000; ultFix = agora;
+  const primeiro = !meShow;
+  moverMe(me, Math.max(250, Math.min(1100, intervalo * 0.95)));
   const p = mapOfLL(me.lat, me.lon);
   if (p && (p[0] < -20000 || p[0] > W + 20000 || p[1] < -20000 || p[1] > H + 20000)){ if (!onPos.warned){ toast('Você está fora da área deste mapa'); onPos.warned = true; } }
-  else if (p && follow){ const k = nav ? Math.max(view.k, 0.3) : Math.max(view.k, 0.25); animateTo(p[0], p[1] + (nav ? 80 : -60)/k, k, 400); }
+  else if (p && follow && (primeiro || view.k < 0.25 || (nav && view.k < 0.3))){ const k = nav ? Math.max(view.k, 0.3) : Math.max(view.k, 0.25); const [dx, dy] = scrToWorldD(0, nav ? -80 : 60, k); animateTo(p[0] + dx, p[1] + dy, k, 450); }
   $('#loc').classList.add('on');
   if (prefs.share){ liveSend(false); posSend(false); }
   if (nav) navTick();
@@ -1192,21 +1279,22 @@ async function startLoc(){
     if (G){
       const perm = await G.requestPermissions().catch(() => null);
       if (perm && perm.location === 'denied'){ onPosErr({code:1}); return; }
-      locWatch = {native: await G.watchPosition({enableHighAccuracy:true, maximumAge:3000}, (pos, err) => { if (err) onPosErr(err); else if (pos) onPos(pos); })};
+      locWatch = {native: await G.watchPosition({enableHighAccuracy:true, maximumAge:0, minimumUpdateInterval:500, interval:1000}, (pos, err) => { if (err) onPosErr(err); else if (pos) onPos(pos); })};
     } else if (navigator.geolocation){
-      locWatch = {web: navigator.geolocation.watchPosition(onPos, onPosErr, {enableHighAccuracy:true, maximumAge:3000})};
+      locWatch = {web: navigator.geolocation.watchPosition(onPos, onPosErr, {enableHighAccuracy:true, maximumAge:0})};
     } else { toast('Localização não disponível neste aparelho'); return; }
+    if (!startLoc.bus){ startLoc.bus = true; addEventListener('deviceorientationabsolute', onBussola, true); if (!('ondeviceorientationabsolute' in window)) addEventListener('deviceorientation', onBussola, true); }
     toast('Buscando sua localização…');
   }catch(e){ onPosErr(e); }
 }
 function stopLoc(){
   if (locWatch){ if (locWatch.native) plug('Geolocation').clearWatch({id: locWatch.native}).catch(()=>{}); if (locWatch.web != null) navigator.geolocation.clearWatch(locWatch.web); }
-  locWatch = null; me = null; follow = false; $('#loc').classList.remove('on','follow'); requestDraw(true);
+  locWatch = null; me = null; meShow = null; kf = null; cancelAnimationFrame(meAnim); meAnim = null; follow = false; $('#loc').classList.remove('on','follow'); requestDraw(true);
 }
 $('#loc').onclick = () => {
   if (locWatch && prefs.share && follow){ follow = false; $('#loc').classList.remove('follow'); toast('Localização continua ligada para o compartilhamento'); return; }
   if (!locWatch){ follow = true; $('#loc').classList.add('follow'); startLoc(); return; }
-  if (!follow && me){ follow = true; $('#loc').classList.add('follow'); onPos({latitude: me.lat, longitude: me.lon, accuracy: me.acc}); return; }
+  if (!follow && me){ follow = true; $('#loc').classList.add('follow'); const p = mapOfLL(me.lat, me.lon); if (p){ const k = Math.max(view.k, 0.25), [dx, dy] = scrToWorldD(0, 60, k); animateTo(p[0] + dx, p[1] + dy, k, 450); } return; }
   stopLoc();
 };
 
@@ -1335,7 +1423,7 @@ function animateTo(x, y, k, ms=480){
     const t = Math.min(1, (now - t0)/ms), e = 1 - Math.pow(1 - t, 3);
     view.k = Math.exp(Math.log(a.k) + (Math.log(k)-Math.log(a.k))*e); view.x = a.x + (x-a.x)*e; view.y = a.y + (y-a.y)*e;
     requestDraw();
-    if (t < 1) anim = requestAnimationFrame(step); else { interacting = false; requestDraw(true); }
+    if (t < 1) anim = requestAnimationFrame(step); else { anim = null; if (!meAnim) interacting = false; requestDraw(true); }
   };
   anim = requestAnimationFrame(step);
 }
@@ -2677,6 +2765,8 @@ function showTab(t){
 }
 $('#tabMap').onclick = () => showTab('map');
 $('#tabSet').onclick = () => showTab('set');
+$('#setBtn').onclick = () => showTab('set');
+$('#setBack').onclick = () => showTab('map');
 $('#tabChat').onclick = () => showTab('chat');
 $('#chatBack').onclick = () => showTab('map');
 function renderPoiChips(){
@@ -2804,7 +2894,7 @@ function paintUpdate(){
   const btn = $('#updbtn'), has = NATIVE && hasUpdate();
   $('#vcur2').textContent = cur.versionName;
   $('#updbox').classList.toggle('has', has);
-  $('#setDot').classList.toggle('show', has);
+  $('#setDot').classList.toggle('show', has); $('#setDot2').classList.toggle('show', has);
   $('#prog').classList.toggle('show', updBusy);
   $('#progi').style.width = updPct + '%';
   if (!NATIVE){

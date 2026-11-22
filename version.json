@@ -1,6 +1,15 @@
 {
-  "latest": "2.20.1",
+  "latest": "2.21.0",
   "versions": [
+    {
+      "version": "2.21.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Mapa em tela cheia: a barra de guias saiu; as configurações ficam no botão ⚙️",
+        "Sua localização ficou mais precisa: filtra saltos do GPS e acompanha a rua quando você está andando",
+        "O ícone da moto anda suave no mapa, sem pulos, e gira pela bússola quando você está parado"
+      ]
+    },
     {
       "version": "2.20.1",
       "date": "21/11/2026",
