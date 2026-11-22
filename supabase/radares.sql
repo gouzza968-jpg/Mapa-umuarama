@@ -25,15 +25,9 @@ create policy "admin apaga radar" on public.radares for delete to authenticated 
 grant select on public.radares to anon, authenticated;
 grant insert, update, delete on public.radares to authenticated;
 
--- Trechos de fiscalização com radar portátil na PR-323 em Umuarama
--- (Planejamento Operacional DER/PR – Batalhão de Polícia Rodoviária, 18/06/2025).
--- O documento informa só o km; a posição no mapa é aproximada: ajuste pelo painel se precisar.
-insert into public.radares (lat, lon, tipo, velocidade, descricao, fonte)
-select * from (values
-  (-23.77786, -53.28466, 'portatil', 60, 'PR-323 km 296 ao 297,5 · fiscalização com radar portátil (local aproximado)', 'DER/PR – BPR, planejamento 18/06/2025'),
-  (-23.78171, -53.30563, 'portatil', 60, 'PR-323 km 298,5 ao 299,5 · fiscalização com radar portátil (local aproximado)', 'DER/PR – BPR, planejamento 18/06/2025')
-) v(lat, lon, tipo, velocidade, descricao, fonte)
-where not exists (select 1 from public.radares r where r.fonte = v.fonte);
+-- Remove os radares da lista oficial (DER/PR) que entraram na primeira versão deste arquivo.
+-- Os radares do mapa são só os cadastrados pelo administrador no painel.
+delete from public.radares where fonte like 'DER/PR%';
 
 do $$ begin
   alter publication supabase_realtime add table public.radares;
