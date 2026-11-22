@@ -125,4 +125,61 @@ public class AppUpdatePlugin extends Plugin {
             call.reject("install: " + e.getMessage());
         }
     }
+
+    /** Abre a tela de compartilhar do Android com um texto (link de download). */
+    @PluginMethod
+    public void shareText(PluginCall call) {
+        try {
+            Intent i = new Intent(Intent.ACTION_SEND);
+            i.setType("text/plain");
+            i.putExtra(Intent.EXTRA_TEXT, call.getString("text", ""));
+            Intent ch = Intent.createChooser(i, call.getString("title", "Compartilhar"));
+            ch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(ch);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("share");
+        }
+    }
+
+    /** Compartilha o próprio APK instalado (funciona sem internet, ex.: pelo WhatsApp ou Bluetooth). */
+    @PluginMethod
+    public void shareApk(final PluginCall call) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File src = new File(getContext().getApplicationInfo().sourceDir);
+                    File dir = new File(getContext().getCacheDir(), "compartilhar");
+                    dir.mkdirs();
+                    File out = new File(dir, "Mapa-Umuarama.apk");
+                    java.io.FileInputStream in = new java.io.FileInputStream(src);
+                    FileOutputStream os = new FileOutputStream(out);
+                    byte[] buf = new byte[65536];
+                    int n;
+                    while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+                    os.close();
+                    in.close();
+                    final Uri u = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", out);
+                    final Intent i = new Intent(Intent.ACTION_SEND);
+                    i.setType("application/vnd.android.package-archive");
+                    i.putExtra(Intent.EXTRA_STREAM, u);
+                    i.putExtra(Intent.EXTRA_TEXT, call.getString("text", ""));
+                    i.setClipData(android.content.ClipData.newRawUri("Mapa-Umuarama.apk", u));
+                    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    final Intent ch = Intent.createChooser(i, "Enviar o app");
+                    ch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try { getContext().startActivity(ch); call.resolve(); }
+                            catch (Exception e) { call.reject("share"); }
+                        }
+                    });
+                } catch (Exception e) {
+                    call.reject("apk: " + e.getMessage());
+                }
+            }
+        }).start();
+    }
 }

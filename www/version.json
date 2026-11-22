@@ -1,6 +1,13 @@
 {
-  "latest": "2.24.0",
+  "latest": "2.25.0",
   "versions": [
+    {
+      "version": "2.25.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Compartilhe o app em ⚙️ → Compartilhar o app: envie o link da versão mais nova ou o próprio arquivo do app"
+      ]
+    },
     {
       "version": "2.24.0",
       "date": "22/11/2026",

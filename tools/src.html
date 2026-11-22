@@ -581,6 +581,19 @@
     <div class="log" id="changelog"></div>
   </div>
 
+  <div class="sec" id="secShare">
+    <div class="ttl">Compartilhar o app</div>
+    <div class="row">
+      <div class="ri" style="font-size:17px">📲</div>
+      <div class="grow"><div class="l">Indique para outros motoboys</div><div class="d">Envie pelo WhatsApp ou outro app. O link sempre baixa a versão mais nova.</div></div>
+    </div>
+    <div class="field" style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn primary" id="shLink" style="width:100%">🔗 Enviar link para baixar</button>
+      <button class="btn" id="shApk" style="width:100%">📦 Enviar o app (arquivo APK)</button>
+    </div>
+    <div class="note" style="margin:0 16px 14px;font-size:12.5px;color:var(--muted);line-height:1.45">O arquivo APK funciona até sem internet, por Bluetooth ou WhatsApp. Quem receber precisa permitir “instalar apps desconhecidos” no Android.</div>
+  </div>
+
   <div class="sec" id="secLive">
     <div class="ttl">Motoboys ao vivo</div>
     <div class="row">
@@ -2962,6 +2975,26 @@ async function aplicarMapaNovo(D){
 setTimeout(() => verificarMapa(true), 15000);
 setInterval(() => { if (!document.hidden) verificarMapa(); if (mapaPendente) aplicarMapaNovo(); }, 5 * 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) verificarMapa(); });
+
+// ---------- compartilhar o app ----------
+const LINK_APK = 'https://github.com/gouzza968-jpg/Mapa-umuarama/releases/latest/download/mapa-umuarama.apk';
+const TXT_APP = `🏍️ Mapa Umuarama: o mapa dos motoboys de Umuarama, com busca por número, rotas, blitz e chat.\nBaixe a versão mais nova (Android): ${LINK_APK}`;
+$('#shLink').onclick = async () => {
+  const U = NATIVE && plug('AppUpdate');
+  try{
+    if (U && U.shareText) await U.shareText({text: TXT_APP, title: 'Compartilhar o Mapa Umuarama'});
+    else if (navigator.share) await navigator.share({title: 'Mapa Umuarama', text: TXT_APP});
+    else { await navigator.clipboard.writeText(TXT_APP); toast('Link copiado'); }
+  }catch(e){ try{ await navigator.clipboard.writeText(TXT_APP); toast('Link copiado'); }catch(_){ toast('Não foi possível compartilhar'); } }
+};
+$('#shApk').onclick = async () => {
+  const U = NATIVE && plug('AppUpdate');
+  if (!U || !U.shareApk){ toast('Disponível no app Android. Use “Enviar link”.'); return; }
+  $('#shApk').disabled = true; toast('Preparando o arquivo…');
+  try{ await U.shareApk({text: 'Mapa Umuarama (app Android para motoboys). Toque no arquivo para instalar.'}); $('#toast').classList.remove('show'); }
+  catch(e){ toast('Não foi possível enviar o arquivo. Use “Enviar link”.'); }
+  finally{ $('#shApk').disabled = false; }
+};
 
 // ---------- configurações ----------
 const optRoute = $('#optRoute');
