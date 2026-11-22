@@ -1,6 +1,13 @@
 {
-  "latest": "2.21.0",
+  "latest": "2.21.1",
   "versions": [
+    {
+      "version": "2.21.1",
+      "date": "22/11/2026",
+      "notes": [
+        "Novo ponto de localização: moto maior, com facho mostrando a direção, pulso suave e nome em etiqueta"
+      ]
+    },
     {
       "version": "2.21.0",
       "date": "22/11/2026",
