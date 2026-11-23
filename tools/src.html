@@ -1896,7 +1896,7 @@ const isLL = d => /^-?\d+\.\d+,-?\d+\.\d+$/.test(d);
 const wazeUrl = d => isLL(d) ? 'https://waze.com/ul?ll=' + encodeURIComponent(d) + '&navigate=yes' : 'https://waze.com/ul?q=' + encodeURIComponent(d) + '&navigate=yes';
 function updateRouteBtn(){
   $('#goRow').classList.toggle('hide', !(cardTarget && GEO && !EMBED));
-  if (prefs.route && REC.rotas && cardDest){ $('#route').href = mapsUrl(cardDest); $('#routeWaze').href = wazeUrl(cardDest); $('#routes').classList.remove('hide'); }
+  if (REC.rotas && cardDest){ $('#route').href = mapsUrl(cardDest); $('#routeWaze').href = wazeUrl(cardDest); $('#routes').classList.remove('hide'); }
   else $('#routes').classList.add('hide');
 }
 function hideCard(){ curStreet = null; $('#numIn').blur(); $('#card').classList.remove('open'); document.body.classList.remove('hascard'); cardDest = null; }
