@@ -30,6 +30,10 @@
   .fb{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:rgba(20,26,34,.92);backdrop-filter:blur(10px);font-size:23px;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.4);position:relative;color:var(--ink)}
   .fb:active{transform:scale(.94)}
   .fb.red{background:#dc2626;border-color:#dc2626}
+  .addm{position:absolute;left:74px;top:50%;transform:translateY(-10%);z-index:4;display:none;flex-direction:column;min-width:230px;padding:6px;border-radius:18px;background:rgba(20,26,34,.97);border:1px solid var(--line);box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  .addm.show{display:flex}
+  .addm button{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--ink);padding:11px 12px;border-radius:13px;text-align:left;font:inherit}
+  .addm button:active{background:var(--raised)} .addm span{font-size:24px} .addm b{display:block;font-size:15px} .addm small{color:var(--muted);font-size:12px}
   .fb .cnt{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:10px;background:var(--bad);color:#fff;font-size:11px;font-weight:800;display:none;place-items:center;padding:0 5px;border:2px solid var(--solid)}
   .fb .cnt.show{display:grid}
   body.mapfull #homeMap{height:100%}
@@ -166,11 +170,12 @@
     <div class="fbs">
       <button class="fb" id="fbChat" aria-label="Chat">💬<span class="cnt" id="chatNovas"></span></button>
       <button class="fb" id="fbAtiv" aria-label="Atividades">📋</button>
-      <button class="fb red" id="addBlitz" aria-label="Adicionar blitz">🚨</button>
-      <button class="fb" id="addRadar" aria-label="Adicionar radar">📷</button>
+      <button class="fb red" id="fbAdd" aria-label="Adicionar no mapa">🚨</button>
+      <button id="addBlitz" style="display:none"></button><button id="addRadar" style="display:none"></button>
       <button class="fb" id="fbCfg" aria-label="Configurações">⚙️</button>
     </div>
     <button id="mapFull" style="display:none"></button>
+    <div class="addm" id="addM"><button data-add="blitz"><span>🚨</span><div><b>Blitz</b><small>Some do mapa em até 2 horas</small></div></button><button data-add="radar"><span>📷</span><div><b>Radar</b><small>Fixo, de semáforo, lombada ou portátil</small></div></button><button data-add="farol"><span>🚦</span><div><b>Semáforo</b><small>Que ainda não está no mapa</small></div></button></div>
   </div>
 </div>
 
@@ -237,7 +242,7 @@
 <div id="rdlg"><div class="box">
   <h3 id="rT">Radar</h3>
   <div class="d" id="rLoc" style="margin-bottom:10px"></div>
-  <label class="fl">Tipo<select id="rTipo"><option value="fixo">Radar fixo</option><option value="semaforo">Radar de semáforo</option><option value="lombada">Lombada eletrônica</option><option value="portatil">Radar portátil (trecho)</option></select></label>
+  <label class="fl">Tipo<select id="rTipo"><option value="fixo">Radar fixo</option><option value="semaforo">Radar de semáforo</option><option value="lombada">Lombada eletrônica</option><option value="portatil">Radar portátil (trecho)</option><option value="farol">Semáforo (sem radar)</option></select></label>
   <label class="fl">Velocidade<select id="rVel"><option value="">Não informar</option><option>30</option><option>40</option><option>50</option><option selected>60</option><option>70</option><option>80</option><option>90</option><option>100</option><option>110</option></select></label>
   <label class="fl">Descrição (opcional)<input id="rDesc" maxlength="160" placeholder="Ex.: Av. Portugal, sentido centro"></label>
   <div class="bt" style="flex-wrap:wrap"><button class="btn" id="rMover">📍 Mover no mapa</button><button class="btn danger" id="rDel">Remover</button><button class="btn" id="rNo">Cancelar</button><button class="btn primary" id="rOk">Salvar</button></div>
@@ -388,6 +393,14 @@ document.querySelectorAll('[data-voltar]').forEach(b => b.onclick = fecharPags);
 $('#fbChat').onclick = () => abrirPag('pChat');
 $('#fbAtiv').onclick = () => abrirPag('pAtiv');
 $('#fbCfg').onclick = () => abrirPag('pAcc');
+$('#fbAdd').onclick = e => { e.stopPropagation(); $('#addM').classList.toggle('show'); };
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#addM, #fbAdd')) $('#addM').classList.remove('show'); }, true);
+$('#addM').addEventListener('click', e => {
+  const b = e.target.closest('[data-add]'); if (!b) return; $('#addM').classList.remove('show');
+  if (b.dataset.add === 'blitz') $('#addBlitz').onclick();
+  else if (b.dataset.add === 'radar') $('#addRadar').onclick();
+  else { pedirLocal({sub: 'farol'}); toast('Arraste o mapa até o 🚦 ficar no semáforo e toque em Marcar aqui'); }
+});
 const back = plug('App'); if (back) back.addListener('backButton', () => { if ($('#dlg').classList.contains('show')) return $('#dNo').click(); if ($('#rdlg').classList.contains('show')) return $('#rNo').click(); if (document.querySelector('.page.open:not(.home)')) return fecharPags(); back.exitApp(); });
 
 const hora = d => new Date(d).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'});
@@ -580,7 +593,7 @@ $('#blitzList').addEventListener('click', async e => {
 });
 // ---------- radares (adicionar, editar, mover, remover) ----------
 let radares = [], rAtual = null;
-const RAD_TIPO = {fixo: 'Radar fixo', semaforo: 'Radar de semáforo', lombada: 'Lombada eletrônica', portatil: 'Radar portátil (trecho)'};
+const RAD_TIPO = {fixo: 'Radar fixo', semaforo: 'Radar de semáforo', lombada: 'Lombada eletrônica', portatil: 'Radar portátil (trecho)', farol: 'Semáforo'};
 async function loadRadares(){
   const r = await sb.from('radares').select('*').order('criado_em', {ascending: false}).limit(1000);
   if (r.error){ $('#radarList').innerHTML = `<div class="empty">${/does not exist|schema cache|42P01/i.test(r.error.message + r.error.code) ? 'Rode o ativar-radares.sql para usar os radares.' : 'Não foi possível carregar.'}</div>`; return; }
@@ -591,9 +604,9 @@ function renderRadares(){
 }
 function abrirRadar(a, novo){
   rAtual = Object.assign({}, a); rAtual.novo = !!novo;
-  $('#rT').textContent = novo ? 'Novo radar' : 'Editar radar';
+  $('#rT').textContent = (novo ? 'Novo ' : 'Editar ') + (a.tipo === 'farol' ? 'semáforo' : 'radar');
   $('#rLoc').textContent = `📍 ${(+a.lat).toFixed(5)}, ${(+a.lon).toFixed(5)}${a.fonte && a.fonte !== 'painel' ? ' · fonte: ' + a.fonte : ''}`;
-  $('#rTipo').value = a.tipo || 'fixo'; $('#rVel').value = a.velocidade ? String(a.velocidade) : (novo ? '60' : '');
+  $('#rTipo').value = a.tipo || 'fixo'; $('#rVel').value = a.velocidade ? String(a.velocidade) : (novo && !a.semVel ? '60' : '');
   $('#rDesc').value = a.descricao || '';
   $('#rDel').style.display = novo ? 'none' : ''; $('#rMover').style.display = novo ? 'none' : '';
   $('#rdlg').classList.add('show');
@@ -633,7 +646,7 @@ addEventListener('message', async e => {
   if (d.radarLocal){
     const L = d.radarLocal;
     if (L.id){ const {error} = await sb.from('radares').update({lat: L.lat, lon: L.lon}).eq('id', L.id); toast(error ? 'Não foi possível mover' : '📍 Radar movido'); loadRadares(); }
-    else abrirRadar({lat: L.lat, lon: L.lon}, true);
+    else abrirRadar({lat: L.lat, lon: L.lon, tipo: L.sub === 'farol' ? 'farol' : 'fixo', velocidade: L.sub === 'farol' ? null : undefined, semVel: L.sub === 'farol'}, true);
   }
   if (d.radarAbrir){ const a = radares.find(x => x.id === d.radarAbrir); if (a) abrirRadar(a, false); }
 });

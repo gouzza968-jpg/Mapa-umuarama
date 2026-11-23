@@ -716,7 +716,7 @@
   <div class="bvn">🔒 Sem login, sem nome e sem telefone. Sua localização é compartilhada de forma anônima com os motoboys. Para trocar o apelido, toque na sua moto no mapa.</div>
 </div></div>
 <div id="aviso" class="glass"><div class="tx"><b>Aviso do administrador</b><span id="avisoT"></span></div><button id="avisoX" aria-label="Fechar aviso">×</button></div>
-<div id="addMenu" class="glass"><button id="amBlitz"><span>🚨</span><div><b>Reportar blitz</b><small>Some do mapa em até 2 horas</small></div></button><button id="amRadar"><span>📷</span><div><b>Adicionar radar</b><small>Radar fixo, de semáforo ou lombada</small></div></button></div>
+<div id="addMenu" class="glass"><button id="amBlitz"><span>🚨</span><div><b>Reportar blitz</b><small>Some do mapa em até 2 horas</small></div></button><button id="amRadar"><span>📷</span><div><b>Adicionar radar</b><small>Radar fixo, de semáforo ou lombada</small></div></button><button id="amFarol"><span>🚦</span><div><b>Adicionar semáforo</b><small>Semáforo que ainda não está no mapa</small></div></button></div>
 <div id="radarForm" role="dialog"><div class="rf glass">
   <h3>📷 Novo radar</h3>
   <div class="rfl">Tipo</div>
@@ -744,7 +744,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.30.0";
+const APP_VERSION = "2.31.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -2157,16 +2157,18 @@ setInterval(() => { if (prefs.share) liveSend(true); paintLive(); requestDraw();
 
 // ---------- radares (cadastrados pelo painel) ----------
 let radares = [], radCh = null;
-const RAD_TIPO = {fixo: 'Radar fixo', semaforo: 'Radar de semáforo', lombada: 'Lombada eletrônica', portatil: 'Radar portátil (trecho)'};
+const RAD_TIPO = {fixo: 'Radar fixo', semaforo: 'Radar de semáforo', lombada: 'Lombada eletrônica', portatil: 'Radar portátil (trecho)', farol: 'Semáforo'};
 function radaresNoMapa(){
   if (!GEO || !POICATS) return;
   let ci = POICATS.findIndex(c => c[0] === 'radar');
   if (ci < 0){ POICATS.push(['radar', 'Radares']); ci = POICATS.length - 1; }
+  let cs = POICATS.findIndex(c => c[0] === 'semaforo');
+  if (cs < 0){ POICATS.push(['semaforo', 'Semáforos']); cs = POICATS.length - 1; }
   for (let i = POIS.length - 1; i >= 0; i--) if (POIS[i][7] && POIS[i][7].radar) POIS.splice(i, 1);
   for (const r of radares){
     const m = mapOfLL(r.lat, r.lon); if (!m) continue;
     const nome = `${RAD_TIPO[r.tipo] || 'Radar'}${r.velocidade ? ' · ' + r.velocidade + ' km/h' : ''}`;
-    POIS.push([Math.round(m[0]), Math.round(m[1]), ci, nome, r.descricao || '', r.lat, r.lon, {radar: r.id}]);
+    POIS.push([Math.round(m[0]), Math.round(m[1]), r.tipo === 'farol' ? cs : ci, r.tipo === 'farol' ? 'Semáforo' : nome, r.descricao || '', r.lat, r.lon, {radar: r.id}]);
   }
   requestDraw(true);
 }
@@ -2266,11 +2268,11 @@ function startPick(info){
   if (EMBED || !window.supabase){ toast('Disponível no app Android'); return; }
   if (!GEO){ toast('Este mapa não tem localização. Escolha o Mapa Principal'); return; }
   pickInfo = info && info.tipo ? info : {tipo: 'blitz'};
-  const radar = pickInfo.tipo === 'radar';
-  $('#pickT').textContent = radar ? (pickInfo.id ? 'Novo local do radar' : 'Onde fica o radar?') : 'Onde está a blitz?';
-  $('#pickS').textContent = `Arraste o mapa ou toque no local até o ${radar ? '📷' : '🚨'} ficar em cima`;
+  const radar = pickInfo.tipo === 'radar', farol = pickInfo.sub === 'farol', ic = farol ? '🚦' : radar ? '📷' : '🚨';
+  $('#pickT').textContent = farol ? 'Onde fica o semáforo?' : radar ? (pickInfo.id ? 'Novo local do radar' : 'Onde fica o radar?') : 'Onde está a blitz?';
+  $('#pickS').textContent = `Arraste o mapa ou toque no local até o ${ic} ficar em cima`;
   $('#pickOk').textContent = radar ? (pickInfo.id ? 'Mover para cá' : 'Marcar aqui') : 'Reportar aqui';
-  $('#pickCross .pin').textContent = radar ? '📷' : '🚨';
+  $('#pickCross .pin').textContent = ic;
   showTab('map'); closePanels(); hideCard();
   picking = true; document.body.classList.add('picking');
   const ini = pickInfo.lat != null ? mapOfLL(pickInfo.lat, pickInfo.lon) : null;
@@ -2288,39 +2290,44 @@ $('#blitzBtn').onclick = e => {
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#addMenu, #blitzBtn')) $('#addMenu').classList.remove('show'); }, true);
 $('#amBlitz').onclick = () => { $('#addMenu').classList.remove('show'); startPick({tipo: 'blitz'}); };
 $('#amRadar').onclick = () => { $('#addMenu').classList.remove('show'); startPick({tipo: 'radar'}); };
+$('#amFarol').onclick = () => { $('#addMenu').classList.remove('show'); startPick({tipo: 'radar', sub: 'farol'}); };
 // formulário rápido do radar (motoboys)
 let rfLocal = null;
 document.querySelectorAll('.chipsel').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }));
 $('#rfNo').onclick = () => $('#radarForm').classList.remove('show');
-$('#rfOk').onclick = async () => {
-  if (!rfLocal) return;
+$('#rfOk').onclick = () => {
   const tipo = ($('#rfTipo .on') || {}).dataset ? $('#rfTipo .on').dataset.v : 'fixo';
   const v = $('#rfVel .on') ? $('#rfVel .on').dataset.v : '';
+  salvarRadar(tipo, v ? +v : null, $('#rfDesc').value.trim().slice(0, 160));
+};
+async function salvarRadar(tipo, vel, desc){
+  if (!rfLocal) return;
   $('#rfOk').disabled = true;
   try{
     await liveConnect();
     if (!sb || !(await ensureAuth())){ toast('Sem conexão com o servidor'); return; }
-    const {data, error} = await sb.from('radares').insert({lat: rfLocal.lat, lon: rfLocal.lon, tipo, velocidade: v ? +v : null, descricao: $('#rfDesc').value.trim().slice(0, 160), apelido: apelidoPub(), fonte: 'motoboy'}).select().single();
-    if (error){ toast(/row-level|policy/i.test(error.message) ? 'Limite de radares: espere um pouco' : /does not exist|schema cache|42P01/i.test(error.message + error.code) ? 'Radares ainda não ativados no servidor' : 'Não foi possível adicionar'); return; }
+    const {data, error} = await sb.from('radares').insert({lat: rfLocal.lat, lon: rfLocal.lon, tipo, velocidade: vel, descricao: desc, apelido: apelidoPub(), fonte: 'motoboy'}).select().single();
+    if (error){ toast(/check constraint|tipo_check/i.test(error.message) ? 'Semáforos ainda não ativados no servidor' : /row-level|policy/i.test(error.message) ? 'Limite atingido: espere um pouco' : /does not exist|schema cache|42P01/i.test(error.message + error.code) ? 'Radares ainda não ativados no servidor' : 'Não foi possível adicionar'); return; }
     if (data && !radares.some(r => r.id === data.id)){ radares.push(data); radaresNoMapa(); }
     $('#radarForm').classList.remove('show'); $('#rfDesc').value = '';
-    toast('📷 Radar adicionado! Todos os motoboys vão ver');
+    toast(tipo === 'farol' ? '🚦 Semáforo adicionado! Todos os motoboys vão ver' : '📷 Radar adicionado! Todos os motoboys vão ver');
   } finally { $('#rfOk').disabled = false; }
-};
+}
 $('#rRemover').onclick = async () => {
   const id = +$('#radarRow').dataset.id; if (!id || !sb) return;
   const {error} = await sb.from('radares').delete().eq('id', id);
   if (error){ toast('Não foi possível remover'); return; }
   radares = radares.filter(r => r.id !== id); radaresNoMapa(); hideCard(); toast('Radar removido');
 };
-if (ADMIN_VIEW) addEventListener('message', e => { const d = e.data || {}; if (d.blitz) startPick({tipo: 'blitz'}); if (d.pick === 'radar') startPick({tipo: 'radar', id: d.id, lat: d.lat, lon: d.lon}); if (d.verRadar){ const m = mapOfLL(d.verRadar.lat, d.verRadar.lon); if (m) focusOn(m[0], m[1], Math.max(view.k, 0.5)); } });
+if (ADMIN_VIEW) addEventListener('message', e => { const d = e.data || {}; if (d.blitz) startPick({tipo: 'blitz'}); if (d.pick === 'radar') startPick({tipo: 'radar', id: d.id, lat: d.lat, lon: d.lon, sub: d.sub || null}); if (d.verRadar){ const m = mapOfLL(d.verRadar.lat, d.verRadar.lon); if (m) focusOn(m[0], m[1], Math.max(view.k, 0.5)); } });
 $('#pickNo').onclick = endPick;
 $('#pickOk').onclick = async () => {
   const ll = llOf(view.x, view.y); if (!ll) return;
   if (pickInfo.tipo === 'radar'){
-    const L = {lat: +ll[0].toFixed(6), lon: +ll[1].toFixed(6), id: pickInfo.id || null};
+    const L = {lat: +ll[0].toFixed(6), lon: +ll[1].toFixed(6), id: pickInfo.id || null, sub: pickInfo.sub || null};
     endPick();
     if (ADMIN_VIEW){ try{ parent.postMessage({radarLocal: L}, '*'); }catch(e){} }
+    else if (L.sub === 'farol'){ rfLocal = L; salvarRadar('farol', null, ''); }
     else { rfLocal = L; $('#radarForm').classList.add('show'); }
     return;
   }

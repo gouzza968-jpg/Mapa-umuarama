@@ -13,6 +13,9 @@ create table if not exists public.radares (
 );
 alter table public.radares add column if not exists autor uuid default auth.uid();
 alter table public.radares add column if not exists apelido text not null default '' check (char_length(apelido) <= 20);
+-- tipos: radar fixo, radar de semáforo, lombada eletrônica, radar portátil e semáforo comum (farol)
+alter table public.radares drop constraint if exists radares_tipo_check;
+alter table public.radares add constraint radares_tipo_check check (tipo in ('fixo','semaforo','lombada','portatil','farol'));
 alter table public.radares enable row level security;
 
 drop policy if exists "ver radares" on public.radares;
