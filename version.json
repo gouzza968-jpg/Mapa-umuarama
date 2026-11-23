@@ -1,6 +1,14 @@
 {
-  "latest": "2.33.0",
+  "latest": "2.34.0",
   "versions": [
+    {
+      "version": "2.34.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Busca por CEP: digite o CEP e veja as ruas",
+        "CEP aparece no cartão do endereço, na cópia e na imagem"
+      ]
+    },
     {
       "version": "2.33.0",
       "date": "22/11/2026",

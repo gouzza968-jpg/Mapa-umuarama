@@ -203,15 +203,22 @@ def rua_de(nome_cnefe, x, y):
             if d < bd: bd, best = d, si
     return best, k
 add_num, sem_rua, novas_cnefe = 0, 0, {}
+cep_reg = []   # (si ou chave do nome, cep, número) — faixas de CEP por rua
+cache_rd = {}
 for r in rows:
     n = (r['NUM_ENDERECO'] or '').strip().lstrip('0')
-    if not n or r['NV_GEO_COORD'] not in ('1', '2'): continue    # só coordenadas do endereço ou da face da quadra
+    if r['NV_GEO_COORD'] not in ('1', '2', '3'): continue    # coordenadas do endereço, da face ou da quadra
     try: lat, lon = float(r['LATITUDE']), float(r['LONGITUDE'])
     except ValueError: continue
     x, y = to_map(lat, lon)
     if not inside(x, y): continue
     nome = ' '.join(v for v in (r['NOM_TIPO_SEGLOGR'], r['NOM_TITULO_SEGLOGR'], r['NOM_SEGLOGR']) if v).strip()
-    si, k = rua_de(nome, x, y)
+    ck = (nome, int(x // 300), int(y // 300))
+    if ck not in cache_rd: cache_rd[ck] = rua_de(nome, x, y)
+    si, k = cache_rd[ck]
+    cep = re.sub(r'\D', '', r.get('CEP') or '')
+    if len(cep) == 8: cep_reg.append((si if si is not None else k, cep, int(n) if n.isdigit() else None))
+    if not n or not n.isdigit() and not n[:1].isdigit() or r['NV_GEO_COORD'] == '3': continue
     if (k, n) in ja: continue
     if num_perto(x, y, 60): ja.add((k, n)); continue        # o Mapa 1 já tem um número aqui
     ja.add((k, n))
@@ -224,6 +231,21 @@ for r in rows:
         streets[si][1].append(idx)
     streets[si][2].append(idx); add_num += 1
 print('IBGE CNEFE: números acrescentados', add_num, '| ruas só do IBGE', sem_rua)
+ceps = collections.defaultdict(dict)
+for alvo, cep, n in cep_reg:
+    si = alvo if isinstance(alvo, int) else novas_cnefe.get(alvo)
+    if si is None: continue
+    f = ceps[si].setdefault(cep, [cep, None, None, 0])
+    f[3] += 1
+    if n is not None:
+        f[1] = n if f[1] is None else min(f[1], n); f[2] = n if f[2] is None else max(f[2], n)
+CEPS = {}
+for si, d in ceps.items():
+    fs = sorted(d.values(), key=lambda f: (f[1] is None, f[1] or 0))
+    tot = sum(f[3] for f in fs)
+    fs = [f for f in fs if f[3] >= 2 or f[3] / tot > .2] or fs   # descarta CEP isolado (erro de cadastro)
+    CEPS[str(si)] = [[f[0], f[1] or 0, f[2] or 0] for f in fs]
+print('CEP: ruas com CEP', len(CEPS), '| CEPs distintos', len({f[0] for v in CEPS.values() for f in v}))
 
 # ---------- 3) comércios e estabelecimentos ----------
 cats = [c for c, _ in D['poicats']]
@@ -285,6 +307,7 @@ meta['lines'] = lines
 D['geo'] = base64.b64encode(gzip.compress(bytes(nb), 9)).decode()
 D['txt'] = base64.b64encode(gzip.compress(json.dumps(texts, ensure_ascii=False, separators=(',', ':')).encode(), 9)).decode()
 D['streets'] = base64.b64encode(gzip.compress(json.dumps(streets, ensure_ascii=False, separators=(',', ':')).encode(), 9)).decode()
+D['ceps'] = base64.b64encode(gzip.compress(json.dumps(CEPS, separators=(',', ':')).encode(), 9)).decode()
 D['fontes'] = ['Prefeitura de Umuarama (Mapa 1)', 'OpenStreetMap', 'IBGE CNEFE 2022', 'Overture Maps']
 json.dump(D, open(out_path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 print('ruas no total:', len({key(s[0]) for s in streets if not (len(s) > 3 and s[3])}), '| arquivo', os.path.getsize(out_path) // 1024, 'KB')

@@ -757,7 +757,7 @@
 </div></div>
 
 <script>
-const APP_VERSION = "2.33.0";
+const APP_VERSION = "2.34.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -874,7 +874,7 @@ const isOnline = () => !!(MAP && MAP.online);
 // ---------- motor do mapa ----------
 let MAP = null; // dados do mapa atual
 let POIS = [], POICATS = [], GEO = null;
-let META, W, H, S, TC, TI, LC, all, pCat, pOff, pN, pBox, NP, GX, GY, gridP, gridT, stampP, texts, streets, sIdx, places, OV = null;
+let META, W, H, S, TC, TI, LC, all, pCat, pOff, pN, pBox, NP, GX, GY, gridP, gridT, stampP, texts, streets, sIdx, places, OV = null, CEPS = {}, cepIdx = new Map();
 let stamp = 0;
 const CELL = 2500;
 
@@ -919,6 +919,9 @@ async function buildMap(DATA){
   texts.forEach((t,i) => { const cx=Math.min(GX-1,Math.max(0,Math.floor(t[0]/CELL))), cy=Math.min(GY-1,Math.max(0,Math.floor(t[1]/CELL))); gridT[cy*GX+cx].push(i); });
   // índice de busca
   sIdx = streets.map(([name, labs, nums, alias], si) => ({si, name, labs, nums, alias: !!alias, key: strip(name), words: strip(name).split(' ')}));
+  CEPS = {}; cepIdx = new Map();
+  try{ if (DATA.ceps) CEPS = JSON.parse(new TextDecoder().decode(await gunzip(DATA.ceps))); }catch(e){}
+  for (const [si, fs] of Object.entries(CEPS)) for (const f of fs){ if (!cepIdx.has(f[0])) cepIdx.set(f[0], []); cepIdx.get(f[0]).push(+si); }
   places = [];
   const seen = new Map();
   texts.forEach((t,i) => {
@@ -1688,8 +1691,33 @@ function parseQuery(q){
   const qt = base.split(' ').filter(w => w && !STOP.has(w));
   return {base, num, qt: qt.length ? qt : base.split(' ').filter(Boolean), raw:s};
 }
+const fmtCep = c => c.slice(0, 5) + '-' + c.slice(5);
+function cepDe(list, num){
+  const fs = []; for (const st of list) for (const f of (CEPS[st.si] || [])) fs.push(f);
+  if (!fs.length) return null;
+  const n = parseInt(num, 10);
+  if (!isNaN(n)){
+    const den = fs.filter(f => f[2] && n >= f[1] && n <= f[2]);
+    if (den.length) return den.sort((a, b) => (a[2] - a[1]) - (b[2] - b[1]))[0][0];
+    let best = null, bd = 1e9; for (const f of fs){ if (!f[2]) continue; const d = n < f[1] ? f[1] - n : n - f[2]; if (d < bd){ bd = d; best = f[0]; } }
+    if (best && bd < 400) return best;
+  }
+  const u = [...new Set(fs.map(f => f[0]))];
+  return u.length === 1 ? u[0] : null;
+}
+function cepsTxt(list){ const u = [...new Set(list.flatMap(st => (CEPS[st.si] || []).map(f => f[0])))]; return u.length ? 'CEP ' + u.slice(0, 2).map(fmtCep).join(', ') + (u.length > 2 ? ` e +${u.length - 2}` : '') : ''; }
+function buscaCep(q){
+  const d = q.replace(/\D/g, ''); if (!/^\s*\d{5}-?\d{0,3}\s*$/.test(q) || d.length < 5) return null;
+  const out = [], seen = new Set();
+  for (const [cep, sis] of cepIdx){ if (!cep.startsWith(d)) continue;
+    for (const si of sis){ const st = sIdx[si]; if (!st || seen.has(si)) continue; seen.add(si);
+      const f = CEPS[si].find(f => f[0] === cep); out.push({kind: 'rua', sc: d.length === 8 ? 10 : 5, st, cepQ: cep, cepF: f}); } }
+  out.sort((a, b) => b.sc - a.sc || b.st.nums.length - a.st.nums.length);
+  return out.slice(0, 60);
+}
 function search(q){
   const P = parseQuery(q); const out = [];
+  const pc = buscaCep(q); if (pc) return {P: Object.assign(P, {num: null}), out: pc};
   if (!P.qt.length) return {P, out};
   for (const st of sIdx){ const sc = matchScore(st.words, P.qt); if (sc>=0) out.push({kind:'rua', sc: sc + Math.min(st.nums.length,50)/100, st}); }
   for (const pl of places){ const sc = matchScore(pl.words, P.qt); if (sc>=0) out.push({kind:pl.type, sc: sc-(pl.type==='poi'?0.3:0.5), pl}); }
@@ -1803,7 +1831,7 @@ let lastResults = [];
 function renderRecent(){
   $('#chips').style.display = 'none';
   const rec = prefs.recent || [];
-  if (!rec.length){ resEl.innerHTML = '<div class="empty">Digite o nome da rua e o número.<br>Ex.: <b>ney braga 1520</b> · <b>sakai 4580</b> · <b>jardim social</b></div>'; resEl.classList.add('open'); return; }
+  if (!rec.length){ resEl.innerHTML = '<div class="empty">Digite o nome da rua e o número, ou o CEP.<br>Ex.: <b>ney braga 1520</b> · <b>sakai 4580</b> · <b>87502-000</b></div>'; resEl.classList.add('open'); return; }
   resEl.innerHTML = `<div class="rh">Recentes <button id="rclr">Limpar</button></div>` + rec.map((r,i) => `<div class="res" data-r="${i}"><div class="ri">${IC.clock}</div><div><div class="t">${esc(r)}</div></div></div>`).join('');
   resEl.classList.add('open');
   $('#rclr').onclick = e => { e.stopPropagation(); prefs.recent = []; savePrefs(); renderRecent(); paintRecent(); };
@@ -1814,7 +1842,7 @@ function renderResults(){
   $('#chips').style.display = document.activeElement === qEl ? 'none' : '';
   if (q.length < 2){ if (document.activeElement === qEl) renderRecent(); else resEl.classList.remove('open'); return; }
   const {P, out: atuais} = search(q);
-  const outros = buscarOutros(P, atuais);
+  const outros = atuais.length && atuais[0].cepQ ? [] : buscarOutros(P, atuais);
   const topoExato = atuais[0] && atuais[0].st && P.num ? (() => { const a = resolveAddress([atuais[0].st].concat(atuais[0].more||[]), P.num); return a && a.exact; })() : true;
   const out = (!atuais.length || (P.num && !topoExato)) ? outros.concat(atuais) : atuais.concat(outros);
   lastResults = out;
@@ -1825,6 +1853,7 @@ function renderResults(){
       const {cx, cy} = streetCenter(r.st); const b = nearestBairro(cx, cy);
       const isAddr = P.num && !r.exactName;
       const title = isAddr ? `${esc(r.st.name)}, <span style="color:var(--accent)">${esc(P.num)}</span>` : esc(r.st.name);
+      if (r.cepQ){ const f = r.cepF; return `<div class="res" data-i="${idx}"><div class="ri rua">${IC.rua}</div><div><div class="t">${esc(r.st.name)}</div><div class="s"><b style="color:var(--accent)">CEP ${fmtCep(r.cepQ)}</b>${f && f[2] ? ` · nº ${f[1]} a ${f[2]}` : ''}${b? ' · '+esc(b):''}</div></div></div>`; }
       return `<div class="res" data-i="${idx}"><div class="ri ${isAddr?'end':'rua'}">${isAddr?IC.end:IC.rua}</div><div><div class="t">${title}</div><div class="s">${r.st.alias ? 'nome usado em outros mapas · ' : ''}${b? esc(b)+' · ':''}${nn ? nn+' números' : 'sem numeração'}</div></div></div>`;
     }
     if (r.kind === 'outro'){
@@ -1869,7 +1898,8 @@ function showStreet(sc, num){
       const go = () => focusOn(t[0], t[1], 0.8); go();
       const b = nearestBairro(t[0], t[1]);
       nextTarget = {label: `${gname}, ${t[7]}`, x: t[0], y: t[1]};
-      showCard('end', `${esc(name)}, ${esc(t[7])}`, `${b? esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - ${cityName()}`, `${gname}, ${t[7]} - ${cityName()}`, go, {num: t[7]});
+      const cp = cepDe(list, t[7]), cpT = cp ? ` - CEP ${fmtCep(cp)}` : '';
+      showCard('end', `${esc(name)}, ${esc(t[7])}`, `${cp ? `<b>CEP ${fmtCep(cp)}</b> · ` : ''}${b? esc(b)+' · ':''}Número encontrado no mapa`, `${gname}, ${t[7]} - ${cityName()}`, `${gname}, ${t[7]} - ${cityName()}${cpT}`, go, {num: t[7]});
       requestDraw(true); return;
     }
   }
@@ -1880,8 +1910,9 @@ function showStreet(sc, num){
   const b = nearestBairro(x0/2+x1/2, y0/2+y1/2);
   { let bi = null, bd = 1e18; for (const i of labs){ const t = texts[i], d = (t[0]-(x0+x1)/2)**2 + (t[1]-(y0+y1)/2)**2; if (d < bd){ bd = d; bi = t; } }
     if (bi) nextTarget = {label: num ? `${gname}, ${num}` : gname, x: bi[0], y: bi[1]}; }
-  if (num) showCard('rua', `${esc(name)}, ${esc(num)}`, `O número <b>${esc(num)}</b> não está no mapa — rua inteira destacada.<br>${faixa}${b? ' · '+esc(b):''}`, `${gname}, ${num} - ${cityName()}`, `${gname}, ${num} - ${cityName()}`, go, {num});
-  else showCard('rua', esc(name), `${faixa}${b? ' · '+esc(b):''}`, `${gname} - ${cityName()}`, `${gname} - ${cityName()}`, go, {num: ''});
+  const cpN = num ? cepDe(list, num) : null, cpAll = sc.cep ? 'CEP ' + fmtCep(sc.cep) : cepsTxt(list);
+  if (num) showCard('rua', `${esc(name)}, ${esc(num)}`, `${cpN ? `<b>CEP ${fmtCep(cpN)}</b> · ` : ''}O número <b>${esc(num)}</b> não está no mapa — rua inteira destacada.<br>${faixa}${b? ' · '+esc(b):''}`, `${gname}, ${num} - ${cityName()}`, `${gname}, ${num} - ${cityName()}${cpN ? ' - CEP ' + fmtCep(cpN) : ''}`, go, {num});
+  else showCard('rua', esc(name), `${cpAll ? `<b>${cpAll}</b><br>` : ''}${faixa}${b? ' · '+esc(b):''}`, `${gname} - ${cityName()}`, `${gname} - ${cityName()}`, go, {num: ''});
   requestDraw(true);
 }
 $('#numrow').addEventListener('submit', e => {
@@ -1949,7 +1980,7 @@ function choose(idx){
   resEl.classList.remove('open'); qEl.blur();
   if (r.st){
     const list = [r.st].concat(r.more||[]);
-    showStreet({list, name: r.st.name, labs: new Set(list.flatMap(x=>x.labs)), nums: new Set(list.flatMap(x=>x.nums)), gname: cleanStreetName(r.st.name)}, (P.num && !r.exactName) ? P.num : '');
+    showStreet({list, name: r.st.name, labs: new Set(list.flatMap(x=>x.labs)), nums: new Set(list.flatMap(x=>x.nums)), gname: cleanStreetName(r.st.name), cep: r.cepQ}, (P.num && !r.exactName) ? P.num : '');
     return;
   }
   const pl = r.pl;
