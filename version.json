@@ -1,6 +1,14 @@
 {
-  "latest": "2.31.0",
+  "latest": "2.32.0",
   "versions": [
+    {
+      "version": "2.32.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Visual novo: botões redondos com ícones, cartão do endereço e busca mais bonitos",
+        "Nada fica por cima da barra de pesquisa quando um endereço está aberto"
+      ]
+    },
     {
       "version": "2.31.0",
       "date": "22/11/2026",
