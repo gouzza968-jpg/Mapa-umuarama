@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b0f14">
 <link rel="icon" href="data:,">
-<title>Mapa Umuarama</title>
+<title>Motoboys Umucity</title>
 <script src="vendor/supabase.js"></script>
 <style>
   :root{
@@ -425,6 +425,12 @@
   #boasVindas .btn{padding:14px;font-size:15.5px;border-radius:16px}
   #boasVindas .bvsw{display:none;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:16px;background:var(--solid);border:1px solid var(--line);cursor:pointer}
   #boasVindas.editar .bvsw{display:flex}
+  .bvico,.bvcor{display:none;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 10px}
+  #boasVindas.editar .bvico, #boasVindas.editar .bvcor{display:flex}
+  .bvico button{width:46px;height:46px;border-radius:50%;border:2px solid transparent;background:var(--solid);font-size:22px;display:grid;place-items:center}
+  .bvico button.on{border-color:var(--accent);background:var(--accent-soft)}
+  .bvcor button{width:30px;height:30px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+  .bvcor button.on{border-color:#fff}
   #boasVindas .bvsw > span:first-child{flex:1} #boasVindas .bvsw b{display:block;font-size:14.5px} #boasVindas .bvsw small{color:var(--muted);font-size:12.5px}
   #boasVindas .bvn{font-size:12.5px;color:var(--muted);line-height:1.45} #aviso .tx{flex:1;font-size:14px;line-height:1.4;white-space:pre-wrap} #aviso .tx b{display:block;font-size:12px;color:var(--accent,#ff6a1f);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
   #aviso button{border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1;padding:0 2px}
@@ -611,7 +617,7 @@
   <div class="sec">
     <div class="hero">
       <div class="appic"><svg width="34" height="34" viewBox="0 0 24 24"><path fill="#ff6a1f" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.8" fill="#0e1217"/></svg></div>
-      <div class="grow"><div style="font-weight:800;font-size:17px">Mapa Umuarama</div><div style="color:var(--muted);font-size:13px;margin-top:2px">Versão <b id="vcur2"></b></div></div>
+      <div class="grow"><div style="font-weight:800;font-size:17px">Motoboys Umucity</div><div style="color:var(--muted);font-size:13px;margin-top:2px">Versão <b id="vcur2"></b></div></div>
     </div>
     <div class="upd" id="updbox">
       <div class="ic" id="updic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>
@@ -711,9 +717,11 @@
 
 <div id="boasVindas" aria-modal="true" role="dialog"><div class="bv glass">
   <div class="bvi">🏍️</div>
-  <h2>Bem-vindo ao Mapa Umuarama</h2>
+  <h2>Bem-vindo ao Motoboys Umucity</h2>
   <p>Como os outros motoboys vão te ver no mapa e no chat?</p>
   <input id="bvNick" maxlength="20" placeholder="Seu apelido (opcional)" autocomplete="off" enterkeyhint="done">
+  <div class="bvico" id="bvIco"></div>
+  <div class="bvcor" id="bvCor"></div>
   <button class="btn primary" id="bvOk">Continuar</button>
   <button class="btn" id="bvAnon">Prefiro ficar anônimo</button>
   <label class="bvsw" id="bvShareRow"><span><b>Aparecer para os outros motoboys</b><small id="bvShareD">Sua moto aparece no mapa deles</small></span><span class="switch"><input type="checkbox" id="bvShare"><span></span></span></label>
@@ -745,11 +753,11 @@
 </div>
 <div id="loading"><div>
   <svg class="logo" viewBox="0 0 24 24"><path fill="#ff6a1f" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.8" fill="var(--bg)"/></svg>
-  <div class="b" id="lttl">Mapa Umuarama</div><div class="m" id="lmsg">Carregando…</div><div class="lbar"><i></i></div>
+  <div class="b" id="lttl">Motoboys Umucity</div><div class="m" id="lmsg">Carregando…</div><div class="lbar"><i></i></div>
 </div></div>
 
 <script>
-const APP_VERSION = "2.32.1";
+const APP_VERSION = "2.33.0";
 const EMBED = null;          // mapa embutido (versão de arquivo único)
 const CHANGELOG_EMBED = null;
 (async function(){
@@ -1281,22 +1289,27 @@ function mapOfLL(lat, lon){
   return [(dl*b2 - a2*dn)/det, (a1*dn - b1*dl)/det];
 }
 function pill(ctx, x, y, w, h, r){ ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
-function drawMoto(sx, sy, label, mine, head){
-  const cor1 = mine ? '#ff8a3d' : '#a78bfa', cor2 = mine ? '#f25500' : '#6d28d9', R = mine ? 19 : 16;
+const ICONES = ['🏍️','🛵','🚲','🚗','📦','🍕','🍔','💊','⚡','⭐','🔥','😎'];
+const CORES_MOTO = {laranja:['#ff8a3d','#f25500'], roxo:['#a78bfa','#6d28d9'], azul:['#60a5fa','#1d4ed8'], verde:['#4ade80','#15803d'], vermelho:['#f87171','#b91c1c'], rosa:['#f472b6','#be185d'], amarelo:['#fde047','#ca8a04'], ciano:['#22d3ee','#0e7490'], preto:['#6b7280','#111827']};
+const icoOk = i => ICONES.includes(i) ? i : '🏍️';
+const corPar = (c, mine) => CORES_MOTO[c] || (mine ? CORES_MOTO.laranja : CORES_MOTO.roxo);
+const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+function drawMoto(sx, sy, label, mine, head, ico, corNome){
+  const [cor1, cor2] = corPar(corNome, mine), R = mine ? 19 : 16;
   ctx.setTransform(dpr,0,0,dpr,sx*dpr,sy*dpr);
   const temDir = head != null && !isNaN(head), ang = temDir ? head * Math.PI/180 + view.r : 0;
   // facho de direção (como lanterna)
   if (temDir){
     ctx.save(); ctx.rotate(ang);
     const L = mine ? 70 : 46, g = ctx.createRadialGradient(0, 0, R * 0.6, 0, 0, L);
-    g.addColorStop(0, mine ? 'rgba(255,106,31,.55)' : 'rgba(124,58,237,.45)'); g.addColorStop(1, 'rgba(255,106,31,0)');
+    g.addColorStop(0, hexA(cor2, mine ? .55 : .45)); g.addColorStop(1, hexA(cor2, 0));
     ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, L, -Math.PI/2 - 0.55, -Math.PI/2 + 0.55); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
   // pulso suave
   if (mine){
     const t = (performance.now() % 2200) / 2200;
-    ctx.fillStyle = `rgba(255,106,31,${0.28 * (1 - t)})`; ctx.beginPath(); ctx.arc(0, 0, R + 4 + 16 * t, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = hexA(cor2, 0.28 * (1 - t)); ctx.beginPath(); ctx.arc(0, 0, R + 4 + 16 * t, 0, Math.PI*2); ctx.fill();
   }
   // corpo
   ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 2;
@@ -1305,7 +1318,7 @@ function drawMoto(sx, sy, label, mine, head){
   const gb = ctx.createLinearGradient(0, -R, 0, R); gb.addColorStop(0, cor1); gb.addColorStop(1, cor2);
   ctx.fillStyle = gb; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.beginPath(); ctx.ellipse(0, -R * 0.55, R * 0.55, R * 0.25, 0, 0, Math.PI*2); ctx.fill();
-  ctx.font = `${mine ? 20 : 17}px system-ui,"Noto Color Emoji",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText('🏍️', 0, 1.5);
+  ctx.font = `${mine ? 20 : 17}px system-ui,"Noto Color Emoji",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(icoOk(ico), 0, 1.5);
   // seta na borda apontando a direção
   if (temDir){
     ctx.save(); ctx.rotate(ang); ctx.translate(0, -(R + 3.5));
@@ -1318,7 +1331,7 @@ function drawMoto(sx, sy, label, mine, head){
   if (label){
     ctx.font = '800 11.5px system-ui,Roboto,sans-serif';
     const w = Math.min(150, ctx.measureText(label).width + 14), y = R + 9;
-    ctx.fillStyle = mine ? 'rgba(242,85,0,.95)' : 'rgba(91,33,182,.95)'; ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 6;
+    ctx.fillStyle = hexA(cor2, .95); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 6;
     pill(ctx, -w/2, y, w, 20, 10); ctx.fill(); ctx.shadowBlur = 0;
     ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(label, 0, y + 10.5, w - 10);
   }
@@ -1335,7 +1348,7 @@ function drawMe(){
     ctx.fillStyle = 'rgba(255,106,31,.10)'; ctx.strokeStyle = 'rgba(255,106,31,.45)'; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.arc(0, 0, acc, 0, Math.PI*2); ctx.fill(); ctx.stroke();
   }
-  drawMoto(sx, sy, 'Você', true, me.head);
+  drawMoto(sx, sy, 'Você', true, me.head, prefs.icone, prefs.cor);
   ctx.restore();
   // mantém o pulso animado enquanto a localização estiver ligada e o app visível
   if (locWatch && !document.hidden && !meAnim){ clearTimeout(drawMe.tm); drawMe.tm = setTimeout(() => { pulsoDraw = true; requestDraw(); }, 60); }
@@ -1981,7 +1994,7 @@ function mergeLive(){
   for (const [id, o] of posOthers){ if (id === liveId || id === sbUid) continue; const p = m.get(id); if (!p || (o.t || 0) > (p.t || 0) + 5000) m.set(id, o); }
   liveOthers = [...m.values()]; paintLive(); requestDraw(true);
 }
-const posRow = r => ({id: r.uid, apelido: r.apelido, lat: r.lat, lon: r.lon, head: r.head, t: Date.parse(r.atualizado_em), bg: true});
+const posRow = r => ({id: r.uid, apelido: r.apelido, lat: r.lat, lon: r.lon, head: r.head, t: Date.parse(r.atualizado_em), bg: true, icone: r.icone, cor: r.cor});
 let posCh = null;
 async function posLoad(){
   if (!sb) return;
@@ -2015,14 +2028,16 @@ async function posSend(force){
   const now = Date.now(), gap = document.hidden ? 10000 : 20000;
   if (!force && posLast && now - posLast.t < gap && Math.hypot((me.lat-posLast.lat)*111000, (me.lon-posLast.lon)*102000) < 25) return;
   posLast = {t: now, lat: me.lat, lon: me.lon};
-  const body = {uid: sbUid, apelido: apelidoPub(), lat: +me.lat.toFixed(6), lon: +me.lon.toFixed(6), head: me.head == null || isNaN(me.head) ? null : me.head, atualizado_em: new Date().toISOString()};
+  const body = {uid: sbUid, apelido: apelidoPub(), ...(prefs.semColIcone ? {} : {icone: icoOk(prefs.icone), cor: prefs.cor || 'laranja'}), lat: +me.lat.toFixed(6), lon: +me.lon.toFixed(6), head: me.head == null || isNaN(me.head) ? null : me.head, atualizado_em: new Date().toISOString()};
   const tk = await tokenAtual(); if (!tk) return;
   const url = SB_URL + '/rest/v1/posicoes?on_conflict=uid';
   const headers = {apikey: SB_KEY, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal'};
   try{
     const Hh = NATIVE && plug('CapacitorHttp');
-    if (Hh) await Hh.request({url, method: 'POST', headers, data: body, connectTimeout: 15000, readTimeout: 15000});
-    else await fetch(url, {method: 'POST', headers, body: JSON.stringify(body)});
+    let st = 0;
+    if (Hh){ const r = await Hh.request({url, method: 'POST', headers, data: body, connectTimeout: 15000, readTimeout: 15000}); st = r.status; }
+    else { const r = await fetch(url, {method: 'POST', headers, body: JSON.stringify(body)}); st = r.status; }
+    if (st === 400 && !prefs.semColIcone && body.icone){ prefs.semColIcone = 1; savePrefs(); posLast = null; }   // servidor sem as colunas de ícone: manda sem elas
   }catch(e){}
 }
 async function posApagar(){ posLast = null; try{ if (sb && sbUid) await sb.from('posicoes').delete().eq('uid', sbUid); }catch(e){} }
@@ -2034,7 +2049,7 @@ async function startBg(){
   if (bgWatch || !BG() || !prefs.share || prefs.bgShare === false) return;
   try{ const LN = plug('LocalNotifications'); if (LN) await LN.requestPermissions().catch(() => {}); }catch(e){}
   try{
-    bgWatch = await BG().addWatcher({backgroundTitle: 'Mapa Umuarama', backgroundMessage: 'Compartilhando sua localização com os motoboys', requestPermissions: true, stale: false, distanceFilter: 15}, (loc, err) => {
+    bgWatch = await BG().addWatcher({backgroundTitle: 'Motoboys Umucity', backgroundMessage: 'Compartilhando sua localização com os motoboys', requestPermissions: true, stale: false, distanceFilter: 15}, (loc, err) => {
       if (err){ if (err.code === 'NOT_AUTHORIZED') toast('Permita a localização para compartilhar em segundo plano', () => BG().openSettings(), 'Abrir'); return; }
       if (!loc) return;
       if (document.hidden){ const prev = me; me = {lat: loc.latitude, lon: loc.longitude, acc: loc.accuracy, head: (loc.speed && loc.speed > 0.8 && loc.bearing != null) ? loc.bearing : (prev ? prev.head : null)}; liveSend(false); }
@@ -2049,7 +2064,7 @@ async function liveSend(force){
   const now = Date.now();
   if (!force && lastSent && now - lastSent.t < 5000 && Math.hypot((me.lat-lastSent.lat)*111000, (me.lon-lastSent.lon)*102000) < 15) return;
   lastSent = {t: now, lat: me.lat, lon: me.lon};
-  try{ await liveCh.track({apelido: apelidoPub(), lat: +me.lat.toFixed(6), lon: +me.lon.toFixed(6), head: me.head, t: now}); }catch(e){}
+  try{ await liveCh.track({apelido: apelidoPub(), lat: +me.lat.toFixed(6), lon: +me.lon.toFixed(6), head: me.head, t: now, icone: icoOk(prefs.icone), cor: prefs.cor || 'laranja'}); }catch(e){}
 }
 function paintLive(){
   try{ paintChatSub(); }catch(e){}
@@ -2068,7 +2083,7 @@ function drawLive(){
     if (Date.now() - (o.t||0) > 180000) continue;
     const m = mapOfLL(o.lat, o.lon); if (!m) continue;
     const [sx, sy] = toScreen(m[0], m[1]); if (sx < -40 || sx > VW+40 || sy < -40 || sy > VH+40) continue;
-    drawMoto(sx, sy, o.apelido || '', false, o.head);
+    drawMoto(sx, sy, o.apelido || '', false, o.head, o.icone, o.cor);
     liveHits.push([sx, sy, o]);
   }
   ctx.restore();
@@ -2089,7 +2104,7 @@ function abrirOnline(){
   if (ADMIN_VIEW){ fitMotos(); return; }
   const lst = onlineAgora().map(o => Object.assign({d: me ? distLL(me, o) : null}, o)).sort((a, b) => (a.d ?? 1e12) - (b.d ?? 1e12));
   $('#onTit').textContent = lst.length ? `${lst.length} motoboy${lst.length > 1 ? 's' : ''} online` : 'Motoboys online';
-  $('#onList').innerHTML = lst.length ? lst.map(o => `<div class="onl" data-id="${esc(o.id)}"><div class="oav">🏍️<i></i></div><div class="ot"><b>${esc(o.apelido || 'Motoboy')}</b><span>${o.bg ? 'app minimizado · ' : ''}visto há ${Math.max(1, Math.round((Date.now() - o.t)/1000))} s</span></div>${o.d != null ? `<div class="od">${o.d < 1000 ? Math.round(o.d) + ' m' : (o.d/1000).toFixed(1).replace('.', ',') + ' km'}</div>` : ''}</div>`).join('') : '<div class="chatnote" style="padding:22px 6px">Nenhum outro motoboy online agora.<br>Quando alguém abrir o app, aparece aqui e no mapa. 🏍️</div>';
+  $('#onList').innerHTML = lst.length ? lst.map(o => `<div class="onl" data-id="${esc(o.id)}"><div class="oav" style="background:linear-gradient(135deg,${corPar(o.cor)[0]},${corPar(o.cor)[1]})">${icoOk(o.icone)}<i></i></div><div class="ot"><b>${esc(o.apelido || 'Motoboy')}</b><span>${o.bg ? 'app minimizado · ' : ''}visto há ${Math.max(1, Math.round((Date.now() - o.t)/1000))} s</span></div>${o.d != null ? `<div class="od">${o.d < 1000 ? Math.round(o.d) + ' m' : (o.d/1000).toFixed(1).replace('.', ',') + ' km'}</div>` : ''}</div>`).join('') : '<div class="chatnote" style="padding:22px 6px">Nenhum outro motoboy online agora.<br>Quando alguém abrir o app, aparece aqui e no mapa. 🏍️</div>';
   $('#onTodos').style.display = lst.length ? '' : 'none';
   if (!prefs.showLive){ prefs.showLive = true; savePrefs(); paintLive(); requestDraw(true); }
   openSheet('#onSheet');
@@ -3217,7 +3232,7 @@ async function capturarEndereco(){
   g.fillStyle = '#b6c0cc'; g.font = `500 ${14.5*d}px system-ui,Roboto,sans-serif`;
   for (const l of l2){ g.fillText(l, pad + 20*d, yy - 4*d); yy += 20 * d; }
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `700 ${11.5*d}px system-ui,Roboto,sans-serif`; g.textAlign = 'right';
-  g.fillText('🏍️ Mapa Umuarama', pad + w - 14*d, y + h - 12*d); g.textAlign = 'left';
+  g.fillText('🏍️ Motoboys Umucity', pad + w - 14*d, y + h - 12*d); g.textAlign = 'left';
   const b64 = out.toDataURL('image/jpeg', 0.9).split(',')[1];
   const U = NATIVE && plug('AppUpdate');
   try{
@@ -3229,12 +3244,12 @@ $('#snapImg').onclick = capturarEndereco;
 
 // ---------- compartilhar o app ----------
 const LINK_APK = 'https://github.com/gouzza968-jpg/Mapa-umuarama/releases/latest/download/mapa-umuarama.apk';
-const TXT_APP = `🏍️ Mapa Umuarama: o mapa dos motoboys de Umuarama, com busca por número, rotas, blitz e chat.\nBaixe a versão mais nova (Android): ${LINK_APK}`;
+const TXT_APP = `🏍️ Motoboys Umucity: o mapa dos motoboys de Umuarama, com busca por número, rotas, blitz e chat.\nBaixe a versão mais nova (Android): ${LINK_APK}`;
 $('#shLink').onclick = async () => {
   const U = NATIVE && plug('AppUpdate');
   try{
-    if (U && U.shareText) await U.shareText({text: TXT_APP, title: 'Compartilhar o Mapa Umuarama'});
-    else if (navigator.share) await navigator.share({title: 'Mapa Umuarama', text: TXT_APP});
+    if (U && U.shareText) await U.shareText({text: TXT_APP, title: 'Compartilhar o Motoboys Umucity'});
+    else if (navigator.share) await navigator.share({title: 'Motoboys Umucity', text: TXT_APP});
     else { await navigator.clipboard.writeText(TXT_APP); toast('Link copiado'); }
   }catch(e){ try{ await navigator.clipboard.writeText(TXT_APP); toast('Link copiado'); }catch(_){ toast('Não foi possível compartilhar'); } }
 };
@@ -3243,7 +3258,7 @@ $('#shareBtn').onclick = async () => {
   const U = NATIVE && plug('AppUpdate');
   if (!U || !U.shareApk){ toast('Disponível no app Android'); return; }
   $('#shareBtn').disabled = true; toast('Preparando o app para enviar…');
-  try{ await U.shareApk({text: '🏍️ Mapa Umuarama: app para motoboys. Toque no arquivo para instalar.'}); $('#toast').classList.remove('show'); }
+  try{ await U.shareApk({text: '🏍️ Motoboys Umucity: app para motoboys. Toque no arquivo para instalar.'}); $('#toast').classList.remove('show'); }
   catch(e){ toast('Não foi possível enviar o app'); }
   finally{ $('#shareBtn').disabled = false; }
 };
@@ -3251,7 +3266,7 @@ $('#shApk').onclick = async () => {
   const U = NATIVE && plug('AppUpdate');
   if (!U || !U.shareApk){ toast('Disponível no app Android. Use “Enviar link”.'); return; }
   $('#shApk').disabled = true; toast('Preparando o arquivo…');
-  try{ await U.shareApk({text: 'Mapa Umuarama (app Android para motoboys). Toque no arquivo para instalar.'}); $('#toast').classList.remove('show'); }
+  try{ await U.shareApk({text: 'Motoboys Umucity (app Android para motoboys). Toque no arquivo para instalar.'}); $('#toast').classList.remove('show'); }
   catch(e){ toast('Não foi possível enviar o arquivo. Use “Enviar link”.'); }
   finally{ $('#shApk').disabled = false; }
 };
@@ -3421,10 +3436,16 @@ function iniciarAoVivo(){
 function paintMeAv(){ const b = $('#meAv'); if (!b) return; const n = (prefs.nick || '').trim(); b.textContent = n.length >= 2 ? n[0].toUpperCase() : '🏍️'; const i = document.createElement('i'); b.appendChild(i); b.classList.toggle('off', !prefs.share); b.style.display = ADMIN_VIEW || EMBED ? 'none' : ''; }
 setTimeout(paintMeAv, 0);
 $('#meAv').onclick = () => trocarApelido();
+function paintIcoPick(){
+  $('#bvIco').innerHTML = ICONES.map(i => `<button type="button" data-i="${i}" class="${icoOk(prefs.icone) === i ? 'on' : ''}" style="background:${icoOk(prefs.icone) === i ? '' : ''}">${i}</button>`).join('');
+  $('#bvCor').innerHTML = Object.entries(CORES_MOTO).map(([k, v]) => `<button type="button" data-c="${k}" class="${(prefs.cor || 'laranja') === k ? 'on' : ''}" style="background:linear-gradient(135deg,${v[0]},${v[1]})" aria-label="${k}"></button>`).join('');
+}
+$('#bvIco').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (!b) return; prefs.icone = b.dataset.i; savePrefs(); paintIcoPick(); paintMeAv(); requestDraw(true); liveSend(true); posLast = null; posSend(true); });
+$('#bvCor').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; prefs.cor = b.dataset.c; savePrefs(); paintIcoPick(); requestDraw(true); liveSend(true); posLast = null; posSend(true); });
 function trocarApelido(){
-  $('#boasVindas').classList.add('editar'); $('#bvShare').checked = !!prefs.share; paintBvShare();
+  $('#boasVindas').classList.add('editar'); $('#bvShare').checked = !!prefs.share; paintBvShare(); paintIcoPick();
   $('#boasVindas h2').textContent = 'Sua moto';
-  $('#boasVindas p').textContent = 'É assim que os outros motoboys te veem no mapa e no chat. Deixe vazio para ficar anônimo.';
+  $('#boasVindas p').textContent = 'Escolha seu apelido, o ícone e a cor da sua moto no mapa.';
   $('#bvNick').value = (prefs.nick || '').trim(); $('#bvOk').textContent = 'Salvar'; $('#bvAnon').textContent = 'Ficar anônimo';
   $('#boasVindas').classList.add('show');
 }

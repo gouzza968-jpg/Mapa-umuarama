@@ -111,4 +111,4 @@ jobs:
           open('notes.md', 'w', encoding='utf-8').write("\n".join("- " + n for n in u["notes"]) or "Atualização")
           PY
           cat update.json
-          gh release create "$TAG" mapa-umuarama.apk update.json --title "Mapa Umuarama $VN (build $GITHUB_RUN_NUMBER)" --notes-file notes.md --latest
+          gh release create "$TAG" mapa-umuarama.apk update.json --title "Motoboys Umucity $VN (build $GITHUB_RUN_NUMBER)" --notes-file notes.md --latest

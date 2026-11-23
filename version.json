@@ -1,6 +1,14 @@
 {
-  "latest": "2.32.1",
+  "latest": "2.33.0",
   "versions": [
+    {
+      "version": "2.33.0",
+      "date": "22/11/2026",
+      "notes": [
+        "Novo nome: Motoboys Umucity",
+        "Personalize o ícone e a cor da sua moto no mapa (toque no seu avatar na busca)"
+      ]
+    },
     {
       "version": "2.32.1",
       "date": "22/11/2026",

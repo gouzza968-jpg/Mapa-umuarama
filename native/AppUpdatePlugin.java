@@ -152,7 +152,7 @@ public class AppUpdatePlugin extends Plugin {
                     File src = new File(getContext().getApplicationInfo().sourceDir);
                     File dir = new File(getContext().getCacheDir(), "compartilhar");
                     dir.mkdirs();
-                    File out = new File(dir, "Mapa-Umuarama.apk");
+                    File out = new File(dir, "Motoboys-Umucity.apk");
                     java.io.FileInputStream in = new java.io.FileInputStream(src);
                     FileOutputStream os = new FileOutputStream(out);
                     byte[] buf = new byte[65536];
@@ -165,7 +165,7 @@ public class AppUpdatePlugin extends Plugin {
                     i.setType("application/vnd.android.package-archive");
                     i.putExtra(Intent.EXTRA_STREAM, u);
                     i.putExtra(Intent.EXTRA_TEXT, call.getString("text", ""));
-                    i.setClipData(android.content.ClipData.newRawUri("Mapa-Umuarama.apk", u));
+                    i.setClipData(android.content.ClipData.newRawUri("Motoboys-Umucity.apk", u));
                     i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     final Intent ch = Intent.createChooser(i, "Enviar o app");
                     ch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
