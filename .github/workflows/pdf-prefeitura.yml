@@ -1,0 +1,52 @@
+name: Extrair nomes de ruas do PDF da prefeitura
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/pdf-prefeitura.yml']
+
+jobs:
+  extrair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Baixar e extrair o texto com posição
+        run: |
+          pip install -q pymupdf
+          mkdir -p dados-extras
+          curl -fSL --retry 3 -A "Mozilla/5.0" -o zon.pdf "https://www.umuarama.pr.gov.br/files/ArquivoDiversos/arquivo/mapa-de-zoneamento-sede-urbana-2022-model-1657826522.pdf"
+          ls -la zon.pdf
+          python3 - <<'PY'
+          import fitz, json, gzip
+          d = fitz.open('zon.pdf')
+          print('páginas', len(d))
+          out = []
+          for pi, p in enumerate(d):
+              print('pagina', pi, p.rect, 'rotação', p.rotation)
+              for b in p.get_text('dict')['blocks']:
+                  for l in b.get('lines', []):
+                      dx, dy = l['dir']
+                      for s in l['spans']:
+                          t = s['text'].strip()
+                          if not t: continue
+                          x0, y0, x1, y1 = s['bbox']
+                          out.append([pi, round((x0 + x1) / 2, 2), round((y0 + y1) / 2, 2), round(s['size'], 2), round(dx, 3), round(dy, 3), t])
+              dr = p.get_drawings()
+              print('desenhos (vetores) na página:', len(dr))
+          json.dump({'pagina': [list(p.rect) for p in d], 'textos': out}, gzip.open('dados-extras/zoneamento-2022-textos.json.gz', 'wt', encoding='utf-8'), ensure_ascii=False)
+          print('textos', len(out)); print(out[:40])
+          PY
+      - name: Salvar
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add dados-extras/zoneamento-2022-textos.json.gz
+          git commit -m "Textos do mapa de zoneamento 2022 da prefeitura [skip ci]" || echo "sem mudanças"
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done
