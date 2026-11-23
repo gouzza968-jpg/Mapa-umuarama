@@ -769,7 +769,7 @@ if (!prefs.autoV1){ prefs.autoV1 = 1; prefs.share = true; prefs.bgShare = true; 
 // opções controladas pelo painel do administrador (config "recursos")
 let REC = Object.assign({blitz: true, aoVivo: true, rotas: true, mapa: '', aviso: ''}, prefs.rec || {});
 if (!ADMIN_VIEW && REC.mapa && prefs.recMapa !== REC.mapa){ prefs.recMapa = REC.mapa; prefs.mapa = REC.mapa; }
-if (ADMIN_VIEW){ prefs.mapa = 'principal'; prefs.showLive = true; document.body.classList.add('adminview'); }
+if (ADMIN_VIEW){ prefs.mapa = 'principal'; prefs.showLive = true; document.body.classList.add('adminview'); setTimeout(() => { $('#shareBtn').parentElement.style.display = 'none'; $('#blitzGroup').style.display = 'none'; }, 0); }
 
 // ---------- rede & armazenamento ----------
 async function httpGet(u, asJson=true){
@@ -988,8 +988,9 @@ function computeCore(){
   CORE = [q(xs,.06), q(ys,.06), q(xs,.94), q(ys,.94)];
 }
 function fillTarget(){
-  const [x0,y0,x1,y1] = CORE, top = 120, bot = 20;
-  const k = Math.max(VW/(x1-x0), (VH-top-bot)/(y1-y0));
+  const [x0,y0,x1,y1] = CORE, top = ADMIN_VIEW ? 90 : 120, bot = ADMIN_VIEW ? 60 : 20;
+  // painel: a cidade inteira de ponta a ponta na tela; app: a área urbana preenchendo a tela
+  const k = ADMIN_VIEW ? Math.min(VW/(x1-x0), (VH-top-bot)/(y1-y0)) * 1.04 : Math.max(VW/(x1-x0), (VH-top-bot)/(y1-y0));
   return [(x0+x1)/2, (y0+y1)/2 + (top-bot)/2/k, k];
 }
 function expandIn(){ const [x,y,k] = fillTarget(); animateTo(x, y, k, 1100); }
@@ -1964,7 +1965,6 @@ async function liveConnect(){
       const st = liveCh.presenceState(), out = [];
       for (const [k, arr] of Object.entries(st)){ if (k === liveId) continue; const p = arr[arr.length - 1]; if (p && p.lat) out.push(Object.assign({id: k}, p)); }
       presOthers = out; mergeLive();
-      if (ADMIN_VIEW && !adminFitted && out.length){ adminFitted = true; setTimeout(fitMotos, 400); }
     });
     liveCh.subscribe(status => { liveSubscribed = status === 'SUBSCRIBED'; if (liveSubscribed) liveSend(true); paintLive(); });
     syncProfile();
@@ -2488,7 +2488,7 @@ function setRec(v){
   if (!antes && REC.aoVivo && prefs.share){ startBg(); liveSend(true); posSend(true); }
 }
 function applyRec(){
-  $('#blitzGroup').style.display = REC.blitz ? '' : 'none';
+  $('#blitzGroup').style.display = REC.blitz && !ADMIN_VIEW ? '' : 'none';
   $('#blitzOpt').style.display = REC.blitz ? '' : 'none';
   if (!REC.blitz && picking) endPick();
   $('#secLive').style.display = REC.aoVivo ? '' : 'none';

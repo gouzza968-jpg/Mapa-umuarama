@@ -19,10 +19,22 @@
   .page.mapa{padding:0;overflow:hidden}
   .page.home{padding:0}
   .page.home > *{max-width:none}
-  #homeMap{position:relative;height:58vh;min-height:320px;background:var(--bg)}
+  #homeMap{position:fixed;inset:0;background:var(--bg)}
+  .tabs{display:none!important}
+  .page{bottom:0!important}
+  .page:not(.home){z-index:20;background:var(--bg)}
+  .phead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .phead h1{margin:0}
+  .phead .voltar{width:42px;height:42px;border-radius:50%;border:0;background:var(--raised);color:var(--ink);font-size:28px;line-height:1;display:grid;place-items:center;flex:none;padding-bottom:3px}
+  .fbs{position:absolute;left:12px;top:50%;transform:translateY(-35%);display:flex;flex-direction:column;gap:10px;z-index:3}
+  .fb{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:rgba(20,26,34,.92);backdrop-filter:blur(10px);font-size:23px;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.4);position:relative;color:var(--ink)}
+  .fb:active{transform:scale(.94)}
+  .fb.red{background:#dc2626;border-color:#dc2626}
+  .fb .cnt{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:10px;background:var(--bad);color:#fff;font-size:11px;font-weight:800;display:none;place-items:center;padding:0 5px;border:2px solid var(--solid)}
+  .fb .cnt.show{display:grid}
   body.mapfull #homeMap{height:100%}
   body.mapfull .homeBody{display:none}
-  .hstats{position:absolute;left:10px;right:56px;top:calc(env(safe-area-inset-top) + 10px);display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+  .hstats{position:absolute;left:12px;right:80px;bottom:calc(env(safe-area-inset-bottom) + 14px);display:flex;gap:6px;flex-wrap:wrap;pointer-events:none;z-index:3}
   .hstats span{background:rgba(20,26,34,.88);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:600;backdrop-filter:blur(8px)}
   #rdlg{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px}
   #rdlg.show{display:flex}
@@ -31,7 +43,7 @@
   #rdlg .fl{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted)}
   #rdlg select, #rdlg input{font:inherit;font-size:15px;color:var(--ink);background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:11px}
   #rdlg .bt{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
-  #addBlitz{position:absolute;left:10px;bottom:44px;background:#dc2626;border-color:#dc2626;color:#fff;box-shadow:var(--shadow)}
+
   body.marcando #addBlitz{display:none}
   #mapFull{position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 10px);width:38px;height:34px;padding:0;font-size:17px;background:rgba(20,26,34,.88)}
   .homeBody{padding:14px 14px 24px;max-width:640px;margin:0 auto}
@@ -150,16 +162,26 @@
 
 <div class="page home open" id="pHome">
   <div id="homeMap"><iframe id="mapFrame" title="Mapa Principal com as atividades"></iframe>
-    <div class="hstats"><span>🏍️ <b id="sCad">–</b> cadastrados · <b id="sOn" style="color:#22c55e">–</b> online</span><span>🚨 <b id="sBlz">–</b> blitz</span><span>💬 <b id="sHoje">–</b> hoje</span></div>
-    <button class="btn sm" id="mapFull" aria-label="Tela cheia">⤢</button>
-    <button class="btn sm" id="addBlitz">🚨 Adicionar blitz</button>
+    <div class="hstats"><span>🏍️ <b id="sCad">–</b> cadastrados · <b id="sOn" style="color:#22c55e">–</b> online</span><span>🚨 <b id="sBlz">–</b></span><span>💬 <b id="sHoje">–</b> hoje</span></div>
+    <div class="fbs">
+      <button class="fb" id="fbChat" aria-label="Chat">💬<span class="cnt" id="chatNovas"></span></button>
+      <button class="fb" id="fbAtiv" aria-label="Atividades">📋</button>
+      <button class="fb red" id="addBlitz" aria-label="Adicionar blitz">🚨</button>
+      <button class="fb" id="addRadar" aria-label="Adicionar radar">📷</button>
+      <button class="fb" id="fbCfg" aria-label="Configurações">⚙️</button>
+    </div>
+    <button id="mapFull" style="display:none"></button>
   </div>
+</div>
+
+<div class="page" id="pAtiv">
+  <div class="phead"><button class="voltar" data-voltar>‹</button><h1>Atividades</h1></div>
   <div class="homeBody">
     <h2>🏍️ Motoboys online</h2>
     <div class="card" id="onList"><div class="empty">Conectando…</div></div>
     <h2>🚨 Blitz ativas</h2>
     <div class="card" id="blitzList"><div class="empty">Carregando…</div></div>
-    <h2 style="display:flex;align-items:center;justify-content:space-between">📷 Radares <button class="btn sm" id="addRadar">+ Adicionar</button></h2>
+    <h2 style="display:flex;align-items:center;justify-content:space-between">📷 Radares <button class="btn sm" id="addRadar2">+ Adicionar</button></h2>
     <div class="card" id="radarList"><div class="empty">Carregando…</div></div>
     <h2>💬 Últimas mensagens</h2>
     <div class="card" id="ultMsgs"><div class="empty">Carregando…</div></div>
@@ -167,7 +189,7 @@
 </div>
 
 <div class="page" id="pChat">
-  <h1>Chat</h1><p class="sub">Todas as mensagens, em tempo real</p>
+  <div class="phead"><button class="voltar" data-voltar>‹</button><div><h1>Chat</h1><p class="sub" style="margin:0">Todas as mensagens, em tempo real</p></div></div>
   <div class="stats"><div class="stat"><b id="sMsg">–</b><span>mensagens</span></div><div class="stat"><b id="sOn2">–</b><span>online agora</span></div><div class="stat"><b id="sBan">–</b><span>bloqueados</span></div></div>
   <div class="card" style="padding:8px 10px"><input id="msgBusca" placeholder="🔎 Buscar nas mensagens (texto ou apelido)" style="width:100%;box-sizing:border-box;border:0;background:transparent"></div>
   <div class="chatbox"><div id="msgList"><div class="empty">Carregando…</div></div></div>
@@ -177,7 +199,7 @@
 </div>
 
 <div class="page" id="pAcc">
-  <h1>Configurações</h1><p class="sub">Do painel e do app dos motoboys</p>
+  <div class="phead"><button class="voltar" data-voltar>‹</button><h1>Configurações</h1></div><p class="sub">Do painel e do app dos motoboys</p>
   <h2>📱 App dos motoboys</h2>
   <div class="card">
     <div class="row"><div class="grow"><b>Chat</b><div class="d" id="chatStD">Carregando…</div></div><label class="sw"><input type="checkbox" id="chatOn"><span></span></label></div>
@@ -209,7 +231,6 @@
 
 <nav class="tabs">
   <button class="tab on" data-p="pHome"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></span>Início</button>
-  <button class="tab" data-p="pChat"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>Chat<span class="cnt" id="chatNovas"></span></button>
   <button class="tab" data-p="pAcc"><span class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Configurações</button>
 </nav>
 
@@ -349,7 +370,7 @@ $('#cadList').addEventListener('click', e => {
   const a = e.target.closest('[data-a]'); if (!a) return;
   if (a.dataset.a === 'ban') ban(p.uid, p.apelido || 'motoboy').then(renderCadastro); else unban(p.uid).then(renderCadastro);
 });
-document.querySelector('.tab[data-p="pAcc"]').addEventListener('click', loadCadastro);
+
 $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
@@ -357,7 +378,17 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('open', p.id === t.dataset.p));
   if (t.dataset.p === 'pChat'){ novasChat = 0; paintNovas(); }
 });
-const back = plug('App'); if (back) back.addListener('backButton', () => { if ($('#dlg').classList.contains('show')) return $('#dNo').click(); const f = document.querySelector('.tab'); if (!f.classList.contains('on')) f.click(); else back.exitApp(); });
+function abrirPag(id){
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('open', p.id === id || (p.id === 'pHome')));
+  if (id === 'pChat'){ novasChat = 0; paintNovas(); setTimeout(() => { const b = $('#msgList'); b.scrollTop = b.scrollHeight; }, 50); }
+  if (id === 'pAcc') loadCadastro();
+}
+const fecharPags = () => document.querySelectorAll('.page:not(.home)').forEach(p => p.classList.remove('open'));
+document.querySelectorAll('[data-voltar]').forEach(b => b.onclick = fecharPags);
+$('#fbChat').onclick = () => abrirPag('pChat');
+$('#fbAtiv').onclick = () => abrirPag('pAtiv');
+$('#fbCfg').onclick = () => abrirPag('pAcc');
+const back = plug('App'); if (back) back.addListener('backButton', () => { if ($('#dlg').classList.contains('show')) return $('#dNo').click(); if ($('#rdlg').classList.contains('show')) return $('#rNo').click(); if (document.querySelector('.page.open:not(.home)')) return fecharPags(); back.exitApp(); });
 
 const hora = d => new Date(d).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'});
 let totalMsgs = null, temMais = false, novasChat = 0;
@@ -368,7 +399,7 @@ function renderUlt(){
   const ult = msgs.slice(-5).reverse();
   $('#ultMsgs').innerHTML = ult.length ? ult.map(m => `<div class="row"><div class="av ${m.admin?'adm':''}">${esc((m.apelido||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(m.apelido)}</b> <span class="d" style="display:inline">${hora(m.criado_em)}</span><div class="d" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.foto ? '📷 ' : ''}${m.audio ? '🎤 ' : ''}${m.lat != null ? '📍 ' : ''}${esc(m.texto || (m.foto ? 'Foto' : m.audio ? 'Áudio (' + (m.audio_seg||0) + 's)' : ''))}</div></div></div>`).join('') + '<div style="text-align:center;padding-top:8px"><button class="btn sm" id="verChat">Abrir o chat</button></div>' : '<div class="empty">Nenhuma mensagem.</div>';
 }
-$('#ultMsgs').addEventListener('click', e => { if (e.target.closest('#verChat')) document.querySelector('.tab[data-p="pChat"]').click(); });
+$('#ultMsgs').addEventListener('click', e => { if (e.target.closest('#verChat')) abrirPag('pChat'); });
 function renderMsgs(){
   renderUlt();
   $('#sMsg').textContent = totalMsgs != null ? Math.max(totalMsgs, msgs.length) : msgs.length;
@@ -393,7 +424,7 @@ function renderBans(){
   $('#sBan').textContent = bans.size;
   $('#banList').innerHTML = bans.size ? [...bans.values()].map(b => `<div class="row" data-u="${b.autor}"><div class="av">${esc((b.apelido||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(b.apelido||'Sem apelido')}</b><div class="d">${b.motivo?esc(b.motivo)+' · ':''}desde ${hora(b.criado_em)}</div></div><button class="btn sm" data-a="unban">Desbloquear</button></div>`).join('') : '<div class="empty">Ninguém bloqueado.</div>';
 }
-function irMapa(){ document.querySelector('.tab[data-p="pHome"]').click(); $('#pHome').scrollTop = 0; }
+function irMapa(){ fecharPags(); }
 let posOn = new Map();   // posições enviadas com o app em segundo plano
 async function loadPos(){
   const r = await sb.from('posicoes').select('*').gt('atualizado_em', new Date(Date.now() - 180000).toISOString()).limit(500);
@@ -571,6 +602,7 @@ function pedirLocal(extra){
   irMapa(); document.body.classList.add('mapfull'); $('#mapFull').textContent = '⤡';
   try{ $('#mapFrame').contentWindow.postMessage(Object.assign({pick: 'radar'}, extra || {}), '*'); }catch(e){}
 }
+$('#addRadar2').onclick = () => $('#addRadar').onclick();
 $('#addRadar').onclick = () => { pedirLocal(); toast('Arraste o mapa até o 📷 ficar no radar e toque em Marcar aqui'); };
 $('#rNo').onclick = () => $('#rdlg').classList.remove('show');
 $('#rMover').onclick = () => { const a = rAtual; $('#rdlg').classList.remove('show'); pedirLocal({id: a.id, lat: a.lat, lon: a.lon}); toast('Arraste o mapa até o novo local e toque em Mover para cá'); };
